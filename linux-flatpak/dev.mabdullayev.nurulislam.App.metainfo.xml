@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Muhammadali Abdullayev -->
+<component type="desktop-application">
+  <id>dev.mabdullayev.nurulislam.App</id>
+  <name>Nurul Islam</name>
+  <summary>Holy Quran, Prayer Times, Tajweed &amp; Hanafi Fiqh Companion</summary>
+  <summary xml:lang="uz">Qur'oni Karim, Namoz vaqtlari, Muallimi Soniy va Hanafiy Fiqhi hamrohi</summary>
+  <summary xml:lang="ru">Священный Коран, время намаза, Таджвид и Ханафитский фикх</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="dev.mabdullayev">
+    <name>Muhammadali Abdullayev</name>
+  </developer>
+
+  <description>
+    <p>
+      Nurul Islam is a comprehensive, ad-free, offline-capable Islamic companion designed with authentic Hanafi scholarship and multilingual support (Uzbek Latin, Uzbek Cyrillic, English, and Russian).
+    </p>
+    <p>Key features include:</p>
+    <ul>
+      <li>The Holy Quran (114 Surahs) with Arabic Mushaf script, Uzbek/Russian/English translations, tafsir, word-by-word breakdown, and reciter audio</li>
+      <li>Accurate Prayer Times and Ramadan Suhoor/Iftar calendar with Uzbekistan regional, district, and village precision</li>
+      <li>Muallimi Sani and Tajweed Trainer: 10 progressive lessons (Ahmad Hodiy Maqsudiy method), interactive audio Qaida practice board, 5 Makhraj articulation zones, and color-coded Tajweed</li>
+      <li>Hifz Memorization Trainer for 18 prayer Surahs and Duas with 3-stage word-hiding memory practice</li>
+      <li>Everyday Hanafi Fiqh Q&amp;A Encyclopedia, 8 Real-Life Hanafi Guides, 40 Fards, Selected Ayahs, Hadiths, and Morning/Evening Adhkar</li>
+      <li>99 Names of Allah (Asma ul-Husna) with audio, solo quiz, and live 1v1 quiz battle</li>
+      <li>Digital Tasbih counter, Qazo prayer tracker, Zakat calculator, Nearby Masjids map, and Verified Masjid Support (Ehson &amp; Hashar)</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">dev.mabdullayev.nurulislam.App.desktop</launchable>
+
+  <url type="homepage">https://nurulislam.mabdullayev.dev</url>
+  <url type="bugtracker">https://github.com/muhammadaliAbdullayevv/nurul-islam-linux/issues</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#eef9ea</color>
+    <color type="primary" scheme_preference="dark">#07291f</color>
+  </branding>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Muallimi Sani interactive Qaida practice board and color-coded Tajweed</caption>
+      <image>https://nurulislam.mabdullayev.dev/linux/screenshots/muallimi-soniy.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Verified Masjid Support (Ehson and Hashar) listing and detail view</caption>
+      <image>https://nurulislam.mabdullayev.dev/linux/screenshots/masjid-ehson.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1" />
+
+  <provides>
+    <binary>nurulislam-desktop</binary>
+  </provides>
+
+  <releases>
+    <release version="1.8.56" date="2026-11-21">
+      <description>
+        <p>Added 10-lesson Muallimi Sani and Tajweed trainer, Everyday Hanafi Fiqh Q&amp;A encyclopedia, Seerah and 25 Prophets stories, and customizable Home screen feature grid.</p>
+      </description>
+    </release>
+  </releases>
+</component>

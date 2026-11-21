@@ -1,0 +1,382 @@
+import { AppLanguage, Coordinates } from '../types';
+
+export type LocationRegionId =
+  | 'uz_tashkent_city'
+  | 'uz_tashkent_region'
+  | 'uz_andijan'
+  | 'uz_fergana'
+  | 'uz_namangan'
+  | 'uz_sirdaryo'
+  | 'uz_jizzakh'
+  | 'uz_samarkand'
+  | 'uz_kashkadarya'
+  | 'uz_surkhandarya'
+  | 'uz_bukhara'
+  | 'uz_navoi'
+  | 'uz_khorezm'
+  | 'uz_karakalpakstan'
+  | 'world';
+
+export interface RegionDefinition {
+  id: LocationRegionId;
+  shortLabel: Record<AppLanguage, string>;
+  fullLabel: Record<AppLanguage, string>;
+}
+
+export const LOCATION_REGIONS: RegionDefinition[] = [
+  {
+    id: 'uz_tashkent_city',
+    shortLabel: { uz_lat: 'Toshkent sh.', uz_cyr: 'Тошкент ш.', en: 'Tashkent', ru: 'Ташкент' },
+    fullLabel: { uz_lat: 'Toshkent shahri', uz_cyr: 'Тошкент шаҳри', en: 'Tashkent City', ru: 'г. Ташкент' },
+  },
+  {
+    id: 'uz_tashkent_region',
+    shortLabel: { uz_lat: 'Toshkent vil.', uz_cyr: 'Тошкент вил.', en: 'Tashkent Reg.', ru: 'Ташкент. обл.' },
+    fullLabel: { uz_lat: 'Toshkent viloyati', uz_cyr: 'Тошкент вилояти', en: 'Tashkent Region', ru: 'Ташкентская область' },
+  },
+  {
+    id: 'uz_andijan',
+    shortLabel: { uz_lat: 'Andijon', uz_cyr: 'Андижон', en: 'Andijan', ru: 'Андижан' },
+    fullLabel: { uz_lat: 'Andijon viloyati', uz_cyr: 'Андижон вилояти', en: 'Andijan Region', ru: 'Андижанская область' },
+  },
+  {
+    id: 'uz_fergana',
+    shortLabel: { uz_lat: "Farg'ona", uz_cyr: 'Фарғона', en: 'Fergana', ru: 'Фергана' },
+    fullLabel: { uz_lat: "Farg'ona viloyati", uz_cyr: 'Фарғона вилояти', en: 'Fergana Region', ru: 'Ферганская область' },
+  },
+  {
+    id: 'uz_namangan',
+    shortLabel: { uz_lat: 'Namangan', uz_cyr: 'Наманган', en: 'Namangan', ru: 'Наманган' },
+    fullLabel: { uz_lat: 'Namangan viloyati', uz_cyr: 'Наманган вилояти', en: 'Namangan Region', ru: 'Наманганская область' },
+  },
+  {
+    id: 'uz_samarkand',
+    shortLabel: { uz_lat: 'Samarqand', uz_cyr: 'Самарқанд', en: 'Samarkand', ru: 'Самарканд' },
+    fullLabel: { uz_lat: 'Samarqand viloyati', uz_cyr: 'Самарқанд вилояти', en: 'Samarkand Region', ru: 'Самаркандская область' },
+  },
+  {
+    id: 'uz_bukhara',
+    shortLabel: { uz_lat: 'Buxoro', uz_cyr: 'Бухоро', en: 'Bukhara', ru: 'Бухара' },
+    fullLabel: { uz_lat: 'Buxoro viloyati', uz_cyr: 'Бухоро вилояти', en: 'Bukhara Region', ru: 'Бухарская область' },
+  },
+  {
+    id: 'uz_jizzakh',
+    shortLabel: { uz_lat: 'Jizzax', uz_cyr: 'Жиззах', en: 'Jizzakh', ru: 'Джизак' },
+    fullLabel: { uz_lat: 'Jizzax viloyati', uz_cyr: 'Жиззах вилояти', en: 'Jizzakh Region', ru: 'Джизакская область' },
+  },
+  {
+    id: 'uz_sirdaryo',
+    shortLabel: { uz_lat: 'Sirdaryo', uz_cyr: 'Сирдарё', en: 'Syrdarya', ru: 'Сырдарья' },
+    fullLabel: { uz_lat: 'Sirdaryo viloyati', uz_cyr: 'Сирдарё вилояти', en: 'Syrdarya Region', ru: 'Сырдарьинская область' },
+  },
+  {
+    id: 'uz_kashkadarya',
+    shortLabel: { uz_lat: 'Qashqadaryo', uz_cyr: 'Қашқадарё', en: 'Kashkadarya', ru: 'Кашкадарья' },
+    fullLabel: { uz_lat: 'Qashqadaryo viloyati', uz_cyr: 'Қашқадарё вилояти', en: 'Kashkadarya Region', ru: 'Кашкадарьинская область' },
+  },
+  {
+    id: 'uz_surkhandarya',
+    shortLabel: { uz_lat: 'Surxondaryo', uz_cyr: 'Сурхондарё', en: 'Surkhandarya', ru: 'Сурхандарья' },
+    fullLabel: { uz_lat: 'Surxondaryo viloyati', uz_cyr: 'Сурхондарё вилояти', en: 'Surkhandarya Region', ru: 'Сурхандарьинская область' },
+  },
+  {
+    id: 'uz_navoi',
+    shortLabel: { uz_lat: 'Navoiy', uz_cyr: 'Навоий', en: 'Navoi', ru: 'Навои' },
+    fullLabel: { uz_lat: 'Navoiy viloyati', uz_cyr: 'Навоий вилояти', en: 'Navoi Region', ru: 'Навоийская область' },
+  },
+  {
+    id: 'uz_khorezm',
+    shortLabel: { uz_lat: 'Xorazm', uz_cyr: 'Хоразм', en: 'Khorezm', ru: 'Хорезм' },
+    fullLabel: { uz_lat: 'Xorazm viloyati', uz_cyr: 'Хоразм вилояти', en: 'Khorezm Region', ru: 'Хорезмская область' },
+  },
+  {
+    id: 'uz_karakalpakstan',
+    shortLabel: { uz_lat: "Qoraqalpog'iston", uz_cyr: 'Қорақалпоғистон', en: 'Karakalpakstan', ru: 'Каракалпакстан' },
+    fullLabel: {
+      uz_lat: "Qoraqalpog'iston Resp.",
+      uz_cyr: 'Қорақалпоғистон Респ.',
+      en: 'Republic of Karakalpakstan',
+      ru: 'Республика Каракалпакстан',
+    },
+  },
+  {
+    id: 'world',
+    shortLabel: { uz_lat: 'Jahon', uz_cyr: 'Жаҳон', en: 'World', ru: 'Мир' },
+    fullLabel: { uz_lat: 'Jahon shaharlari', uz_cyr: 'Жаҳон шаҳарлари', en: 'World Cities', ru: 'Города мира' },
+  },
+];
+
+export const REGION_MAP: Record<LocationRegionId, RegionDefinition> = Object.fromEntries(
+  LOCATION_REGIONS.map((r) => [r.id, r])
+) as Record<LocationRegionId, RegionDefinition>;
+
+export interface LocationEntry extends Coordinates {
+  region: LocationRegionId;
+  labels: Record<AppLanguage, string>;
+  aliases?: string;
+}
+
+type RawUzRow = [
+  id: string,
+  region: Exclude<LocationRegionId, 'world'>,
+  lat: number,
+  lng: number,
+  tz: 'Asia/Tashkent' | 'Asia/Samarkand',
+  uzLat: string,
+  uzCyr: string,
+  en: string,
+  ru: string,
+  aliases?: string
+];
+
+// Comprehensive Uzbekistan cities & administrative districts (viloyatlar, shaharlar va tumanlar)
+const RAW_UZBEKISTAN_ROWS: RawUzRow[] = [
+  // ==================== Toshkent shahri ====================
+  ['Tashkent', 'uz_tashkent_city', 41.2995, 69.2401, 'Asia/Tashkent', 'Toshkent', 'Тошкент', 'Tashkent', 'Ташкент', 'toshkent shahri markaz center'],
+  ['Bektemir District', 'uz_tashkent_city', 41.2131, 69.3358, 'Asia/Tashkent', 'Bektemir tumani', 'Бектемир тумани', 'Bektemir District', 'Бектемирский район'],
+  ['Chilonzor District', 'uz_tashkent_city', 41.2753, 69.2036, 'Asia/Tashkent', 'Chilonzor tumani', 'Чилонзор тумани', 'Chilonzor District', 'Чиланзарский район', 'chilanzar'],
+  ['Mirabad District', 'uz_tashkent_city', 41.2877, 69.2775, 'Asia/Tashkent', 'Mirobod tumani', 'Миробод тумани', 'Mirobod District', 'Мирабадский район', 'mirabad'],
+  ['Mirzo Ulugbek District', 'uz_tashkent_city', 41.3372, 69.3389, 'Asia/Tashkent', "Mirzo Ulug'bek tumani", 'Мирзо Улуғбек тумани', 'Mirzo Ulugbek District', 'Мирзо-Улугбекский район'],
+  ['Olmazor District', 'uz_tashkent_city', 41.3514, 69.2225, 'Asia/Tashkent', 'Olmazor tumani', 'Олмазор тумани', 'Olmazor District', 'Алмазарский район', 'almazar'],
+  ['Sergeli District', 'uz_tashkent_city', 41.2244, 69.2167, 'Asia/Tashkent', 'Sergeli tumani', 'Сергели тумани', 'Sergeli District', 'Сергелийский район'],
+  ['Shaykhontohur District', 'uz_tashkent_city', 41.3258, 69.2439, 'Asia/Tashkent', 'Shayxontohur tumani', 'Шайхонтоҳур тумани', 'Shaykhontohur District', 'Шайхантахурский район'],
+  ['Uchtepa District', 'uz_tashkent_city', 41.2981, 69.1742, 'Asia/Tashkent', 'Uchtepa tumani', 'Учтепа тумани', 'Uchtepa District', 'Учтепинский район'],
+  ['Yakkasaray District', 'uz_tashkent_city', 41.2856, 69.2547, 'Asia/Tashkent', 'Yakkasaroy tumani', 'Яккасарой тумани', 'Yakkasaray District', 'Яккасарайский район'],
+  ['Yangihayot District', 'uz_tashkent_city', 41.2014, 69.2192, 'Asia/Tashkent', 'Yangihayot tumani', 'Янгиҳаёт тумани', 'Yangihayot District', 'Янгихаётский район'],
+  ['Yashnobod District', 'uz_tashkent_city', 41.2939, 69.3422, 'Asia/Tashkent', 'Yashnobod tumani', 'Яшнобод тумани', 'Yashnobod District', 'Яшнабадский район', 'hamza'],
+  ['Yunusabad District', 'uz_tashkent_city', 41.3653, 69.2869, 'Asia/Tashkent', 'Yunusobod tumani', 'Юнусобод тумани', 'Yunusabad District', 'Юнусабадский район'],
+
+  // ==================== Toshkent viloyati ====================
+  ['Nurafshon', 'uz_tashkent_region', 41.0355, 69.3585, 'Asia/Tashkent', 'Nurafshon', 'Нурафшон', 'Nurafshon', 'Нурафшон', 'toйтепа toytepa to\'ytepa nurafshan'],
+  ['Angren', 'uz_tashkent_region', 41.0167, 70.1436, 'Asia/Tashkent', 'Angren shahri', 'Ангрен шаҳри', 'Angren', 'Ангрен'],
+  ['Bekabad', 'uz_tashkent_region', 40.2208, 69.2697, 'Asia/Tashkent', 'Bekobod shahri', 'Бекобод шаҳри', 'Bekabad', 'Бекабад'],
+  ['Chirchik', 'uz_tashkent_region', 41.4689, 69.5822, 'Asia/Tashkent', 'Chirchiq shahri', 'Чирчиқ шаҳри', 'Chirchik', 'Чирчик'],
+  ['Almalyk', 'uz_tashkent_region', 40.8447, 69.5983, 'Asia/Tashkent', 'Olmaliq shahri', 'Олмалиқ шаҳри', 'Almalyk', 'Алмалык'],
+  ['Ohangaron', 'uz_tashkent_region', 40.9064, 69.6383, 'Asia/Tashkent', 'Ohangaron shahri', 'Оҳангарон шаҳри', 'Ohangaron', 'Ахангаран'],
+  ['Yangiyul', 'uz_tashkent_region', 41.1125, 69.0472, 'Asia/Tashkent', "Yangiyo'l shahri", 'Янгийўл шаҳри', 'Yangiyul', 'Янгиюль'],
+  ['Bekabad District', 'uz_tashkent_region', 40.2783, 69.2347, 'Asia/Tashkent', 'Bekobod tumani', 'Бекобод тумани', 'Bekabad District', 'Бекабадский район', 'zafar'],
+  ['Buka District', 'uz_tashkent_region', 40.8117, 69.1942, 'Asia/Tashkent', "Bo'ka tumani", 'Бўка тумани', 'Buka District', 'Букинский район', 'boka'],
+  ['Bostanliq District', 'uz_tashkent_region', 41.5844, 69.7717, 'Asia/Tashkent', "Bo'stonliq tumani (G'azalkent)", 'Бўстонлиқ тумани (Ғазалкент)', 'Bostanliq District', 'Бостанлыкский район', 'gazalkent chorbog charvak'],
+  ['Chinaz District', 'uz_tashkent_region', 40.9358, 68.7614, 'Asia/Tashkent', 'Chinoz tumani', 'Чиноз тумани', 'Chinaz District', 'Чиназский район'],
+  ['Ohangaron District', 'uz_tashkent_region', 40.9167, 69.6500, 'Asia/Tashkent', 'Ohangaron tumani', 'Оҳангарон тумани', 'Ohangaron District', 'Ахангаранский район'],
+  ['Oqqorgon District', 'uz_tashkent_region', 40.8856, 69.0464, 'Asia/Tashkent', "Oqqo'rg'on tumani", 'Оққўрғон тумани', 'Oqqorgon District', 'Аккурганский район'],
+  ['Orta Chirchik District', 'uz_tashkent_region', 41.0319, 69.3425, 'Asia/Tashkent', "O'rta Chirchiq tumani", 'Ўрта Чирчиқ тумани', 'Orta Chirchik District', 'Уртачирчикский район', 'qorasuv'],
+  ['Parkent District', 'uz_tashkent_region', 41.2944, 69.6764, 'Asia/Tashkent', 'Parkent tumani', 'Паркент тумани', 'Parkent District', 'Паркентский район'],
+  ['Piskent District', 'uz_tashkent_region', 40.8975, 69.3506, 'Asia/Tashkent', 'Piskent tumani', 'Пискент тумани', 'Piskent District', 'Пскентский район'],
+  ['Qibray District', 'uz_tashkent_region', 41.3894, 69.4647, 'Asia/Tashkent', 'Qibray tumani', 'Қибрай тумани', 'Qibray District', 'Кибрайский район'],
+  ['Quyi Chirchik District', 'uz_tashkent_region', 40.9553, 69.0003, 'Asia/Tashkent', 'Quyi Chirchiq tumani', 'Қуйи Чирчиқ тумани', 'Quyi Chirchik District', 'Куйичирчикский район', 'do\'stobod'],
+  ['Tashkent District', 'uz_tashkent_region', 41.4114, 69.2108, 'Asia/Tashkent', 'Toshkent tumani (Keles)', 'Тошкент тумани (Келес)', 'Tashkent District (Keles)', 'Ташкентский район (Келес)'],
+  ['Yangiyul District', 'uz_tashkent_region', 41.1200, 69.0450, 'Asia/Tashkent', "Yangiyo'l tumani", 'Янгийўл тумани', 'Yangiyul District', 'Янгиюльский район'],
+  ['Yuqori Chirchik District', 'uz_tashkent_region', 41.2247, 69.5469, 'Asia/Tashkent', 'Yuqori Chirchiq tumani', 'Юқори Чирчиқ тумани', 'Yuqori Chirchik District', 'Юкоричирчикский район', 'yangibozor'],
+  ['Zangiota District', 'uz_tashkent_region', 41.2017, 69.1464, 'Asia/Tashkent', 'Zangiota tumani', 'Зангиота тумани', 'Zangiota District', 'Зангиатинский район', 'eshonguzar'],
+
+  // ==================== Andijon viloyati ====================
+  ['Andijan', 'uz_andijan', 40.7821, 72.3442, 'Asia/Tashkent', 'Andijon shahri', 'Андижон шаҳри', 'Andijan', 'Андижан'],
+  ['Khanabad', 'uz_andijan', 40.8056, 72.9767, 'Asia/Tashkent', 'Xonobod shahri', 'Хонобод шаҳри', 'Khanabad', 'Ханабад'],
+  ['Andijan District', 'uz_andijan', 40.8242, 72.3906, 'Asia/Tashkent', 'Andijon tumani (Kuyganyor)', 'Андижон тумани (Куйганёр)', 'Andijan District', 'Андижанский район'],
+  ['Asaka District', 'uz_andijan', 40.6419, 72.2389, 'Asia/Tashkent', 'Asaka tumani', 'Асака тумани', 'Asaka District', 'Асакинский район'],
+  ['Baliqchi District', 'uz_andijan', 40.8969, 71.8556, 'Asia/Tashkent', 'Baliqchi tumani', 'Балиқчи тумани', 'Baliqchi District', 'Балыкчинский район'],
+  ['Boston District', 'uz_andijan', 40.6797, 71.9189, 'Asia/Tashkent', "Bo'ston tumani (Bo'z)", 'Бўстон тумани (Бўз)', 'Boston District', 'Бустанский район', 'boz'],
+  ['Buloqboshi District', 'uz_andijan', 40.6286, 72.4997, 'Asia/Tashkent', 'Buloqboshi tumani', 'Булоқбоши тумани', 'Buloqboshi District', 'Булакбашинский район'],
+  ['Izboskan District', 'uz_andijan', 40.9169, 72.2564, 'Asia/Tashkent', 'Izboskan tumani (Poytug)', 'Избоскан тумани (Пойтуғ)', 'Izboskan District', 'Избасканский район', 'poytug'],
+  ['Jalaquduq District', 'uz_andijan', 40.7192, 72.6431, 'Asia/Tashkent', 'Jalaquduq tumani', 'Жалақудуқ тумани', 'Jalaquduq District', 'Джалакудукский район', 'oxunboboyev'],
+  ['Marhamat District', 'uz_andijan', 40.5039, 72.3239, 'Asia/Tashkent', 'Marhamat tumani', 'Марҳамат тумани', 'Marhamat District', 'Мархаматский район'],
+  ['Oltinkol District', 'uz_andijan', 40.7997, 72.1672, 'Asia/Tashkent', "Oltinko'l tumani", 'Олтинкўл тумани', 'Oltinkol District', 'Алтынкульский район'],
+  ['Pakhtaabad District', 'uz_andijan', 40.9289, 72.4969, 'Asia/Tashkent', 'Paxtaobod tumani', 'Пахтаобод тумани', 'Pakhtaabad District', 'Пахтаабадский район'],
+  ['Qorgontepa District', 'uz_andijan', 40.7317, 72.7625, 'Asia/Tashkent', "Qo'rg'ontepa tumani", 'Қўрғонтепа тумани', 'Qorgontepa District', 'Кургантепинский район'],
+  ['Shahrixon District', 'uz_andijan', 40.7133, 72.0569, 'Asia/Tashkent', 'Shahrixon tumani', 'Шаҳрихон тумани', 'Shahrixon District', 'Шахриханский район'],
+  ['Ulugnor District', 'uz_andijan', 40.7333, 71.7000, 'Asia/Tashkent', "Ulug'nor tumani", 'Улуғнор тумани', 'Ulugnor District', 'Улугнорский район'],
+  ['Khojaobod District', 'uz_andijan', 40.6689, 72.5600, 'Asia/Tashkent', "Xo'jaobod tumani", 'Хўжаобод тумани', 'Khojaobod District', 'Ходжаабадский район'],
+
+  // ==================== Farg'ona viloyati ====================
+  ['Fergana', 'uz_fergana', 40.3842, 71.7843, 'Asia/Tashkent', "Farg'ona shahri", 'Фарғона шаҳри', 'Fergana', 'Фергана'],
+  ['Kokand', 'uz_fergana', 40.5286, 70.9425, 'Asia/Tashkent', "Qo'qon shahri", 'Қўқон шаҳри', 'Kokand', 'Коканд'],
+  ['Margilan', 'uz_fergana', 40.4711, 71.7247, 'Asia/Tashkent', "Marg'ilon shahri", 'Марғилон шаҳри', 'Margilan', 'Маргилан'],
+  ['Kuvasoy', 'uz_fergana', 40.2972, 71.9803, 'Asia/Tashkent', 'Quvasoy shahri', 'Қувасой шаҳри', 'Kuvasoy', 'Кувасай'],
+  ['Baghdad District', 'uz_fergana', 40.4647, 71.2119, 'Asia/Tashkent', "Bag'dod tumani", 'Бағдод тумани', 'Baghdad District', 'Багдадский район'],
+  ['Beshariq District', 'uz_fergana', 40.4358, 70.6103, 'Asia/Tashkent', 'Beshariq tumani', 'Бешариқ тумани', 'Beshariq District', 'Бешарыкский район'],
+  ['Buvayda District', 'uz_fergana', 40.5625, 71.1061, 'Asia/Tashkent', 'Buvayda tumani', 'Бувайда тумани', 'Buvayda District', 'Бувайдинский район', 'ibrat'],
+  ['Dangara District', 'uz_fergana', 40.5819, 70.9169, 'Asia/Tashkent', "Dang'ara tumani", 'Данғара тумани', 'Dangara District', 'Дангаринский район'],
+  ['Fergana District', 'uz_fergana', 40.2333, 71.7500, 'Asia/Tashkent', "Farg'ona tumani (Vodil)", 'Фарғона тумани (Водил)', 'Fergana District (Vodil)', 'Ферганский район (Водил)'],
+  ['Furqat District', 'uz_fergana', 40.4536, 70.7939, 'Asia/Tashkent', 'Furqat tumani (Navbahor)', 'Фурқат тумани (Навбаҳор)', 'Furqat District', 'Фуркатский район'],
+  ['Oltiariq District', 'uz_fergana', 40.3919, 71.4719, 'Asia/Tashkent', 'Oltiariq tumani', 'Олтиариқ тумани', 'Oltiariq District', 'Алтыарыкский район'],
+  ['Uzbekistan District', 'uz_fergana', 40.3758, 70.8156, 'Asia/Tashkent', "O'zbekiston tumani (Yaypan)", 'Ўзбекистон тумани (Яйпан)', 'Uzbekistan District (Yaypan)', 'Узбекистанский район (Яйпан)'],
+  ['Qoshtepa District', 'uz_fergana', 40.5333, 71.6000, 'Asia/Tashkent', "Qo'shtepa tumani", 'Қўштепа тумани', 'Qoshtepa District', 'Куштепинский район'],
+  ['Quva District', 'uz_fergana', 40.5222, 72.0731, 'Asia/Tashkent', 'Quva tumani', 'Қува тумани', 'Quva District', 'Кувинский район'],
+  ['Rishton District', 'uz_fergana', 40.3567, 71.2847, 'Asia/Tashkent', 'Rishton tumani', 'Риштон тумани', 'Rishton District', 'Риштанский район'],
+  ['Sokh District', 'uz_fergana', 39.9614, 71.1322, 'Asia/Tashkent', "So'x tumani", 'Сўх тумани', 'Sokh District', 'Сохский район', 'ravon'],
+  ['Toshloq District', 'uz_fergana', 40.4789, 71.7717, 'Asia/Tashkent', 'Toshloq tumani', 'Тошлоқ тумани', 'Toshloq District', 'Ташлакский район'],
+  ['Uchkoprik District', 'uz_fergana', 40.5417, 71.0556, 'Asia/Tashkent', "Uchko'prik tumani", 'Учкўприк тумани', 'Uchkoprik District', 'Учкуприкский район'],
+  ['Yozyovon District', 'uz_fergana', 40.6606, 71.7439, 'Asia/Tashkent', 'Yozyovon tumani', 'Ёзёвон тумани', 'Yozyovon District', 'Язъяванский район'],
+
+  // ==================== Namangan viloyati ====================
+  ['Namangan', 'uz_namangan', 40.9983, 71.6726, 'Asia/Tashkent', 'Namangan shahri', 'Наманган шаҳри', 'Namangan', 'Наманган'],
+  ['Chortoq District', 'uz_namangan', 41.0725, 71.8167, 'Asia/Tashkent', 'Chortoq tumani', 'Чортоқ тумани', 'Chortoq District', 'Чартакский район'],
+  ['Chust District', 'uz_namangan', 41.0033, 71.2378, 'Asia/Tashkent', 'Chust tumani', 'Чуст тумани', 'Chust District', 'Чустский район'],
+  ['Davlatobod District', 'uz_namangan', 40.9850, 71.5850, 'Asia/Tashkent', 'Davlatobod tumani', 'Давлатобод тумани', 'Davlatobod District', 'Давлатабадский район'],
+  ['Kosonsoy District', 'uz_namangan', 41.2500, 71.5500, 'Asia/Tashkent', 'Kosonsoy tumani', 'Косонсой тумани', 'Kosonsoy District', 'Касансайский район'],
+  ['Mingbuloq District', 'uz_namangan', 40.7500, 71.4667, 'Asia/Tashkent', 'Mingbuloq tumani (Jomasho\'y)', 'Мингбулоқ тумани (Жомашўй)', 'Mingbuloq District', 'Мингбулакский район'],
+  ['Namangan District', 'uz_namangan', 40.9469, 71.5644, 'Asia/Tashkent', 'Namangan tumani (Toshbuloq)', 'Наманган тумани (Тошбулоқ)', 'Namangan District', 'Наманганский район'],
+  ['Norin District', 'uz_namangan', 40.9278, 71.9589, 'Asia/Tashkent', 'Norin tumani (Haqqulobod)', 'Норин тумани (Ҳаққулобод)', 'Norin District', 'Нарынский район'],
+  ['Pap District', 'uz_namangan', 40.8736, 71.1089, 'Asia/Tashkent', 'Pop tumani', 'Поп тумани', 'Pap District', 'Папский район'],
+  ['Toraqorgon District', 'uz_namangan', 41.0000, 71.5119, 'Asia/Tashkent', "To'raqo'rg'on tumani", 'Тўрақўрғон тумани', 'Toraqorgon District', 'Туракурганский район'],
+  ['Uchqorgon District', 'uz_namangan', 41.1136, 72.0792, 'Asia/Tashkent', "Uchqo'rg'on tumani", 'Учқўрғон тумани', 'Uchqorgon District', 'Учкурганский район'],
+  ['Uychi District', 'uz_namangan', 41.0281, 71.8556, 'Asia/Tashkent', 'Uychi tumani', 'Уйчи тумани', 'Uychi District', 'Уйчинский район'],
+  ['Yangiqorgon District', 'uz_namangan', 41.1944, 71.7239, 'Asia/Tashkent', "Yangiqo'rg'on tumani", 'Янгиқўрғон тумани', 'Yangiqorgon District', 'Янгикурганский район'],
+
+  // ==================== Sirdaryo viloyati ====================
+  ['Gulistan', 'uz_sirdaryo', 40.4897, 68.7842, 'Asia/Tashkent', 'Guliston shahri', 'Гулистон шаҳри', 'Gulistan', 'Гулистан'],
+  ['Shirin', 'uz_sirdaryo', 40.2236, 69.1047, 'Asia/Tashkent', 'Shirin shahri', 'Ширин шаҳри', 'Shirin', 'Ширин'],
+  ['Yangiyer', 'uz_sirdaryo', 40.2750, 68.8225, 'Asia/Tashkent', 'Yangiyer shahri', 'Янгиер шаҳри', 'Yangiyer', 'Янгиер'],
+  ['Boyovut District', 'uz_sirdaryo', 40.3125, 69.0358, 'Asia/Tashkent', 'Boyovut tumani', 'Боёвут тумани', 'Boyovut District', 'Баяутский район'],
+  ['Gulistan District', 'uz_sirdaryo', 40.4578, 68.9383, 'Asia/Tashkent', 'Guliston tumani (Dehqonobod)', 'Гулистон тумани (Деҳқонобод)', 'Gulistan District', 'Гулистанский район'],
+  ['Mirzaobod District', 'uz_sirdaryo', 40.4536, 68.5831, 'Asia/Tashkent', 'Mirzaobod tumani', 'Мирзаобод тумани', 'Mirzaobod District', 'Мирзаабадский район', 'navroz'],
+  ['Oqoltin District', 'uz_sirdaryo', 40.4714, 68.4047, 'Asia/Tashkent', 'Oqoltin tumani (Sardoba)', 'Оқолтин тумани', 'Oqoltin District', 'Акалтынский район'],
+  ['Sardoba District', 'uz_sirdaryo', 40.3547, 68.3842, 'Asia/Tashkent', 'Sardoba tumani (Paxtaobod)', 'Сардоба тумани', 'Sardoba District', 'Сардобинский район'],
+  ['Saykhunabad District', 'uz_sirdaryo', 40.6625, 68.8422, 'Asia/Tashkent', 'Sayxunobod tumani', 'Сайхунобод тумани', 'Saykhunabad District', 'Сайхунабадский район'],
+  ['Syrdarya District', 'uz_sirdaryo', 40.8436, 68.6617, 'Asia/Tashkent', 'Sirdaryo tumani (Baxt)', 'Сирдарё тумани (Бахт)', 'Syrdarya District', 'Сырдарьинский район', 'baxt'],
+  ['Khovos District', 'uz_sirdaryo', 40.2336, 68.8031, 'Asia/Tashkent', 'Xovos tumani', 'Ховос тумани', 'Khovos District', 'Хавастский район'],
+
+  // ==================== Jizzax viloyati ====================
+  ['Jizzakh', 'uz_jizzakh', 40.1158, 67.8422, 'Asia/Tashkent', 'Jizzax shahri', 'Жиззах шаҳри', 'Jizzakh', 'Джизак'],
+  ['Arnasoy District', 'uz_jizzakh', 40.4833, 67.9167, 'Asia/Tashkent', "Arnasoy tumani (G'oliblar)", 'Арнасой тумани', 'Arnasoy District', 'Арнасайский район'],
+  ['Bakhmal District', 'uz_jizzakh', 39.7236, 67.6247, 'Asia/Tashkent', "Baxmal tumani (O'smat)", 'Бахмал тумани', 'Bakhmal District', 'Бахмальский район', 'osmat'],
+  ['Dostlik District', 'uz_jizzakh', 40.5250, 68.0361, 'Asia/Tashkent', "Do'stlik tumani", 'Дўстлик тумани', 'Dostlik District', 'Дустликский район'],
+  ['Forish District', 'uz_jizzakh', 40.5667, 66.8667, 'Asia/Tashkent', 'Forish tumani (Yangikishloq)', 'Фориш тумани', 'Forish District', 'Фаришский район'],
+  ['Gallaorol District', 'uz_jizzakh', 40.0258, 67.5939, 'Asia/Tashkent', "G'allaorol tumani", 'Ғаллаорол тумани', 'Gallaorol District', 'Галляаральский район'],
+  ['Mirzachol District', 'uz_jizzakh', 40.6639, 68.1744, 'Asia/Tashkent', "Mirzacho'l tumani (Gagarin)", 'Мирзачўл тумани (Гагарин)', 'Mirzachol District', 'Мирзачульский район', 'gagarin'],
+  ['Pakhtakor District', 'uz_jizzakh', 40.3153, 67.9544, 'Asia/Tashkent', 'Paxtakor tumani', 'Пахтакор тумани', 'Pakhtakor District', 'Пахтакорский район'],
+  ['Sharof Rashidov District', 'uz_jizzakh', 40.1500, 67.8500, 'Asia/Tashkent', 'Sharof Rashidov tumani', 'Шароф Рашидов тумани', 'Sharof Rashidov District', 'Шараф-Рашидовский район'],
+  ['Yangiobod District', 'uz_jizzakh', 40.0333, 68.8333, 'Asia/Tashkent', 'Yangiobod tumani', 'Янгиобод тумани', 'Yangiobod District', 'Янгиабадский район'],
+  ['Zafarobod District', 'uz_jizzakh', 40.3886, 67.8347, 'Asia/Tashkent', 'Zafarobod tumani', 'Зафаробод тумани', 'Zafarobod District', 'Зафарабадский район'],
+  ['Zarbdor District', 'uz_jizzakh', 40.0889, 68.1656, 'Asia/Tashkent', 'Zarbdor tumani', 'Зарбдор тумани', 'Zarbdor District', 'Зарбдарский район'],
+  ['Zomin District', 'uz_jizzakh', 39.9614, 68.3958, 'Asia/Tashkent', 'Zomin tumani', 'Зомин тумани', 'Zomin District', 'Зааминский район', 'zaamin'],
+
+  // ==================== Samarqand viloyati ====================
+  ['Samarkand', 'uz_samarkand', 39.6542, 66.9597, 'Asia/Samarkand', 'Samarqand shahri', 'Самарқанд шаҳри', 'Samarkand', 'Самарканд'],
+  ['Kattakurgan', 'uz_samarkand', 39.8989, 66.2561, 'Asia/Samarkand', "Kattaqo'rg'on shahri", 'Каттақўрғон шаҳри', 'Kattakurgan', 'Каттакурган'],
+  ['Bulungur District', 'uz_samarkand', 39.7647, 67.2714, 'Asia/Samarkand', "Bulung'ur tumani", 'Булунғур тумани', 'Bulungur District', 'Булунгурский район'],
+  ['Ishtixon District', 'uz_samarkand', 39.9664, 66.4861, 'Asia/Samarkand', 'Ishtixon tumani', 'Иштихон тумани', 'Ishtixon District', 'Иштыханский район'],
+  ['Jomboy District', 'uz_samarkand', 39.6989, 67.0933, 'Asia/Samarkand', 'Jomboy tumani', 'Жомбой тумани', 'Jomboy District', 'Джамбайский район'],
+  ['Kattakurgan District', 'uz_samarkand', 39.8556, 66.2750, 'Asia/Samarkand', "Kattaqo'rg'on tumani (Payshanba)", 'Каттақўрғон тумани', 'Kattakurgan District', 'Каттакурганский район', 'payshanba'],
+  ['Narpay District', 'uz_samarkand', 39.9278, 65.9256, 'Asia/Samarkand', 'Narpay tumani (Oqtosh)', 'Нарпай тумани (Оқтош)', 'Narpay District', 'Нарпайский район', 'oqtosh'],
+  ['Nurobod District', 'uz_samarkand', 39.6078, 66.2869, 'Asia/Samarkand', 'Nurobod tumani', 'Нуробод тумани', 'Nurobod District', 'Нурабадский район'],
+  ['Oqdaryo District', 'uz_samarkand', 39.8558, 66.7681, 'Asia/Samarkand', 'Oqdaryo tumani (Loyish)', 'Оқдарё тумани (Лойиш)', 'Oqdaryo District', 'Акдарьинский район', 'loyish'],
+  ['Pastdargom District', 'uz_samarkand', 39.7156, 66.6572, 'Asia/Samarkand', "Pastdarg'om tumani (Juma)", 'Пастдарғом тумани (Жума)', 'Pastdargom District', 'Пастдаргомский район', 'juma'],
+  ['Pakhtachi District', 'uz_samarkand', 39.9144, 65.6572, 'Asia/Samarkand', 'Paxtachi tumani (Ziyovuddin)', 'Пахтачи тумани', 'Pakhtachi District', 'Пахтачийский район', 'ziyovuddin'],
+  ['Payariq District', 'uz_samarkand', 39.9917, 66.8511, 'Asia/Samarkand', 'Payariq tumani', 'Пайариқ тумани', 'Payariq District', 'Пайарыкский район', 'chelak'],
+  ['Qoshrabot District', 'uz_samarkand', 40.2583, 66.6833, 'Asia/Samarkand', "Qo'shrabot tumani", 'Қўшработ тумани', 'Qoshrabot District', 'Кушрабадский район'],
+  ['Samarkand District', 'uz_samarkand', 39.5917, 66.9333, 'Asia/Samarkand', 'Samarqand tumani (Gulobod)', 'Самарқанд тумани (Гулобод)', 'Samarkand District', 'Самаркандский район'],
+  ['Toyloq District', 'uz_samarkand', 39.6014, 67.1206, 'Asia/Samarkand', 'Toyloq tumani', 'Тойлоқ тумани', 'Toyloq District', 'Тайлакский район'],
+  ['Urgut District', 'uz_samarkand', 39.4022, 67.2431, 'Asia/Samarkand', 'Urgut tumani', 'Ургут тумани', 'Urgut District', 'Ургутский район'],
+
+  // ==================== Qashqadaryo viloyati ====================
+  ['Karshi', 'uz_kashkadarya', 38.8606, 65.7891, 'Asia/Samarkand', 'Qarshi shahri', 'Қарши шаҳри', 'Karshi', 'Карши'],
+  ['Shahrisabz', 'uz_kashkadarya', 39.0578, 66.8342, 'Asia/Samarkand', 'Shahrisabz shahri', 'Шаҳрисабз шаҳри', 'Shahrisabz', 'Шахрисабз'],
+  ['Chiroqchi District', 'uz_kashkadarya', 39.0336, 66.5719, 'Asia/Samarkand', 'Chiroqchi tumani', 'Чироқчи тумани', 'Chiroqchi District', 'Чиракчинский район'],
+  ['Dehkanabad District', 'uz_kashkadarya', 38.3522, 66.4914, 'Asia/Samarkand', 'Dehqonobod tumani', 'Деҳқонобод тумани', 'Dehkanabad District', 'Дехканабадский район', 'karashina'],
+  ['Guzor District', 'uz_kashkadarya', 38.6208, 66.2481, 'Asia/Samarkand', "G'uzor tumani", 'Ғузор тумани', 'Guzor District', 'Гузарский район'],
+  ['Kamashi District', 'uz_kashkadarya', 38.8211, 66.4631, 'Asia/Samarkand', 'Qamashi tumani', 'Қамаши тумани', 'Kamashi District', 'Камашинский район'],
+  ['Karshi District', 'uz_kashkadarya', 38.8208, 65.6561, 'Asia/Samarkand', 'Qarshi tumani (Beshkent)', 'Қарши тумани (Бешкент)', 'Karshi District', 'Каршинский район', 'beshkent'],
+  ['Kasbi District', 'uz_kashkadarya', 38.9419, 65.4142, 'Asia/Samarkand', 'Kasbi tumani (Muglon)', 'Касби тумани', 'Kasbi District', 'Касбийский район'],
+  ['Kitob District', 'uz_kashkadarya', 39.1244, 66.8833, 'Asia/Samarkand', 'Kitob tumani', 'Китоб тумани', 'Kitob District', 'Китабский район'],
+  ['Kokdala District', 'uz_kashkadarya', 39.1800, 66.2500, 'Asia/Samarkand', "Ko'kdala tumani", 'Кўкдала тумани', 'Kokdala District', 'Кукдалинский район', 'yettitom'],
+  ['Koson District', 'uz_kashkadarya', 39.0375, 65.5850, 'Asia/Samarkand', 'Koson tumani', 'Косон тумани', 'Koson District', 'Касанский район'],
+  ['Mirishkor District', 'uz_kashkadarya', 38.8806, 65.1714, 'Asia/Samarkand', 'Mirishkor tumani (Yangi Mirishkor)', 'Миришкор тумани', 'Mirishkor District', 'Миришкорский район'],
+  ['Muborak District', 'uz_kashkadarya', 39.2553, 65.1528, 'Asia/Samarkand', 'Muborak tumani', 'Муборак тумани', 'Muborak District', 'Мубарекский район'],
+  ['Nishon District', 'uz_kashkadarya', 38.6939, 65.6758, 'Asia/Samarkand', 'Nishon tumani (Yangi Nishon)', 'Нишон тумани', 'Nishon District', 'Нишанский район'],
+  ['Shahrisabz District', 'uz_kashkadarya', 39.0600, 66.8400, 'Asia/Samarkand', 'Shahrisabz tumani', 'Шаҳрисабз тумани', 'Shahrisabz District', 'Шахрисабзский район'],
+  ['Yakkabog District', 'uz_kashkadarya', 38.9769, 66.6869, 'Asia/Samarkand', "Yakkabog' tumani", 'Яккабоғ тумани', 'Yakkabog District', 'Яккабагский район'],
+
+  // ==================== Surxondaryo viloyati ====================
+  ['Termez', 'uz_surkhandarya', 37.2242, 67.2783, 'Asia/Samarkand', 'Termiz shahri', 'Термиз шаҳри', 'Termez', 'Термез'],
+  ['Angor District', 'uz_surkhandarya', 37.4547, 67.1528, 'Asia/Samarkand', 'Angor tumani', 'Ангор тумани', 'Angor District', 'Ангорский район'],
+  ['Bandikhan District', 'uz_surkhandarya', 37.8500, 67.3500, 'Asia/Samarkand', 'Bandixon tumani', 'Бандихон тумани', 'Bandikhan District', 'Бандиханский район'],
+  ['Boysun District', 'uz_surkhandarya', 38.2061, 67.1986, 'Asia/Samarkand', 'Boysun tumani', 'Бойсун тумани', 'Boysun District', 'Байсунский район'],
+  ['Denov District', 'uz_surkhandarya', 38.2672, 67.8989, 'Asia/Samarkand', 'Denov tumani', 'Денов тумани', 'Denov District', 'Денауский район', 'denau'],
+  ['Jarkurgan District', 'uz_surkhandarya', 37.5086, 67.4194, 'Asia/Samarkand', "Jarqo'rg'on tumani", 'Жарқўрғон тумани', 'Jarkurgan District', 'Джаркурганский район'],
+  ['Muzrabot District', 'uz_surkhandarya', 37.4142, 66.8661, 'Asia/Samarkand', 'Muzrabot tumani (Xalqobod)', 'Музработ тумани', 'Muzrabot District', 'Музрабадский район'],
+  ['Oltinsoy District', 'uz_surkhandarya', 38.1917, 67.6889, 'Asia/Samarkand', 'Oltinsoy tumani (Qarluq)', 'Олтинсой тумани', 'Oltinsoy District', 'Алтынсайский район'],
+  ['Qiziriq District', 'uz_surkhandarya', 37.6197, 67.1778, 'Asia/Samarkand', 'Qiziriq tumani (Sariq)', 'Қизириқ тумани', 'Qiziriq District', 'Кизирикский район'],
+  ['Kumkurgan District', 'uz_surkhandarya', 37.8289, 67.5964, 'Asia/Samarkand', "Qumqo'rg'on tumani", 'Қумқўрғон тумани', 'Kumkurgan District', 'Кумкурганский район'],
+  ['Sariosiyo District', 'uz_surkhandarya', 38.4092, 67.9497, 'Asia/Samarkand', 'Sariosiyo tumani', 'Сариосиё тумани', 'Sariosiyo District', 'Сариасийский район'],
+  ['Sherobod District', 'uz_surkhandarya', 37.6744, 67.0156, 'Asia/Samarkand', 'Sherobod tumani', 'Шеробод тумани', 'Sherobod District', 'Шерабадский район'],
+  ['Shorchi District', 'uz_surkhandarya', 37.9972, 67.7911, 'Asia/Samarkand', "Sho'rchi tumani", 'Шўрчи тумани', 'Shorchi District', 'Шурчинский район'],
+  ['Termez District', 'uz_surkhandarya', 37.3414, 67.3389, 'Asia/Samarkand', 'Termiz tumani (Uchqizil)', 'Термиз тумани (Учқизил)', 'Termez District', 'Термезский район'],
+  ['Uzun District', 'uz_surkhandarya', 38.3472, 68.0083, 'Asia/Samarkand', 'Uzun tumani', 'Узун тумани', 'Uzun District', 'Узунский район'],
+
+  // ==================== Buxoro viloyati ====================
+  ['Bukhara', 'uz_bukhara', 39.7747, 64.4286, 'Asia/Samarkand', 'Buxoro shahri', 'Бухоро шаҳри', 'Bukhara', 'Бухара'],
+  ['Kogon', 'uz_bukhara', 39.7228, 64.5517, 'Asia/Samarkand', 'Kogon shahri', 'Когон шаҳри', 'Kogon', 'Каган'],
+  ['Bukhara District', 'uz_bukhara', 39.8556, 64.4556, 'Asia/Samarkand', 'Buxoro tumani (Galaosiyo)', 'Бухоро тумани (Галаосиё)', 'Bukhara District', 'Бухарский район', 'galaosiyo'],
+  ['Gijduvan District', 'uz_bukhara', 40.1000, 64.6833, 'Asia/Samarkand', "G'ijduvon tumani", 'Ғиждувон тумани', 'Gijduvan District', 'Гиждуванский район'],
+  ['Jondor District', 'uz_bukhara', 39.7408, 64.1794, 'Asia/Samarkand', 'Jondor tumani', 'Жондор тумани', 'Jondor District', 'Жондорский район'],
+  ['Kogon District', 'uz_bukhara', 39.7300, 64.5600, 'Asia/Samarkand', 'Kogon tumani', 'Когон тумани', 'Kogon District', 'Каганский район'],
+  ['Alat District', 'uz_bukhara', 39.4150, 63.8039, 'Asia/Samarkand', 'Olot tumani', 'Олот тумани', 'Alat District', 'Алатский район'],
+  ['Peshku District', 'uz_bukhara', 40.0369, 64.3822, 'Asia/Samarkand', 'Peshku tumani (Yangibozor)', 'Пешку тумани', 'Peshku District', 'Пешкунский район'],
+  ['Qorakol District', 'uz_bukhara', 39.4994, 63.8539, 'Asia/Samarkand', "Qorako'l tumani", 'Қоракўл тумани', 'Qorakol District', 'Каракульский район'],
+  ['Qorovulbozor District', 'uz_bukhara', 39.5006, 64.7936, 'Asia/Samarkand', 'Qorovulbozor tumani', 'Қоровулбозор тумани', 'Qorovulbozor District', 'Караулбазарский район'],
+  ['Romitan District', 'uz_bukhara', 39.9294, 64.3794, 'Asia/Samarkand', 'Romitan tumani', 'Ромитан тумани', 'Romitan District', 'Ромитанский район'],
+  ['Shofirkon District', 'uz_bukhara', 40.1200, 64.5014, 'Asia/Samarkand', 'Shofirkon tumani', 'Шофиркон тумани', 'Shofirkon District', 'Шафирканский район'],
+  ['Vabkent District', 'uz_bukhara', 40.0303, 64.5136, 'Asia/Samarkand', 'Vobkent tumani', 'Вобкент тумани', 'Vabkent District', 'Вабкентский район'],
+
+  // ==================== Navoiy viloyati ====================
+  ['Navoi', 'uz_navoi', 40.0844, 65.3792, 'Asia/Samarkand', 'Navoiy shahri', 'Навоий шаҳри', 'Navoi', 'Навои'],
+  ['Zarafshan', 'uz_navoi', 41.5764, 64.1978, 'Asia/Samarkand', 'Zarafshon shahri', 'Зарафшон шаҳри', 'Zarafshan', 'Зарафшан'],
+  ['Gozgon', 'uz_navoi', 40.5333, 65.5333, 'Asia/Samarkand', "G'ozg'on shahri", 'Ғозғон шаҳри', 'Gozgon', 'Газган'],
+  ['Karmana District', 'uz_navoi', 40.1419, 65.3567, 'Asia/Samarkand', 'Karmana tumani', 'Кармана тумани', 'Karmana District', 'Карманинский район'],
+  ['Konimekh District', 'uz_navoi', 40.2833, 65.1500, 'Asia/Samarkand', 'Konimex tumani', 'Конимех тумани', 'Konimekh District', 'Канимехский район'],
+  ['Navbahor District', 'uz_navoi', 40.2569, 65.3833, 'Asia/Samarkand', 'Navbahor tumani (Beshrabot)', 'Навбаҳор тумани', 'Navbahor District', 'Навбахорский район'],
+  ['Nurota District', 'uz_navoi', 40.5614, 65.6886, 'Asia/Samarkand', 'Nurota tumani', 'Нурота тумани', 'Nurota District', 'Нуратинский район'],
+  ['Qiziltepa District', 'uz_navoi', 40.0331, 64.8500, 'Asia/Samarkand', 'Qiziltepa tumani', 'Қизилтепа тумани', 'Qiziltepa District', 'Кызылтепинский район'],
+  ['Tomdi District', 'uz_navoi', 41.7444, 64.6194, 'Asia/Samarkand', 'Tomdi tumani (Tomdibuloq)', 'Томди тумани', 'Tomdi District', 'Тамдынский район'],
+  ['Uchquduq District', 'uz_navoi', 42.1567, 63.5556, 'Asia/Samarkand', 'Uchquduq tumani', 'Учқудуқ тумани', 'Uchquduq District', 'Учкудукский район'],
+  ['Khatirchi District', 'uz_navoi', 40.0258, 65.9636, 'Asia/Samarkand', 'Xatirchi tumani (Yangirabot)', 'Хатирчи тумани', 'Khatirchi District', 'Хатырчинский район', 'yangirabot'],
+
+  // ==================== Xorazm viloyati ====================
+  ['Urgench', 'uz_khorezm', 41.5500, 60.6333, 'Asia/Samarkand', 'Urganch shahri', 'Урганч шаҳри', 'Urgench', 'Ургенч'],
+  ['Khiva', 'uz_khorezm', 41.3783, 60.3639, 'Asia/Samarkand', 'Xiva shahri', 'Хива шаҳри', 'Khiva', 'Хива'],
+  ['Bogot District', 'uz_khorezm', 41.3514, 60.8181, 'Asia/Samarkand', "Bog'ot tumani", 'Боғот тумани', 'Bogot District', 'Багатский район'],
+  ['Gurlan District', 'uz_khorezm', 41.8444, 60.3917, 'Asia/Samarkand', 'Gurlan tumani', 'Гурлан тумани', 'Gurlan District', 'Гурленский район'],
+  ['Qoshkopir District', 'uz_khorezm', 41.5333, 60.3469, 'Asia/Samarkand', "Qo'shko'pir tumani", 'Қўшкўпир тумани', 'Qoshkopir District', 'Кошкупырский район'],
+  ['Shovot District', 'uz_khorezm', 41.6556, 60.2994, 'Asia/Samarkand', 'Shovot tumani', 'Шовот тумани', 'Shovot District', 'Шаватский район'],
+  ['Tuproqqala District', 'uz_khorezm', 41.1500, 61.3333, 'Asia/Samarkand', "Tuproqqal'a tumani (Pitnak)", 'Тупроққалъа тумани (Питнак)', 'Tuproqqala District', 'Тупраккалинский район', 'pitnak'],
+  ['Urgench District', 'uz_khorezm', 41.5833, 60.6000, 'Asia/Samarkand', 'Urganch tumani (Qorovul)', 'Урганч тумани (Қоровул)', 'Urgench District', 'Ургенчский район'],
+  ['Khazarasp District', 'uz_khorezm', 41.3194, 61.0742, 'Asia/Samarkand', 'Xazorasp tumani', 'Ҳазорасп тумани', 'Khazarasp District', 'Хазараспский район', 'hazorasp'],
+  ['Khiva District', 'uz_khorezm', 41.3800, 60.3700, 'Asia/Samarkand', 'Xiva tumani', 'Хива тумани', 'Khiva District', 'Хивинский район'],
+  ['Khonqa District', 'uz_khorezm', 41.4667, 60.7833, 'Asia/Samarkand', 'Xonqa tumani', 'Хонқа тумани', 'Khonqa District', 'Ханкинский район'],
+  ['Yangiariq District', 'uz_khorezm', 41.3667, 60.6000, 'Asia/Samarkand', 'Yangiariq tumani', 'Янгиариқ тумани', 'Yangiariq District', 'Янгиарыкский район'],
+  ['Yangibozor District', 'uz_khorezm', 41.7083, 60.5250, 'Asia/Samarkand', 'Yangibozor tumani', 'Янгибозор тумани', 'Yangibozor District', 'Янгибазарский район'],
+
+  // ==================== Qoraqalpog'iston Respublikasi ====================
+  ['Nukus', 'uz_karakalpakstan', 42.4619, 59.6166, 'Asia/Samarkand', 'Nukus shahri', 'Нукус шаҳри', 'Nukus', 'Нукус'],
+  ['Amudarya District', 'uz_karakalpakstan', 42.1189, 60.0569, 'Asia/Samarkand', "Amudaryo tumani (Mang'it)", 'Амударё тумани (Манғит)', 'Amudarya District', 'Амударьинский район', 'mangit'],
+  ['Beruniy District', 'uz_karakalpakstan', 41.6911, 60.7525, 'Asia/Samarkand', 'Beruniy tumani', 'Беруний тумани', 'Beruniy District', 'Берунийский район'],
+  ['Bozataw District', 'uz_karakalpakstan', 43.0200, 59.3500, 'Asia/Samarkand', "Bo'zatov tumani", 'Бўзатов тумани', 'Bozataw District', 'Бозатауский район'],
+  ['Chimbay District', 'uz_karakalpakstan', 42.9333, 59.7833, 'Asia/Samarkand', 'Chimboy tumani', 'Чимбой тумани', 'Chimbay District', 'Чимбайский район'],
+  ['Ellikkala District', 'uz_karakalpakstan', 41.8492, 60.8617, 'Asia/Samarkand', "Ellikqal'a tumani (Bo'ston)", 'Элликқалъа тумани (Бўстон)', 'Ellikkala District', 'Элликкалинский район'],
+  ['Kegeyli District', 'uz_karakalpakstan', 42.7750, 59.6083, 'Asia/Samarkand', 'Kegeyli tumani', 'Кегейли тумани', 'Kegeyli District', 'Кегейлийский район'],
+  ['Muynak District', 'uz_karakalpakstan', 43.7683, 59.0214, 'Asia/Samarkand', "Mo'ynoq tumani", 'Мўйноқ тумани', 'Muynak District', 'Муйнакский район'],
+  ['Nukus District', 'uz_karakalpakstan', 42.5489, 59.5675, 'Asia/Samarkand', "Nukus tumani (Oqmang'it)", 'Нукус тумани (Оқманғит)', 'Nukus District', 'Нукусский район', 'oqmangit'],
+  ['Kanlikul District', 'uz_karakalpakstan', 42.8333, 59.0000, 'Asia/Samarkand', "Qanliko'l tumani", 'Қанликўл тумани', 'Kanlikul District', 'Канлыкульский район'],
+  ['Qaraozak District', 'uz_karakalpakstan', 43.0333, 60.0167, 'Asia/Samarkand', "Qorao'zak tumani", 'Қораўзак тумани', 'Qaraozak District', 'Караузякский район'],
+  ['Kungrad District', 'uz_karakalpakstan', 43.0667, 58.9000, 'Asia/Samarkand', "Qo'ng'irot tumani", 'Қўнғирот тумани', 'Kungrad District', 'Кунградский район'],
+  ['Shumanay District', 'uz_karakalpakstan', 42.6394, 58.9325, 'Asia/Samarkand', 'Shumanay tumani', 'Шуманай тумани', 'Shumanay District', 'Шуманайский район'],
+  ['Takhiatash District', 'uz_karakalpakstan', 42.3333, 59.5667, 'Asia/Samarkand', 'Taxiatosh tumani', 'Тахиатош тумани', 'Takhiatash District', 'Тахиаташский район'],
+  ['Takhtakupir District', 'uz_karakalpakstan', 43.0214, 60.2925, 'Asia/Samarkand', "Taxtako'pir tumani", 'Тахтакўпир тумани', 'Takhtakupir District', 'Тахтакупырский район'],
+  ['Turtkul District', 'uz_karakalpakstan', 41.5500, 61.0000, 'Asia/Samarkand', "To'rtko'l tumani", 'Тўрткўл тумани', 'Turtkul District', 'Турткульский район'],
+  ['Khojeyli District', 'uz_karakalpakstan', 42.4000, 59.4500, 'Asia/Samarkand', "Xo'jayli tumani", 'Хўжайли тумани', 'Khojeyli District', 'Ходжейлийский район'],
+];
+
+export const UZBEKISTAN_LOCATIONS: LocationEntry[] = RAW_UZBEKISTAN_ROWS.map(
+  ([cityName, region, latitude, longitude, timezone, uz_lat, uz_cyr, en, ru, aliases]) => ({
+    cityName,
+    countryName: 'Uzbekistan',
+    region,
+    latitude,
+    longitude,
+    timezone,
+    labels: { uz_lat, uz_cyr, en, ru },
+    aliases,
+  })
+);

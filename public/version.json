@@ -1,0 +1,13 @@
+{
+  "versionCode": 75,
+  "versionName": "1.8.56",
+  "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
+  "forceUpdate": true,
+  "minSupportedVersionCode": 75,
+  "notes": {
+    "uz_lat": "'Muallimi Soniy va Tajvid' bo'limi Ahmad Hodiy Maqsudiy uslubida yangilandi: 10 ta bosqichma-bosqich dars va interaktiv ovozli Mashq Taxtasi (avto-o'qish bilan), sekinlashtirilgan talaffuz (0.7x), o'qilish yordamchisini yashirish/ko'rsatish, arab shriftini kattalashtirish (A+), 5 ta maxraj hududi hamda rangli tajvid ko'rsatkichlari qo'shildi.",
+    "uz_cyr": "«Муаллими Соний ва Тажвид» бўлими Аҳмад Ҳодий Мақсудий услубида янгиланди: 10 та босқичма-босқич дарс ва интерактив овозли Машқ Тахтаси (авто-ўқиш билан), секинлаштирилган талаффуз (0.7x), ўқилиш ёрдамчисини яшириш/кўрсатиш, араб шрифтини катталаштириш (A+), 5 та махраж ҳудуди ҳамда рангли тажвид кўрсаткичлари қўшилди.",
+    "en": "Upgraded Muallimi Sani & Tajweed with 10 progressive lessons (Ahmad Hodiy Maqsudiy method), an interactive audio Qaida Practice Board with Auto-Recite, slow 0.7x speed toggle, reading-hint hide/show toggle, Arabic font zoom (A+), 5 Makhraj articulation zones, and color-coded Tajweed examples.",
+    "ru": "Раздел «Муаллими Сани и Таджвид» обновлён по методике Ахмада Хади Максуди: 10 пошаговых уроков с интерактивной доской упражнений и авто-чтением, режим медленного произношения (0.7x), скрытие подсказок, увеличение шрифта (A+), 5 зон махраджа и цветной таджвид."
+  }
+}

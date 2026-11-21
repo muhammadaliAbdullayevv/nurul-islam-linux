@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+"""
+Nurul Islam — Native Linux Desktop Widescreen Edition (GTK3 + WebKit2GTK 4.1)
+App ID: dev.mabdullayev.nurulislam.App
+"""
+import http.server
+import json
+import mimetypes
+import os
+import shutil
+import socketserver
+import sys
+import threading
+import urllib.request
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("WebKit2", "4.1")
+from gi.repository import Gio, GLib, Gtk, WebKit2  # noqa: E402
+
+APP_ID = "dev.mabdullayev.nurulislam.App"
+APP_TITLE = "Nurul Islam"
+PREFERRED_PORT = 47871
+
+WWW_CANDIDATES = [
+    "/usr/share/nurulislam/www",
+    "/app/share/nurulislam/www",
+    "/home/muhammadaliabdullayev/Documents/Islamicapp/dist",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "share", "nurulislam", "www")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "dist")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "www")),
+]
+
+
+def resolve_www_dir() -> str:
+    for p in WWW_CANDIDATES:
+        if os.path.isdir(p) and os.path.isfile(os.path.join(p, "index.html")):
+            return p
+    return WWW_CANDIDATES[0]
+
+
+WWW_DIR = resolve_www_dir()
+
+SELF_UNREGISTER_SW_JS = b"""
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch (e) {}
+      try {
+        await self.registration.unregister();
+      } catch (e) {}
+    })()
+  );
+});
+"""
+
+
+class SPAStaticHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=WWW_DIR, **kwargs)
+
+    def log_message(self, format, *args):
+        pass
+
+    def do_GET(self):
+        clean_path = self.path.split("?", 1)[0].split("#", 1)[0]
+
+        # 1. Prevent Workbox ServiceWorker from caching old builds in WebKit2GTK
+        if clean_path in ("/sw.js", "/registerSW.js") or clean_path.startswith("/workbox-"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/javascript; charset=utf-8")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Content-Length", str(len(SELF_UNREGISTER_SW_JS)))
+            self.end_headers()
+            self.wfile.write(SELF_UNREGISTER_SW_JS)
+            return
+
+        # 2. Built-in local GeoIP helper endpoint (uses ipinfo.io and ip-api.com which respond in <300ms in Uzbekistan)
+        if clean_path == "/__desktop_geoip":
+            coords = None
+            for url in (
+                "https://ipinfo.io/json",
+                "http://ip-api.com/json/",
+            ):
+                try:
+                    req = urllib.request.Request(
+                        url, headers={"User-Agent": "NurulIslamDesktop/1.8.56"}
+                    )
+                    with urllib.request.urlopen(req, timeout=2.5) as resp:
+                        data = json.loads(resp.read().decode("utf-8", errors="ignore"))
+                        lat = data.get("latitude") or data.get("lat")
+                        lon = data.get("longitude") or data.get("lon")
+                        if (lat is None or lon is None) and isinstance(data.get("loc"), str):
+                            parts = data["loc"].split(",")
+                            if len(parts) == 2:
+                                lat, lon = parts[0], parts[1]
+                        city = data.get("city") or ""
+                        if lat is not None and lon is not None:
+                            coords = {
+                                "ok": True,
+                                "latitude": float(lat),
+                                "longitude": float(lon),
+                                "city": str(city),
+                            }
+                            break
+                except Exception:
+                    continue
+            body = json.dumps(coords or {"ok": False}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        full_fs_path = self.translate_path(clean_path)
+        if not os.path.exists(full_fs_path):
+            self.path = "/index.html"
+        return super().do_GET()
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        super().end_headers()
+
+
+class ReusableTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
+def start_local_server() -> int:
+    for port in (PREFERRED_PORT, 47872, 47873, 0):
+        try:
+            httpd = ReusableTCPServer(("127.0.0.1", port), SPAStaticHandler)
+            actual_port = httpd.server_address[1]
+            t = threading.Thread(target=httpd.serve_forever, daemon=True)
+            t.start()
+            return actual_port
+        except OSError:
+            continue
+    raise RuntimeError("Could not bind local static server")
+
+
+def purge_stale_serviceworker_cache(data_root: str, cache_root: str) -> None:
+    """Remove cached ServiceWorker & HTTP cache so RPM updates always take effect immediately,
+    while preserving localStorage (city, bookmarks, tasbih, hifz progress)."""
+    for folder in (
+        os.path.join(data_root, "serviceworkers"),
+        os.path.join(cache_root, "CacheStorage"),
+        os.path.join(cache_root, "WebKitCache"),
+        os.path.join(cache_root, "applications"),
+    ):
+        if os.path.exists(folder):
+            shutil.rmtree(folder, ignore_errors=True)
+
+
+class NurulIslamDesktopApp(Gtk.Application):
+    def __init__(self, port: int):
+        super().__init__(
+            application_id=APP_ID,
+            flags=Gio.ApplicationFlags.FLAGS_NONE,
+        )
+        self.port = port
+        self.window = None
+
+    def do_activate(self):
+        if self.window is not None:
+            self.window.present()
+            return
+
+        GLib.set_application_name(APP_TITLE)
+        GLib.set_prgname(APP_ID)
+
+        self.window = Gtk.ApplicationWindow(application=self, title=APP_TITLE)
+        self.window.set_default_size(1280, 820)
+        self.window.set_size_request(920, 620)
+        self.window.set_position(Gtk.WindowPosition.CENTER)
+        self.window.set_icon_name(APP_ID)
+
+        data_root = os.path.join(GLib.get_user_data_dir(), "nurulislam-webkit")
+        cache_root = os.path.join(GLib.get_user_cache_dir(), "nurulislam-webkit")
+        os.makedirs(data_root, exist_ok=True)
+        os.makedirs(cache_root, exist_ok=True)
+        purge_stale_serviceworker_cache(data_root, cache_root)
+
+        data_manager = WebKit2.WebsiteDataManager(
+            base_data_directory=data_root,
+            base_cache_directory=cache_root,
+        )
+        web_context = WebKit2.WebContext.new_with_website_data_manager(data_manager)
+        web_context.set_cache_model(WebKit2.CacheModel.DOCUMENT_VIEWER)
+
+        cookie_mgr = data_manager.get_cookie_manager()
+        cookie_mgr.set_persistent_storage(
+            os.path.join(data_root, "cookies.sqlite"),
+            WebKit2.CookiePersistentStorage.SQLITE,
+        )
+
+        webview = WebKit2.WebView.new_with_context(web_context)
+        settings = webview.get_settings()
+        settings.set_enable_javascript(True)
+        settings.set_enable_html5_local_storage(True)
+        settings.set_enable_html5_database(True)
+        settings.set_enable_webaudio(True)
+        settings.set_enable_media_stream(True)
+        settings.set_media_playback_requires_user_gesture(False)
+        settings.set_enable_smooth_scrolling(True)
+        settings.set_enable_page_cache(False)
+
+        webview.connect("decide-policy", self.on_decide_policy)
+        webview.connect("create", self.on_create_popup)
+        webview.connect("permission-request", self.on_permission_request)
+
+        url = f"http://127.0.0.1:{self.port}/?desktop=1"
+        webview.load_uri(url)
+
+        self.window.add(webview)
+        self.window.show_all()
+
+    def on_permission_request(self, webview, request):
+        request.allow()
+        return True
+
+    def on_create_popup(self, webview, navigation_action):
+        req = navigation_action.get_request()
+        uri = req.get_uri() if req else None
+        if uri:
+            Gio.AppInfo.launch_default_for_uri(uri, None)
+        return None
+
+    def on_decide_policy(self, webview, decision, decision_type):
+        if decision_type == WebKit2.PolicyDecisionType.NEW_WINDOW_ACTION:
+            nav_action = decision.get_navigation_action()
+            req = nav_action.get_request()
+            uri = req.get_uri() if req else ""
+            if uri and not uri.startswith(f"http://127.0.0.1:{self.port}"):
+                Gio.AppInfo.launch_default_for_uri(uri, None)
+                decision.ignore()
+                return True
+        elif decision_type == WebKit2.PolicyDecisionType.NAVIGATION_ACTION:
+            nav_action = decision.get_navigation_action()
+            req = nav_action.get_request()
+            uri = req.get_uri() if req else ""
+            if (
+                uri.startswith(("http://", "https://"))
+                and not uri.startswith(f"http://127.0.0.1:{self.port}")
+                and "nurulislam.mabdullayev.dev/api/" not in uri
+            ):
+                if any(
+                    host in uri
+                    for host in (
+                        "google.com/maps",
+                        "t.me/",
+                        "play.google.com",
+                        "openstreetmap.org",
+                    )
+                ):
+                    Gio.AppInfo.launch_default_for_uri(uri, None)
+                    decision.ignore()
+                    return True
+        return False
+
+
+def main():
+    mimetypes.add_type("application/javascript", ".js")
+    mimetypes.add_type("application/manifest+json", ".webmanifest")
+    mimetypes.add_type("image/webp", ".webp")
+    port = start_local_server()
+    app = NurulIslamDesktopApp(port)
+    sys.exit(app.run(sys.argv))
+
+
+if __name__ == "__main__":
+    main()

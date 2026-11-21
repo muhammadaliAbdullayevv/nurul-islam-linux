@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Nurul Islam</string>
+    <string name="title_activity_main">Nurul Islam</string>
+    <string name="package_name">com.nurulquran.app</string>
+    <string name="custom_url_scheme">com.nurulquran.app</string>
+    <string name="widget_prayer_rich_name">Nurul Islam · Namoz (To‘liq)</string>
+    <string name="widget_prayer_strip_name">Nurul Islam · 5 Vaqt Namoz</string>
+    <string name="widget_ramadan_name">Nurul Islam · Ramazon</string>
+    <string name="widget_description">To‘liq namoz jadvali, hozirgi va keyingi namoz, quyosh va saharlik vaqtlari</string>
+    <string name="widget_prayer_strip_description">Faqat 5 vaqt namoz va hozirgi namoz vaqti belgisi</string>
+    <string name="widget_ramadan_description">Ramazon va ro‘za: Saharlik (Imsak), Iftorlik (Shom) va kunlik vaqtlar</string>
+</resources>

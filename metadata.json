@@ -1,0 +1,6 @@
+{
+  "name": "Nurul Quran & Prayer Times - Islamic Android App",
+  "description": "Comprehensive Islamic app featuring full Holy Quran with translations, audio recitations, accurate prayer times, Qibla compass, Tasbih counter, and 99 Names of Allah.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

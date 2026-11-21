@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+/* Locally bundled Amiri Arabic & Latin fonts (zero network latency & works 100% offline) */
+@font-face {
+  font-family: 'Amiri';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/amiri-400-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
+@font-face {
+  font-family: 'Amiri';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/amiri-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Amiri';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/amiri-700-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
+@font-face {
+  font-family: 'Amiri';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/amiri-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@layer base {
+  body {
+    font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+.font-display {
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+}
+
+.font-arabic {
+  font-family: 'Amiri', serif;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.4);
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Home Page 2 first-time gliding swipe-left hand gesture hint */
+@keyframes nqSwipeHandGlide {
+  0% { transform: translateX(34px) scale(0.92); opacity: 0; }
+  16% { opacity: 1; transform: translateX(26px) scale(1); }
+  74% { transform: translateX(-34px) scale(1); opacity: 1; }
+  100% { transform: translateX(-42px) scale(0.95); opacity: 0; }
+}
+
+@keyframes nqSwipeTrailGrow {
+  0% { width: 0px; opacity: 0; }
+  18% { opacity: 0.9; }
+  74% { width: 68px; opacity: 0.65; }
+  100% { width: 74px; opacity: 0; }
+}
+
+.nq-swipe-hand {
+  animation: nqSwipeHandGlide 1.75s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.nq-swipe-trail {
+  animation: nqSwipeTrailGrow 1.75s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* ============================================================================
+   Fast Exact-Class Day Theme Scope (ONLY applied to RamadanTab active season view)
+   Zero [class*="..."] wildcards and zero ancestor scans for fast WebView style recalcs.
+   ============================================================================ */
+html[data-theme="day"] .nq-ramadan-day-scope {
+  --nq-bg-muted: #ecf1f5;
+  --nq-bg-card: #ffffff;
+  --nq-bg-soft: #eef9ea;
+  --nq-border: #dde3ea;
+  --nq-ink: #0f172a;
+  --nq-ink-secondary: #334155;
+  --nq-ink-muted: #64748b;
+  --nq-accent: #158509;
+  --nq-accent-deep: #0e6007;
+  color: var(--nq-ink);
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .bg-slate-950 {
+  background-color: var(--nq-bg-muted) !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .bg-slate-900,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-slate-900\/80,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-slate-900\/90 {
+  background-color: var(--nq-bg-card) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-950,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-950\/60,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-950\/70,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-950\/80 {
+  background-color: var(--nq-bg-soft) !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-900\/60,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-900\/70,
+html[data-theme="day"] .nq-ramadan-day-scope .bg-emerald-900\/80 {
+  background-color: #e2f5dc !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-950,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-900\/40,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-900\/50,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-900\/60,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-800\/40,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-800\/50,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-800\/60,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-800\/80,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-700,
+html[data-theme="day"] .nq-ramadan-day-scope .border-emerald-700\/60,
+html[data-theme="day"] .nq-ramadan-day-scope .border-slate-800,
+html[data-theme="day"] .nq-ramadan-day-scope .border-slate-800\/40,
+html[data-theme="day"] .nq-ramadan-day-scope .border-slate-800\/50,
+html[data-theme="day"] .nq-ramadan-day-scope .border-slate-800\/60,
+html[data-theme="day"] .nq-ramadan-day-scope .border-slate-700 {
+  border-color: var(--nq-border) !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .text-slate-300 {
+  color: var(--nq-ink-secondary) !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .text-slate-400,
+html[data-theme="day"] .nq-ramadan-day-scope .text-slate-400\/80 {
+  color: var(--nq-ink-muted) !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .text-emerald-300,
+html[data-theme="day"] .nq-ramadan-day-scope .text-emerald-400 {
+  color: var(--nq-accent-deep) !important;
+}
+
+html[data-theme="day"] .nq-ramadan-day-scope .text-amber-100,
+html[data-theme="day"] .nq-ramadan-day-scope .text-amber-200,
+html[data-theme="day"] .nq-ramadan-day-scope .text-amber-200\/90,
+html[data-theme="day"] .nq-ramadan-day-scope .text-amber-300,
+html[data-theme="day"] .nq-ramadan-day-scope .text-amber-400,
+html[data-theme="day"] .nq-ramadan-day-scope .text-amber-400\/90 {
+  color: var(--nq-accent) !important;
+}
+
+/* Preserve dark hero cards inside RamadanTab when explicitly marked .nq-keep-dark */
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-amber-100,
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-amber-200,
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-amber-300,
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-amber-400 {
+  color: #fde68a !important;
+}
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-emerald-300,
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-emerald-400 {
+  color: #d0f39f !important;
+}
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-slate-300,
+html[data-theme="day"] .nq-ramadan-day-scope .nq-keep-dark .text-slate-400 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Safe layout classes for Quran, Surah directory & Hadith lists (disabled content-visibility:auto to prevent blank unpainted cards in Linux WebKit2GTK) */
+.nq-list-item {
+  position: relative;
+}
+
+.nq-ayah-card {
+  position: relative;
+}
+
+.nq-surah-row {
+  position: relative;
+}
+
+/* Layered emerald-gold geometric hero cards (Profile & 99 Names Quiz) */
+.nq-hero-day {
+  background-color: #0c5007;
+  background-image:
+    radial-gradient(circle at 86% 16%, rgba(253, 230, 138, 0.16) 0%, transparent 45%),
+    radial-gradient(circle at 12% 88%, rgba(208, 243, 159, 0.14) 0%, transparent 42%),
+    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.08) 1px, transparent 0),
+    linear-gradient(135deg, #0a4606 0%, #147514 55%, #1f8726 100%);
+  background-size: 100% 100%, 100% 100%, 18px 18px, 100% 100%;
+}
+
+.nq-hero-night {
+  background-color: #042010;
+  background-image:
+    radial-gradient(circle at 86% 16%, rgba(251, 191, 36, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.06) 1px, transparent 0),
+    linear-gradient(135deg, #031c0d 0%, #07381b 55%, #0a241b 100%);
+  background-size: 100% 100%, 18px 18px, 100% 100%;
+}

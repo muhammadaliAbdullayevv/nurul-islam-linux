@@ -1,0 +1,8 @@
+{
+  "appId": "com.nurulquran.app",
+  "appName": "Nurul Islam",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

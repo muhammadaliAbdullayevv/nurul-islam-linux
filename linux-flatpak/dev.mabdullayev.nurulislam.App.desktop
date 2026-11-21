@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Nurul Islam
+GenericName=Islamic Companion & Quran App
+Comment=Holy Quran, accurate prayer times, Qibla, Tasbih, Muallimi Sani Tajweed, Hanafi Fiqh Q&A, and Seerah
+Comment[uz]=Qur'oni Karim, namoz vaqtlari, Qibla, Tasbeh, Muallimi Soniy va Tajvid, Hanafiy fiqhi va Siyrat
+Comment[ru]=Священный Коран, время намаза, Кибла, Тасбих, Муаллими Сани (Таджвид), Ханафитский фикх и Сира
+Exec=nurulislam-desktop
+Icon=dev.mabdullayev.nurulislam.App
+Terminal=false
+Categories=Education;Spirituality;
+Keywords=Quran;Islam;Prayer;Namoz;Tajweed;Hadith;Tasbih;Qibla;Ramadan;
+StartupNotify=true
+StartupWMClass=dev.mabdullayev.nurulislam.App
