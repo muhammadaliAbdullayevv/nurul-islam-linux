@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.60" date="2026-11-22">
+      <description>
+        <p>Streamlined Scholars and Wisdom with a compact Daily Hikmat banner and added native PNG Quote Card saving and sharing on Android and Linux Desktop.</p>
+      </description>
+    </release>
     <release version="1.8.59" date="2026-11-22">
       <description>
         <p>Added Scholars and Wisdom (Allomalar va Hikmatlar) featuring 48 curated works and commentaries from 8 Movarounnahr masters (Ahmad Yasawi, Bahauddin Naqshband, Alisher Navoi, Sufi Allahyar, Abdulkhaliq Ghijduwani, Imam al-Bukhari, Imam al-Maturidi, and Burhanuddin al-Marghinani), Daily Wisdom spotlight, bookmarks, and shareable PNG quote cards.</p>

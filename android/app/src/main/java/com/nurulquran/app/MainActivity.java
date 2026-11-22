@@ -2,6 +2,7 @@ package com.nurulquran.app;
 
 import android.Manifest;
 import android.appwidget.AppWidgetManager;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +17,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Base64;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -397,6 +399,53 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
                 Intent viewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(trimmed));
                 viewIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(viewIntent);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean shareImageBase64(String dataUrlOrBase64, String fileName, String caption) {
+            if (dataUrlOrBase64 == null || dataUrlOrBase64.isEmpty()) return false;
+            try {
+                String cleanB64 = dataUrlOrBase64;
+                int commaIdx = cleanB64.indexOf(',');
+                if (commaIdx >= 0) {
+                    cleanB64 = cleanB64.substring(commaIdx + 1);
+                }
+                byte[] bytes = Base64.decode(cleanB64, Base64.DEFAULT);
+                if (bytes == null || bytes.length < 100) return false;
+
+                String safeName = (fileName != null ? fileName : "nurul-islam-hikmat.png")
+                    .replaceAll("[^a-zA-Z0-9._-]", "_");
+                if (!safeName.endsWith(".png")) safeName += ".png";
+
+                File sharedDir = new File(getCacheDir(), "shared");
+                if (!sharedDir.exists()) sharedDir.mkdirs();
+                File outFile = new File(sharedDir, safeName);
+                try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                    fos.write(bytes);
+                    fos.flush();
+                }
+
+                Uri contentUri = FileProvider.getUriForFile(
+                    MainActivity.this,
+                    getPackageName() + ".fileprovider",
+                    outFile
+                );
+                Intent sendIntent = new Intent(Intent.ACTION_SEND);
+                sendIntent.setType("image/png");
+                sendIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                if (caption != null && !caption.isEmpty()) {
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, caption);
+                }
+                sendIntent.setClipData(ClipData.newRawUri("Nurul Islam", contentUri));
+                sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                Intent chooser = Intent.createChooser(sendIntent, null);
+                chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                runOnUiThread(() -> startActivity(chooser));
                 return true;
             } catch (Exception e) {
                 return false;

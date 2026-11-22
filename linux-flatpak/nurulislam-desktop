@@ -4,10 +4,12 @@ Nurul Islam — Native Linux Desktop Widescreen Edition (GTK3 + WebKit2GTK 4.1)
 App ID: dev.mabdullayev.nurulislam.App
 Includes native in-app / forced RPM self-updater (PolicyKit + DNF/RPM + auto-relaunch).
 """
+import base64
 import http.server
 import json
 import mimetypes
 import os
+import re
 import shutil
 import socketserver
 import subprocess
@@ -28,8 +30,8 @@ from gi.repository import Gio, GLib, Gtk, WebKit2  # noqa: E402
 APP_ID = "dev.mabdullayev.nurulislam.App"
 APP_TITLE = "Nurul Islam"
 PREFERRED_PORT = 47871
-FALLBACK_VERSION_CODE = 78
-FALLBACK_VERSION_NAME = "1.8.59"
+FALLBACK_VERSION_CODE = 79
+FALLBACK_VERSION_NAME = "1.8.60"
 ALLOWED_UPDATE_HOST = "nurulislam.mabdullayev.dev"
 DEFAULT_RPM_URL = "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm"
 
@@ -303,6 +305,64 @@ class SPAStaticHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         clean_path = self.path.split("?", 1)[0].split("#", 1)[0]
+        if clean_path == "/__desktop_save_image":
+            if not self._is_local_origin():
+                self._send_json(403, {"ok": False, "error": "Forbidden origin"})
+                return
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            if length <= 0 or length > 6 * 1024 * 1024:
+                self._send_json(400, {"ok": False, "error": "Invalid image payload size"})
+                return
+            raw = self.rfile.read(length)
+            try:
+                body = json.loads(raw.decode("utf-8", errors="ignore") or "{}")
+                data_url = str(body.get("dataUrl") or "")
+                if "," in data_url:
+                    data_url = data_url.split(",", 1)[1]
+                png_bytes = base64.b64decode(data_url)
+                if not png_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+                    raise ValueError("Invalid PNG header")
+                raw_name = str(body.get("fileName") or "nurul-islam-hikmat.png")
+                safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", raw_name)
+                if not safe_name.endswith(".png"):
+                    safe_name += ".png"
+                pics_base = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) or os.path.expanduser("~/Pictures")
+                out_dir = os.path.join(pics_base, "Nurul-Islam")
+                os.makedirs(out_dir, exist_ok=True)
+                out_path = os.path.join(out_dir, safe_name)
+                with open(out_path, "wb") as fh:
+                    fh.write(png_bytes)
+
+                # Copy PNG to desktop clipboard when wl-copy or xclip is available
+                copied_clip = False
+                if os.environ.get("WAYLAND_DISPLAY") and shutil.which("wl-copy"):
+                    try:
+                        p = subprocess.Popen(["wl-copy", "--type", "image/png"], stdin=subprocess.PIPE)
+                        p.communicate(input=png_bytes, timeout=2)
+                        copied_clip = p.returncode == 0
+                    except Exception:
+                        pass
+                elif shutil.which("xclip"):
+                    try:
+                        p = subprocess.Popen(["xclip", "-selection", "clipboard", "-t", "image/png"], stdin=subprocess.PIPE)
+                        p.communicate(input=png_bytes, timeout=2)
+                        copied_clip = p.returncode == 0
+                    except Exception:
+                        pass
+
+                # Open saved image in default viewer so user can view/share immediately
+                try:
+                    uri = Gio.File.new_for_path(out_path).get_uri()
+                    GLib.idle_add(lambda u=uri: (Gio.AppInfo.launch_default_for_uri(u, None), False)[1])
+                except Exception:
+                    pass
+
+                display_path = out_path.replace(os.path.expanduser("~"), "~", 1)
+                self._send_json(200, {"ok": True, "path": display_path, "copied": copied_clip})
+            except Exception as exc:
+                self._send_json(400, {"ok": False, "error": str(exc)[:180]})
+            return
+
         if clean_path == "/__desktop_update/start":
             if not self._is_local_origin():
                 self._send_json(403, {"ok": False, "error": "Forbidden origin"})

@@ -35,7 +35,6 @@ import {
 const SAVED_WISDOM_KEY = 'nq_wisdom_bookmarks_v1';
 
 type ViewMode = 'scholars' | 'feed' | 'saved';
-type TextScale = 'sm' | 'md' | 'lg';
 
 function loadSavedWisdomIds(): string[] {
   try {
@@ -297,10 +296,10 @@ function wrapCanvasLines(
   return lines;
 }
 
-async function generateHikmatCardBlob(
+async function generateHikmatCardData(
   scholar: LocalizedScholar,
   entry: LocalizedWisdomEntry
-): Promise<Blob | null> {
+): Promise<{ dataUrl: string; blob: Blob | null } | null> {
   const canvas = document.createElement('canvas');
   const W = 1080;
   const H = 1350;
@@ -408,9 +407,11 @@ async function generateHikmatCardBlob(
   ctx.font = '500 20px sans-serif';
   ctx.fillText('nurulislam.mabdullayev.dev', W / 2, H - 72);
 
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/png');
+  const dataUrl = canvas.toDataURL('image/png');
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((b) => resolve(b), 'image/png');
   });
+  return { dataUrl, blob };
 }
 
 export const WisdomTab: React.FC = () => {
@@ -424,7 +425,6 @@ export const WisdomTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [savedIds, setSavedIds] = useState<string[]>(() => loadSavedWisdomIds());
   const [expandedSharhIds, setExpandedSharhIds] = useState<Set<string>>(() => new Set());
-  const [textScale, setTextScale] = useState<TextScale>('md');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sharingId, setSharingId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -503,12 +503,28 @@ export const WisdomTab: React.FC = () => {
         .filter((l, i, arr) => !(l === '' && arr[i - 1] === ''))
         .join('\n');
       try {
-        await navigator.clipboard.writeText(lines);
-        setCopiedId(entry.id);
-        window.setTimeout(() => setCopiedId((cur) => (cur === entry.id ? null : cur)), 1800);
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(lines);
+        } else {
+          throw new Error('Clipboard API unavailable');
+        }
       } catch {
-        // fallback ignored
+        // Fallback for non-HTTPS localhost WebKit2GTK or older WebViews
+        const ta = document.createElement('textarea');
+        ta.value = lines;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+        } catch {
+          // ignore
+        }
+        ta.remove();
       }
+      setCopiedId(entry.id);
+      window.setTimeout(() => setCopiedId((cur) => (cur === entry.id ? null : cur)), 1800);
     },
     []
   );
@@ -517,36 +533,79 @@ export const WisdomTab: React.FC = () => {
     async (entry: LocalizedWisdomEntry, scholar: LocalizedScholar) => {
       setSharingId(entry.id);
       try {
-        const blob = await generateHikmatCardBlob(scholar, entry);
-        if (!blob) throw new Error('Canvas unavailable');
+        const rendered = await generateHikmatCardData(scholar, entry);
+        if (!rendered) throw new Error('Canvas unavailable');
+        const { dataUrl, blob } = rendered;
         const fileName = `nurul-islam-${scholar.id}-${entry.id}.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
+        const caption = `${entry.excerpt}\n— ${scholar.name} (${entry.work})\nNurul Islam · nurulislam.mabdullayev.dev`;
 
-        const nav = navigator as Navigator & {
-          canShare?: (data: ShareData) => boolean;
-        };
-        if (nav.share && (!nav.canShare || nav.canShare({ files: [file] }))) {
+        // 1. Native Android Share Sheet (FileProvider + ACTION_SEND image/png)
+        const androidBridge = (
+          window as Window & {
+            NqNativeBridge?: {
+              shareImageBase64?: (b64: string, name: string, text: string) => boolean;
+            };
+          }
+        ).NqNativeBridge;
+        if (androidBridge && typeof androidBridge.shareImageBase64 === 'function') {
+          const ok = androidBridge.shareImageBase64(dataUrl, fileName, caption);
+          if (ok) return;
+        }
+
+        // 2. Native Linux Desktop wrapper (saves to ~/Pictures/Nurul-Islam, copies to clipboard & opens image)
+        const isDesktop =
+          new URLSearchParams(window.location.search).get('desktop') === '1' ||
+          Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__);
+        if (isDesktop && window.location.hostname === '127.0.0.1') {
           try {
-            await nav.share({
-              title: `${scholar.name} — ${entry.heading}`,
-              text: `${entry.excerpt}\n— ${scholar.name} (${entry.work})`,
-              files: [file],
+            const resp = await fetch('/__desktop_save_image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ dataUrl, fileName }),
             });
-            return;
-          } catch (err) {
-            if ((err as { name?: string })?.name === 'AbortError') return;
+            if (resp.ok) {
+              const info = (await resp.json()) as { ok?: boolean; path?: string };
+              if (info.ok) {
+                showToast(info.path ? `${ui.cardSavedMsg}: ${info.path}` : ui.cardSavedMsg);
+                return;
+              }
+            }
+          } catch {
+            // fall through to browser download
           }
         }
 
-        // Download PNG fallback (works cleanly on Fedora Desktop & browsers)
-        const url = URL.createObjectURL(blob);
+        // 3. Modern Mobile/Web Browsers: Web Share API with PNG File
+        if (blob) {
+          const file = new File([blob], fileName, { type: 'image/png' });
+          const nav = navigator as Navigator & {
+            canShare?: (data: ShareData) => boolean;
+          };
+          if (nav.share && (!nav.canShare || nav.canShare({ files: [file] }))) {
+            try {
+              await nav.share({
+                title: `${scholar.name} — ${entry.heading}`,
+                text: caption,
+                files: [file],
+              });
+              return;
+            } catch (err) {
+              if ((err as { name?: string })?.name === 'AbortError') return;
+            }
+          }
+        }
+
+        // 4. Standard browser PNG download fallback
         const a = document.createElement('a');
-        a.href = url;
+        a.href = blob ? URL.createObjectURL(blob) : dataUrl;
         a.download = fileName;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+        if (blob && a.href.startsWith('blob:')) {
+          const revokeTarget = a.href;
+          window.setTimeout(() => URL.revokeObjectURL(revokeTarget), 4000);
+        }
         showToast(ui.cardSavedMsg);
       } catch {
         await handleCopyText(entry, scholar);
@@ -584,18 +643,8 @@ export const WisdomTab: React.FC = () => {
     });
   }, [activeTopic, allEntries, savedIds, scholarMap, searchQuery, viewMode]);
 
-  const verseSizeCls =
-    textScale === 'lg'
-      ? 'text-[17px] leading-[1.75]'
-      : textScale === 'sm'
-      ? 'text-[13.5px] leading-[1.6]'
-      : 'text-[15px] leading-[1.7]';
-  const bodySizeCls =
-    textScale === 'lg'
-      ? 'text-[15.5px] leading-relaxed'
-      : textScale === 'sm'
-      ? 'text-[12.5px] leading-relaxed'
-      : 'text-[13.5px] leading-relaxed';
+  const verseSizeCls = 'text-[15px] leading-[1.7]';
+  const bodySizeCls = 'text-[13.5px] leading-relaxed';
 
   const cardSurfaceCls = isDay
     ? 'bg-white border-[#dde3ea] text-slate-900 shadow-xs'
@@ -798,30 +847,6 @@ export const WisdomTab: React.FC = () => {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>{ui.backToScholars}</span>
           </button>
-
-          {/* Font size comfort toggle */}
-          <div
-            className={`inline-flex items-center rounded-xl border p-0.5 ${
-              isDay ? 'bg-white border-[#dde3ea]' : 'bg-slate-900 border-emerald-900/60'
-            }`}
-          >
-            {(['sm', 'md', 'lg'] as TextScale[]).map((sc, i) => (
-              <button
-                key={sc}
-                type="button"
-                onClick={() => setTextScale(sc)}
-                className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition ${
-                  textScale === sc
-                    ? isDay
-                      ? 'bg-[#158509] text-white nq-keep-dark'
-                      : 'bg-amber-400 text-slate-950'
-                    : subTextCls
-                }`}
-              >
-                {i === 0 ? 'A' : i === 1 ? 'A+' : 'A++'}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Scholar Hero Card */}
@@ -903,141 +928,100 @@ export const WisdomTab: React.FC = () => {
 
   // ==================== MAIN HERITAGE HUB ====================
   return (
-    <div className="space-y-4 pb-6">
-      {/* Heritage Hero Banner + Daily Wisdom Spotlight */}
+    <div className="space-y-3 pb-6">
+      {/* Compact Daily Hikmat Banner Only */}
       <section
-        className={`rounded-3xl p-4 sm:p-5 space-y-3.5 border ${
+        className={`rounded-2xl p-3 space-y-2 border ${
           isDay
-            ? 'bg-gradient-to-br from-[#0b4a06] via-[#136c13] to-[#1e7f2b] border-[#0c5007] text-white shadow-md nq-keep-dark'
-            : 'bg-gradient-to-br from-[#06241b] via-[#0a3625] to-[#051812] border-emerald-800/70 text-white shadow-xl'
+            ? 'bg-gradient-to-br from-[#0b4a06] via-[#136c13] to-[#1e7f2b] border-[#0c5007] text-white shadow-sm nq-keep-dark'
+            : 'bg-gradient-to-br from-[#06241b] via-[#0a3625] to-[#051812] border-emerald-800/70 text-white shadow-lg'
         }`}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 border border-white/20 text-[10.5px] font-bold text-[#fde68a]">
-              <Sparkles className="w-3 h-3" />
-              <span>{ui.badge}</span>
-            </span>
-            <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-              {ui.title}
-            </h1>
-            <p className="text-[11.5px] text-white/85 leading-snug max-w-2xl">
-              {ui.subtitle}
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#d0f39f] shrink-0">
+            ✦ {ui.dailyTag}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedScholarId(dailyScholar.id)}
+            className="text-[11px] font-bold text-[#fde68a] hover:underline truncate"
+          >
+            {dailyScholar.name} →
+          </button>
         </div>
 
-        {/* Daily Rotating Hikmat Spotlight */}
-        <div className="rounded-2xl bg-black/22 border border-white/15 p-3.5 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#d0f39f]">
-              ✦ {ui.dailyTag}
-            </span>
+        {dailyEntry.original ? (
+          <p className="font-serif italic text-[13px] leading-snug text-[#fef3c7] whitespace-pre-line line-clamp-3">
+            {dailyEntry.original}
+          </p>
+        ) : (
+          <p className="text-xs leading-snug text-white/95 line-clamp-3">{dailyEntry.excerpt}</p>
+        )}
+
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <span className="text-[10.5px] text-white/70 truncate">{dailyEntry.work}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => setSelectedScholarId(dailyScholar.id)}
-              className="text-[11px] font-bold text-[#fde68a] hover:underline truncate"
+              onClick={() => void handleCopyText(dailyEntry, dailyScholar)}
+              className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-bold text-white inline-flex items-center gap-1 transition active:scale-95"
             >
-              {dailyScholar.name} →
+              {copiedId === dailyEntry.id ? (
+                <Check className="w-3 h-3 text-[#d0f39f]" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
+              <span>{copiedId === dailyEntry.id ? ui.copiedBtn : ui.copyBtn}</span>
             </button>
-          </div>
-
-          {dailyEntry.original && (
-            <p className="font-serif italic text-[13.5px] leading-relaxed text-[#fef3c7] whitespace-pre-line">
-              {dailyEntry.original}
-            </p>
-          )}
-          <p className="text-xs leading-relaxed text-white/95">{dailyEntry.excerpt}</p>
-
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <span className="text-[10.5px] text-white/70 truncate">{dailyEntry.work}</span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => void handleCopyText(dailyEntry, dailyScholar)}
-                className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-bold text-white inline-flex items-center gap-1 transition"
-              >
-                {copiedId === dailyEntry.id ? (
-                  <Check className="w-3 h-3 text-[#d0f39f]" />
-                ) : (
-                  <Copy className="w-3 h-3" />
-                )}
-                <span>{copiedId === dailyEntry.id ? ui.copiedBtn : ui.copyBtn}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleShareCard(dailyEntry, dailyScholar)}
-                className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-[11px] font-extrabold text-slate-950 inline-flex items-center gap-1 transition"
-              >
-                <Share2 className="w-3 h-3" />
-                <span>{ui.shareCardBtn}</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={sharingId === dailyEntry.id}
+              onClick={() => void handleShareCard(dailyEntry, dailyScholar)}
+              className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-[11px] font-extrabold text-slate-950 inline-flex items-center gap-1 transition active:scale-95 disabled:opacity-50"
+            >
+              <Share2 className="w-3 h-3" />
+              <span>{sharingId === dailyEntry.id ? ui.sharingCard : ui.shareCardBtn}</span>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Primary View Switcher + Font Zoom */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div
-          className={`flex-1 min-w-[230px] grid grid-cols-3 gap-1 p-1 rounded-2xl border ${
-            isDay ? 'bg-white border-[#dde3ea]' : 'bg-slate-900 border-emerald-900/60'
-          }`}
-        >
-          {(
-            [
-              { id: 'scholars' as const, label: ui.tabScholars },
-              { id: 'feed' as const, label: ui.tabFeed },
-              {
-                id: 'saved' as const,
-                label: savedIds.length > 0 ? `${ui.tabSaved} (${savedIds.length})` : ui.tabSaved,
-              },
-            ] as const
-          ).map((tab) => {
-            const active = viewMode === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setViewMode(tab.id)}
-                className={`py-2 px-2 rounded-xl text-[11.5px] font-extrabold transition truncate ${
-                  active
-                    ? isDay
-                      ? 'bg-[#158509] text-white shadow-xs nq-keep-dark'
-                      : 'bg-amber-400 text-slate-950 shadow-xs'
-                    : isDay
-                    ? 'text-slate-600 hover:bg-slate-50'
-                    : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          className={`inline-flex items-center rounded-2xl border p-1 ${
-            isDay ? 'bg-white border-[#dde3ea]' : 'bg-slate-900 border-emerald-900/60'
-          }`}
-        >
-          {(['sm', 'md', 'lg'] as TextScale[]).map((sc, i) => (
+      {/* Primary View Switcher */}
+      <div
+        className={`grid grid-cols-3 gap-1 p-1 rounded-2xl border ${
+          isDay ? 'bg-white border-[#dde3ea]' : 'bg-slate-900 border-emerald-900/60'
+        }`}
+      >
+        {(
+          [
+            { id: 'scholars' as const, label: ui.tabScholars },
+            { id: 'feed' as const, label: ui.tabFeed },
+            {
+              id: 'saved' as const,
+              label: savedIds.length > 0 ? `${ui.tabSaved} (${savedIds.length})` : ui.tabSaved,
+            },
+          ] as const
+        ).map((tab) => {
+          const active = viewMode === tab.id;
+          return (
             <button
-              key={sc}
+              key={tab.id}
               type="button"
-              onClick={() => setTextScale(sc)}
-              className={`px-2 py-1 rounded-xl text-[11px] font-extrabold transition ${
-                textScale === sc
+              onClick={() => setViewMode(tab.id)}
+              className={`py-2 px-2 rounded-xl text-[11.5px] font-extrabold transition truncate ${
+                active
                   ? isDay
-                    ? 'bg-[#eef9ea] text-[#0c4703]'
-                    : 'bg-emerald-950 text-amber-300'
-                  : subTextCls
+                    ? 'bg-[#158509] text-white shadow-xs nq-keep-dark'
+                    : 'bg-amber-400 text-slate-950 shadow-xs'
+                  : isDay
+                  ? 'text-slate-600 hover:bg-slate-50'
+                  : 'text-slate-300 hover:bg-slate-800'
               }`}
             >
-              {i === 0 ? 'A' : i === 1 ? 'A+' : 'A++'}
+              {tab.label}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* SCHOLARS GALLERY VIEW */}

@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.59
+Version:        1.8.60
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.60-1
+- Compact Daily Hikmat banner, remove font size switcher, and add native Android & Linux Desktop PNG Quote Card sharing
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.59-1
 - Add Scholars & Wisdom (Allomalar va Hikmatlar) featuring 8 Movarounnahr masters (Yasawi, Naqshband, Navoi, Sufi Allahyar, Ghijduwani, Bukhari, Maturidi, Marghinani) with 48 curated works, commentary, and PNG Quote Card generator
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.58-1
