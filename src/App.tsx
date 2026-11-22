@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { ArrowDownCircle, CloudDownload, X } from 'lucide-react';
 import { AndroidShell } from './components/AndroidShell';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
@@ -38,6 +39,7 @@ import {
   canRequestNativeInstallPermission,
   checkForAppUpdate,
   isDesktopRpmUpdaterSupported,
+  isNativeUpdaterSupported,
   startInAppUpdate,
   getReleaseNoteText
 } from './utils/appUpdater';
@@ -70,6 +72,111 @@ const CitySelectorModal = lazy(modalLoaders.citySelector);
 const OnboardingModal = lazy(modalLoaders.onboarding);
 const QuranMiniPlayer = lazy(modalLoaders.miniPlayer);
 
+const VALID_WEB_TABS = new Set([
+  'home',
+  'quran',
+  'prayer',
+  'qibla',
+  'tasbih',
+  'azkar',
+  'names',
+  'zakat',
+  'qazo',
+  'ramadan',
+  'guide',
+  'masjids',
+  'ehson',
+  'juma',
+  'quiz',
+  'hifz',
+  'life',
+  'fiqh',
+  'tajweed',
+  'seerah',
+  'wisdom',
+  'profile',
+]);
+
+const VALID_AZKAR_SECTIONS = new Set<HubSection>([
+  'hub',
+  'duas',
+  'zikr',
+  'hadith',
+  'ayats',
+  'farz',
+  'niyat',
+  'saved',
+]);
+
+interface ParsedWebRoute {
+  tab: string;
+  azkarSection: HubSection;
+  namesMode: 'list' | 'quiz';
+  surahNumber: number | null;
+  ayahNumber: number | null;
+}
+
+function parseHashRoute(hashStr: string): ParsedWebRoute {
+  const fallback: ParsedWebRoute = {
+    tab: 'home',
+    azkarSection: 'hub',
+    namesMode: 'list',
+    surahNumber: null,
+    ayahNumber: null,
+  };
+  const clean = hashStr.replace(/^#\/?/, '').trim();
+  if (!clean) return fallback;
+  const parts = clean.split('/').filter(Boolean);
+  const first = (parts[0] || '').toLowerCase();
+  if (!VALID_WEB_TABS.has(first)) return fallback;
+
+  if (first === 'quran') {
+    const sNum = parts[1] ? Number(parts[1]) : NaN;
+    const aNum = parts[2] ? Number(parts[2]) : NaN;
+    return {
+      ...fallback,
+      tab: 'quran',
+      surahNumber: Number.isInteger(sNum) && sNum >= 1 && sNum <= 114 ? sNum : null,
+      ayahNumber: Number.isInteger(aNum) && aNum >= 1 ? aNum : null,
+    };
+  }
+  if (first === 'azkar') {
+    const sub = (parts[1] || 'hub').toLowerCase() as HubSection;
+    return {
+      ...fallback,
+      tab: 'azkar',
+      azkarSection: VALID_AZKAR_SECTIONS.has(sub) ? sub : 'hub',
+    };
+  }
+  if (first === 'names') {
+    return {
+      ...fallback,
+      tab: 'names',
+      namesMode: parts[1] === 'quiz' ? 'quiz' : 'list',
+    };
+  }
+  return { ...fallback, tab: first };
+}
+
+function buildHashRoute(route: ParsedWebRoute): string {
+  if (route.tab === 'home') return '#home';
+  if (route.tab === 'quran') {
+    if (route.surahNumber) {
+      return route.ayahNumber && route.ayahNumber > 1
+        ? `#quran/${route.surahNumber}/${route.ayahNumber}`
+        : `#quran/${route.surahNumber}`;
+    }
+    return '#quran';
+  }
+  if (route.tab === 'azkar' && route.azkarSection !== 'hub') {
+    return `#azkar/${route.azkarSection}`;
+  }
+  if (route.tab === 'names' && route.namesMode === 'quiz') {
+    return '#names/quiz';
+  }
+  return `#${route.tab}`;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -83,15 +190,28 @@ export default function App() {
 function AppContent() {
   const { isDay } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<string>('home');
-  const [azkarInitialSection, setAzkarInitialSection] = useState<HubSection>('hub');
-  const [namesInitialMode, setNamesInitialMode] = useState<'list' | 'quiz'>('list');
-  const [selectedSurahNumber, setSelectedSurahNumber] = useState<number | null>(null);
-  const [selectedAyahNumber, setSelectedAyahNumber] = useState<number | null>(null);
-  const [isReadingSurah, setIsReadingSurah] = useState(false);
+  const initialRoute = useMemo(
+    () => (typeof window !== 'undefined' ? parseHashRoute(window.location.hash) : parseHashRoute('')),
+    []
+  );
+  const [activeTab, setActiveTab] = useState<string>(initialRoute.tab);
+  const [azkarInitialSection, setAzkarInitialSection] = useState<HubSection>(initialRoute.azkarSection);
+  const [namesInitialMode, setNamesInitialMode] = useState<'list' | 'quiz'>(initialRoute.namesMode);
+  const [selectedSurahNumber, setSelectedSurahNumber] = useState<number | null>(initialRoute.surahNumber);
+  const [selectedAyahNumber, setSelectedAyahNumber] = useState<number | null>(initialRoute.ayahNumber);
+  const [isReadingSurah, setIsReadingSurah] = useState(Boolean(initialRoute.surahNumber));
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
+      // On public web browsers, let visitors jump straight into the live website immediately (zero friction!)
+      // Keep the guided 3-step setup modal for native Android APK & Linux Desktop installations.
+      const isDesktopApp =
+        typeof window !== 'undefined' &&
+        (new URLSearchParams(window.location.search).get('desktop') === '1' ||
+          Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__));
+      if (!Capacitor.isNativePlatform() && !isDesktopApp) {
+        return false;
+      }
       if (localStorage.getItem('nq_onboarding_done') === '1') return false;
       if (localStorage.getItem('nq_onboarding_in_progress') === '1') return true;
       if (localStorage.getItem('nq_city') && localStorage.getItem('nq_language')) {
@@ -148,6 +268,8 @@ function AppContent() {
   }, []);
 
   const handleCheckUpdate = useCallback(async (silent = false, forceCheck = false) => {
+    // Public web browsers auto-update via Service Worker; never block website users with APK/RPM OTA modals
+    if (silent && !isNativeUpdaterSupported()) return;
     if (isCheckingUpdateRef.current) return;
     if (
       silent &&
@@ -277,17 +399,68 @@ function AppContent() {
     };
   }, [handleCheckUpdate, handleStartUpdate]);
 
+  const pushWebHash = useCallback((route: ParsedWebRoute) => {
+    if (typeof window === 'undefined' || Capacitor.isNativePlatform()) return;
+    const nextHash = buildHashRoute(route);
+    if (window.location.hash !== nextHash) {
+      try {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+      } catch {
+        // Ignore history restrictions in sandboxed environments
+      }
+    }
+  }, []);
+
+  // Sync Browser Back / Forward buttons & manually edited URL hashes on Web
+  useEffect(() => {
+    if (typeof window === 'undefined' || Capacitor.isNativePlatform()) return;
+    const applyLocationHash = () => {
+      const parsed = parseHashRoute(window.location.hash);
+      setActiveTab(parsed.tab);
+      setAzkarInitialSection(parsed.azkarSection);
+      setNamesInitialMode(parsed.namesMode);
+      setSelectedSurahNumber(parsed.surahNumber);
+      setSelectedAyahNumber(parsed.ayahNumber);
+      if (parsed.tab !== 'quran' || !parsed.surahNumber) {
+        setIsReadingSurah(false);
+      }
+    };
+    window.addEventListener('popstate', applyLocationHash);
+    window.addEventListener('hashchange', applyLocationHash);
+    return () => {
+      window.removeEventListener('popstate', applyLocationHash);
+      window.removeEventListener('hashchange', applyLocationHash);
+    };
+  }, []);
+
+  // Dynamic browser page title per section
+  useEffect(() => {
+    if (typeof document === 'undefined' || Capacitor.isNativePlatform()) return;
+    const titleMap = t.tabTitles as Record<string, string>;
+    const sectionTitle = titleMap[activeTab];
+    document.title =
+      activeTab === 'home' || !sectionTitle
+        ? "Nurul Islam — Qur'oni Karim, Namoz vaqtlari, Allomalar va Hikmatlar"
+        : `${sectionTitle} — Nurul Islam`;
+  }, [activeTab, t.tabTitles]);
+
   const navigateToTab = useCallback(
     (nextTab: string) => {
+      let nextAzkar: HubSection = azkarInitialSection;
+      let nextNames: 'list' | 'quiz' = namesInitialMode;
       if (nextTab === 'azkar') {
+        nextAzkar = 'hub';
         setAzkarInitialSection('hub');
       } else if (nextTab.startsWith('azkar:')) {
         const sub = nextTab.slice('azkar:'.length) as HubSection;
+        nextAzkar = sub;
         setAzkarInitialSection(sub);
         nextTab = 'azkar';
       } else if (nextTab === 'names') {
+        nextNames = 'list';
         setNamesInitialMode('list');
       } else if (nextTab === 'names:quiz') {
+        nextNames = 'quiz';
         setNamesInitialMode('quiz');
         nextTab = 'names';
       }
@@ -299,8 +472,15 @@ function AppContent() {
         setSelectedSurahNumber(null);
         setIsReadingSurah(false);
       }
+      pushWebHash({
+        tab: nextTab,
+        azkarSection: nextTab === 'azkar' ? nextAzkar : 'hub',
+        namesMode: nextTab === 'names' ? nextNames : 'list',
+        surahNumber: nextTab === 'quran' ? selectedSurahNumber : null,
+        ayahNumber: nextTab === 'quran' ? selectedAyahNumber : null,
+      });
     },
-    [activeTab]
+    [activeTab, azkarInitialSection, namesInitialMode, pushWebHash, selectedAyahNumber, selectedSurahNumber]
   );
 
   const handleBack = useCallback((): boolean => {
@@ -332,6 +512,13 @@ function AppContent() {
         setSelectedSurahNumber(null);
         setIsReadingSurah(false);
       }
+      pushWebHash({
+        tab: prevTab,
+        azkarSection: prevTab === 'azkar' ? azkarInitialSection : 'hub',
+        namesMode: prevTab === 'names' ? namesInitialMode : 'list',
+        surahNumber: null,
+        ayahNumber: null,
+      });
       return true;
     }
 
@@ -339,11 +526,18 @@ function AppContent() {
       setActiveTab('home');
       setSelectedSurahNumber(null);
       setIsReadingSurah(false);
+      pushWebHash({
+        tab: 'home',
+        azkarSection: 'hub',
+        namesMode: 'list',
+        surahNumber: null,
+        ayahNumber: null,
+      });
       return true;
     }
 
     return false;
-  }, [activeTab, handleDismissUpdateModal, isCityModalOpen, isUpdateModalOpen, showOnboarding, updateRelease?.forceUpdate]);
+  }, [activeTab, azkarInitialSection, handleDismissUpdateModal, isCityModalOpen, isUpdateModalOpen, namesInitialMode, pushWebHash, showOnboarding, updateRelease?.forceUpdate]);
 
   // Android hardware / gesture back button support
   useEffect(() => {
@@ -533,7 +727,7 @@ function AppContent() {
       const endpoints = [
         '/__desktop_geoip',
         'https://ipinfo.io/json',
-        'http://ip-api.com/json/',
+        'https://ipwho.is/',
       ];
       for (const url of endpoints) {
         try {
@@ -613,8 +807,15 @@ function AppContent() {
         tabHistoryRef.current = [...tabHistoryRef.current.slice(-19), activeTab];
         setActiveTab('quran');
       }
+      pushWebHash({
+        tab: 'quran',
+        azkarSection: 'hub',
+        namesMode: 'list',
+        surahNumber,
+        ayahNumber: ayahNumber ?? null,
+      });
     },
-    [activeTab]
+    [activeTab, pushWebHash]
   );
 
   // Sync global native QuranAudioService state + handle tapping notification to jump straight to Surah
@@ -885,6 +1086,13 @@ function AppContent() {
                   onCloseSurahDetail={() => {
                     setSelectedSurahNumber(null);
                     setSelectedAyahNumber(null);
+                    pushWebHash({
+                      tab: 'quran',
+                      azkarSection: 'hub',
+                      namesMode: 'list',
+                      surahNumber: null,
+                      ayahNumber: null,
+                    });
                   }}
                   onSurahDetailActiveChange={setIsReadingSurah}
                   selectedTranslation={selectedTranslation}

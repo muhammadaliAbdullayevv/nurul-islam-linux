@@ -4,11 +4,6 @@ import {
   ArrowLeft,
   Home,
   User,
-  Smartphone,
-  Monitor,
-  Battery,
-  Wifi,
-  Signal,
   Sun,
   Moon,
   Globe,
@@ -64,14 +59,30 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
 }) => {
   const { isDay, toggleTheme } = useTheme();
   const { language, setLanguage, meta, t } = useLanguage();
+  const isCapacitorNative = Capacitor.isNativePlatform();
   const isDesktopApp =
     typeof window !== 'undefined' &&
     (new URLSearchParams(window.location.search).get('desktop') === '1' ||
       Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__));
-  const isNative = Capacitor.isNativePlatform() || isDesktopApp;
-  const [isPhoneFrame, setIsPhoneFrame] = useState(!isNative);
+  const isNative = isCapacitorNative || isDesktopApp;
+  const [isWideViewport, setIsWideViewport] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+  );
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isCapacitorNative) return;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => setIsWideViewport(e.matches);
+    setIsWideViewport(mq.matches);
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    }
+    mq.addListener(onChange);
+    return () => mq.removeListener(onChange);
+  }, [isCapacitorNative]);
 
   useEffect(() => {
     if (!isLangMenuOpen) return;
@@ -84,7 +95,22 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [isLangMenuOpen]);
 
-  const showPhoneFrame = !isNative && isPhoneFrame;
+  const useWidescreenShell = isDesktopApp || (!isCapacitorNative && isWideViewport);
+  const editionSubtitle = isDesktopApp
+    ? language === 'ru'
+      ? '✦ Desktop · 24 раздела'
+      : language === 'en'
+      ? '✦ Desktop Edition · 24 modules'
+      : language === 'uz_cyr'
+      ? '✦ Desktop · 24 бўлим'
+      : "✦ Desktop Edition · 24 bo'lim"
+    : language === 'ru'
+    ? '✦ Веб-версия · 24 раздела'
+    : language === 'en'
+    ? '✦ Web Edition · 24 modules'
+    : language === 'uz_cyr'
+    ? '✦ Веб-илова · 24 бўлим'
+    : "✦ Veb-ilova · 24 bo'lim";
   const currentTimeStr = new Date().toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -219,9 +245,9 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
   ];
 
   // ===========================================================================
-  // NATIVE LINUX DESKTOP WIDESCREEN EDITION (?desktop=1)
+  // WIDESCREEN EDITION: Desktop Web Browser (>= 1024px) & Native Linux Desktop
   // ===========================================================================
-  if (isDesktopApp) {
+  if (useWidescreenShell) {
     return (
       <div
         className={`h-screen w-screen overflow-hidden flex selection:bg-[#158509] selection:text-white transition-colors duration-200 ${
@@ -230,7 +256,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
             : 'bg-gradient-to-br from-[#03110c] via-[#061a13] to-[#020c09] text-slate-100'
         }`}
       >
-        {/* Left Rich 3D Studio 2-Column Sidebar Rail (All 26 items visible at once) */}
+        {/* Left Rich 3D Studio 2-Column Sidebar Rail (All 27 items visible at once) */}
         <aside
           className={`w-80 shrink-0 h-full flex flex-col border-r select-none shadow-lg z-20 ${
             isDay
@@ -239,8 +265,10 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
           }`}
         >
           {/* App Brand Header */}
-          <div
-            className={`px-3.5 py-2.5 flex items-center justify-between border-b shrink-0 ${
+          <button
+            type="button"
+            onClick={() => onTabChange('home')}
+            className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between border-b shrink-0 transition hover:opacity-95 ${
               isDay
                 ? 'bg-gradient-to-r from-[#0b4a06] via-[#158509] to-[#1b9c21] border-[#0c5007] text-white'
                 : 'bg-gradient-to-r from-[#041710] via-[#092b1d] to-[#051a12] border-emerald-900/70 text-white'
@@ -256,12 +284,12 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
                 <div className="font-display text-base font-extrabold tracking-tight leading-none text-white truncate">
                   {t.appTitle}
                 </div>
-                <div className="text-[9.5px] font-bold text-[#fde68a] mt-0.5">
-                  ✦ Desktop Edition · 24 bo&apos;lim
+                <div className="text-[9.5px] font-bold text-[#fde68a] mt-0.5 truncate">
+                  {editionSubtitle}
                 </div>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* 2-Column × 14-Row Grid — All 27 Items Fit on Screen simultaneously */}
           <div className="flex-1 min-h-0 p-2 grid grid-cols-2 grid-rows-[repeat(14,minmax(0,1fr))] gap-1.5 overflow-y-auto">
@@ -425,24 +453,27 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               </h1>
             </div>
 
-            <div
-              className={`px-3 py-1 rounded-full text-xs font-mono font-extrabold border ${
-                isDay
-                  ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
-                  : 'bg-emerald-950 border-emerald-800 text-amber-300'
-              }`}
-            >
-              {currentTimeStr}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <PWAInstallButton />
+              <div
+                className={`px-3 py-1.5 rounded-full text-xs font-mono font-extrabold border ${
+                  isDay
+                    ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+                    : 'bg-emerald-950 border-emerald-800 text-amber-300'
+                }`}
+              >
+                {currentTimeStr}
+              </div>
             </div>
           </header>
 
           {topBanner}
 
-          {/* Centered Desktop Stage with Proper Height Forwarding for Virtualized Readers (QuranTab / TasbihTab) */}
+          {/* Centered Widescreen Stage with Proper Height Forwarding for Virtualized Readers (QuranTab / TasbihTab) */}
           <div className="flex-1 min-h-0 flex flex-col items-center overflow-hidden px-6 py-4">
             <div
               className={`w-full ${
-                activeTab === 'home' ? 'max-w-5xl' : 'max-w-[780px]'
+                activeTab === 'home' ? 'max-w-5xl' : 'max-w-4xl'
               } flex-1 min-h-0 flex flex-col rounded-3xl border shadow-xl overflow-hidden ${
                 isDay
                   ? 'bg-[#f4f8f3] border-[#c5e0bf]'
@@ -472,129 +503,35 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
     );
   }
 
+  // ===========================================================================
+  // RESPONSIVE MOBILE / TABLET FULL-SCREEN SHELL (Web Mobile, Tablet & Android APK)
+  // ===========================================================================
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-start selection:bg-[#158509] selection:text-white transition-colors duration-200 ${
-        isDay ? 'bg-[#ecf1f5] text-slate-900' : 'bg-slate-950 text-slate-100'
-      } ${isNative ? 'p-0 h-[100dvh] overflow-hidden' : 'p-0 sm:p-4'}`}
+      className={`h-[100dvh] w-full overflow-hidden flex flex-col items-center justify-start selection:bg-[#158509] selection:text-white transition-colors duration-200 ${
+        isDay ? 'bg-[#e6edf2] text-slate-900' : 'bg-slate-950 text-slate-100'
+      }`}
     >
-      {/* Top Device Preview Mode Toggle Toolbar (Web Preview Only) */}
-      {!isNative && (
-        <header
-          className={`w-full max-w-4xl py-2 px-4 flex items-center justify-between text-xs border-b mb-2 ${
-            isDay
-              ? 'text-slate-600 border-slate-300/70'
-              : 'text-slate-400 border-slate-900'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#158509] animate-pulse" />
-            <span className={`font-semibold ${isDay ? 'text-slate-900' : 'text-slate-200'}`}>
-              Nurul Islam
-            </span>
-            <span
-              className={`text-[11px] px-2 py-0.5 rounded-full border ${
-                isDay
-                  ? 'text-[#0c4703] bg-[#eef9ea] border-[#c5e8bc]'
-                  : 'text-emerald-400 bg-emerald-950/80 border-emerald-800/40'
-              }`}
-            >
-              Android App
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <PWAInstallButton />
-
-            <div
-              className={`p-1 rounded-xl flex items-center border ${
-                isDay ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
-              }`}
-            >
-              <button
-                onClick={() => setIsPhoneFrame(true)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-                  isPhoneFrame
-                    ? 'bg-[#158509] text-white shadow'
-                    : isDay
-                    ? 'text-slate-600 hover:text-slate-900'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Phone Frame</span>
-              </button>
-
-              <button
-                onClick={() => setIsPhoneFrame(false)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-                  !isPhoneFrame
-                    ? 'bg-[#158509] text-white shadow'
-                    : isDay
-                    ? 'text-slate-600 hover:text-slate-900'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Full Responsive</span>
-              </button>
-            </div>
-          </div>
-        </header>
-      )}
-
-      {/* Main Container: Android Frame or Fullscreen */}
+      {/* Full-Screen Responsive App Container (Edge-to-Edge on Phones, Clean Centered Column on Tablets) */}
       <main
-        className={`w-full transition-colors duration-200 relative flex flex-col ${
+        className={`w-full h-full overflow-hidden transition-colors duration-200 relative flex flex-col ${
           isDay ? 'bg-[#ecf1f5]' : 'bg-slate-950'
         } ${
-          showPhoneFrame
-            ? `max-w-[430px] min-h-[880px] h-[92vh] max-h-[920px] rounded-[48px] border-[10px] overflow-hidden shadow-2xl ${
-                isDay
-                  ? 'border-slate-800 shadow-slate-400/40 ring-1 ring-slate-300'
-                  : 'border-slate-800 shadow-emerald-950/70 ring-1 ring-slate-700/50'
-              }`
-            : isNative
-            ? 'h-full overflow-hidden'
-            : 'max-w-2xl min-h-screen'
+          isCapacitorNative
+            ? ''
+            : isDay
+            ? 'md:max-w-2xl md:border-x md:border-[#d5dfe8] md:shadow-xl'
+            : 'md:max-w-2xl md:border-x md:border-emerald-950 md:shadow-2xl'
         }`}
       >
-        {/* Android Status Bar (Shown in Phone Frame Mode) */}
-        {showPhoneFrame && (
-          <div
-            className={`h-9 w-full px-7 flex items-center justify-between text-xs select-none z-30 shrink-0 text-white ${
-              isDay ? 'bg-[#0c4703]' : 'bg-[#051f05]'
-            }`}
-          >
-            <span className="font-semibold text-xs tracking-tight">{currentTimeStr}</span>
-
-            {/* Center Camera Punch-hole Notch */}
-            <div className="w-4 h-4 rounded-full bg-black border border-slate-800 shadow-inner flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-950" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Signal className="w-3.5 h-3.5" />
-              <Wifi className="w-3.5 h-3.5" />
-              <div className="flex items-center gap-1 text-[11px] tabular-nums">
-                <span>98%</span>
-                <Battery className="w-4 h-4 text-[#d0f39f]" />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Solid Deep Islamic Green App Top Bar */}
         <div
-          style={
-            isNative
-              ? {
-                  paddingTop:
-                    'calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 16px)',
-                }
-              : undefined
-          }
-          className={`w-full px-4 pb-3 ${!isNative ? 'pt-3' : ''} flex items-center justify-between gap-2 shrink-0 z-30 border-b ${
+          style={{
+            paddingTop: isCapacitorNative
+              ? 'calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 16px)'
+              : 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          }}
+          className={`w-full px-4 pb-3 flex items-center justify-between gap-2 shrink-0 z-30 border-b ${
             isDay
               ? 'bg-[#0c4703] border-[#1a6810] text-white shadow-sm'
               : 'bg-[#051f05] border-emerald-950 text-white'
@@ -630,6 +567,8 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
 
           {!isSecondaryFeature && !hideBottomNav && (
             <div className="flex items-center gap-1.5 shrink-0">
+              <PWAInstallButton compact onDarkBar />
+
               {/* Compact App Language Switcher */}
               <div ref={langMenuRef} className="relative">
                 <button
@@ -715,7 +654,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
         {/* Viewport Content */}
         <div
           style={
-            isNative && isSecondaryFeature
+            isSecondaryFeature
               ? {
                   paddingBottom:
                     'calc(1rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))',
@@ -740,17 +679,11 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
         {/* Modern Elevated 4-Button Bottom Navigation Dock */}
         {!shouldHideBottomNav && (
           <nav
-            style={
-              isNative
-                ? {
-                    paddingBottom:
-                      'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 10px)',
-                  }
-                : undefined
-            }
-            className={`shrink-0 rounded-t-3xl border-t px-3 pt-2.5 ${
-              !isNative ? 'pb-2.5' : ''
-            } flex items-stretch gap-2 z-40 select-none transition-colors ${
+            style={{
+              paddingBottom:
+                'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 10px)',
+            }}
+            className={`shrink-0 rounded-t-3xl border-t px-3 pt-2.5 flex items-stretch gap-2 z-40 select-none transition-colors ${
               isDay
                 ? 'bg-white border-[#d6dfe8] shadow-[0_-8px_26px_rgba(12,71,3,0.09)]'
                 : 'bg-slate-950 border-emerald-900/70 shadow-[0_-8px_26px_rgba(0,0,0,0.45)]'
@@ -818,21 +751,6 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               );
             })}
           </nav>
-        )}
-
-        {/* Android Gesture Bar */}
-        {showPhoneFrame && (
-          <div
-            className={`h-3 w-full flex items-center justify-center shrink-0 z-50 ${
-              isDay ? 'bg-white' : 'bg-slate-950'
-            }`}
-          >
-            <div
-              className={`w-32 h-1 rounded-full ${
-                isDay ? 'bg-slate-300' : 'bg-slate-600/70'
-              }`}
-            />
-          </div>
         )}
       </main>
 

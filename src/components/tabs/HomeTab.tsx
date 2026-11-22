@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 import {
   MapPin,
   ChevronDown,
@@ -729,20 +730,42 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   };
 
   const activeDraggingDef = draggingId ? allFeaturesMap.get(draggingId) || null : null;
+  const isCapacitorNative = Capacitor.isNativePlatform();
   const isDesktopApp =
     typeof window !== 'undefined' &&
     (new URLSearchParams(window.location.search).get('desktop') === '1' ||
       Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__));
+  const [isWideViewport, setIsWideViewport] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+  );
 
-  if (isDesktopApp) {
+  useEffect(() => {
+    if (typeof window === 'undefined' || isCapacitorNative) return;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => setIsWideViewport(e.matches);
+    setIsWideViewport(mq.matches);
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    }
+    mq.addListener(onChange);
+    return () => mq.removeListener(onChange);
+  }, [isCapacitorNative]);
+
+  const useWidescreenHome = isDesktopApp || (!isCapacitorNative && isWideViewport);
+
+  if (useWidescreenHome) {
     return (
-      <div className="space-y-5 pb-6">
+      <div className="space-y-4 pb-6">
         {/* Widescreen Desktop Prayer Hero Dashboard */}
         <div
           onMouseEnter={() => prefetchTab('prayer')}
           onClick={() => onNavigateTab('prayer')}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') onNavigateTab('prayer');
+          }}
           className={`w-full p-5 rounded-3xl transition cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-5 items-center ${
             isDay
               ? 'bg-gradient-to-br from-[#0c5007] via-[#157a17] to-[#2e8537] text-white shadow-md shadow-emerald-950/15'
@@ -751,9 +774,24 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         >
           <div className="lg:col-span-5 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-white/85">
-                {gregorianStr} · <span className="text-[#d0f39f]">{hijriStr}</span>
-              </span>
+              <div className="min-w-0 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-white/85 truncate">
+                  {gregorianStr} · <span className="text-[#d0f39f]">{hijriStr}</span>
+                </span>
+                {isFriday && (
+                  <button
+                    type="button"
+                    onMouseEnter={() => prefetchTab('juma')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigateTab('juma');
+                    }}
+                    className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-bold shrink-0 hover:bg-amber-300 transition active:scale-95"
+                  >
+                    {fridayPillText}
+                  </button>
+                )}
+              </div>
               <button
                 type="button"
                 onMouseEnter={prefetchCityModal}
@@ -762,7 +800,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   e.stopPropagation();
                   onOpenCitySelector();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 hover:bg-black/35 border border-white/20 text-xs font-semibold text-white transition"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 hover:bg-black/35 border border-white/20 text-xs font-semibold text-white transition shrink-0"
               >
                 <MapPin className="w-3.5 h-3.5 text-[#d0f39f]" />
                 <span>{regionOnlyLabel}</span>
@@ -836,6 +874,69 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             })}
           </div>
         </div>
+
+        {/* Live Owner Broadcast Banner on Widescreen Web / Desktop */}
+        {activeBroadcast && (
+          <div
+            className={`rounded-2xl border px-4 py-3 flex items-center justify-between gap-3 shadow-xs ${
+              activeBroadcast.tone === 'urgent'
+                ? isDay
+                  ? 'bg-rose-50 border-rose-300 text-rose-950'
+                  : 'bg-rose-950/75 border-rose-500/60 text-rose-100'
+                : activeBroadcast.tone === 'gold'
+                ? isDay
+                  ? 'bg-amber-50 border-amber-300 text-amber-950'
+                  : 'bg-amber-950/65 border-amber-500/60 text-amber-100'
+                : isDay
+                ? 'bg-[#eef9ea] border-[#b7e2ad] text-[#0c4703]'
+                : 'bg-emerald-950/85 border-emerald-700/70 text-emerald-100'
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                  activeBroadcast.tone === 'urgent'
+                    ? 'bg-rose-600 text-white'
+                    : activeBroadcast.tone === 'gold'
+                    ? 'bg-amber-500 text-white'
+                    : isDay
+                    ? 'bg-[#158509] text-white'
+                    : 'bg-emerald-800 text-[#d0f39f]'
+                }`}
+              >
+                <Megaphone className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-extrabold truncate">{activeBroadcast.title}</h3>
+                <p className="text-[11.5px] opacity-85 line-clamp-1 mt-0.5">{activeBroadcast.body}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {(activeBroadcast.actionTab || activeBroadcast.actionUrl) && (
+                <button
+                  type="button"
+                  onClick={() => handleBroadcastAction(activeBroadcast)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${
+                    isDay
+                      ? 'bg-[#158509] text-white hover:bg-[#0c5007]'
+                      : 'bg-amber-400 text-slate-950 hover:bg-amber-300'
+                  }`}
+                >
+                  <span>{activeBroadcast.actionLabel || broadcastDefaultCta}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => handleDismissBroadcast(activeBroadcast.id)}
+                className="p-1 rounded-lg opacity-65 hover:opacity-100 transition"
+                aria-label="Dismiss announcement"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* All 24 Features Widescreen 6-Column Desktop Grid */}
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">

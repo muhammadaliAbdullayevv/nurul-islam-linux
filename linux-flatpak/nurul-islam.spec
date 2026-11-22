@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.64
+Version:        1.8.65
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.65-1
+- Transform web edition into a full responsive website (widescreen desktop layout, edge-to-edge mobile web, URL hash routing, and localized PWA/APK/RPM download hub)
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.64-1
 - Bundle all 114 Surahs offline for instant Surah text loading, add Web/Linux offline Surah MP3 caching, and add modern PNG Share Cards for Quran Ayahs, Hadiths, Zikr, and Duas
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.63-1

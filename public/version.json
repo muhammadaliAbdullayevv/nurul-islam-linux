@@ -1,14 +1,14 @@
 {
-  "versionCode": 83,
-  "versionName": "1.8.64",
+  "versionCode": 84,
+  "versionName": "1.8.65",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
-  "forceUpdate": true,
+  "forceUpdate": false,
   "minSupportedVersionCode": 83,
   "notes": {
-    "uz_lat": "Barcha 114 suraning arabcha va o'zbekcha matni ilova ichida oflayn jamlandi — endi har qanday sura bir zumda (kutishsiz!) ochiladi. Web va Linux Desktopda ham oflayn audio yuklab olish ishga tushirildi. Qur'on oyatlari, Hadislar, Zikrlar va Duolar uchun zamonaviy Nurul Islam PNG ulashish kartalari qo'shildi!",
-    "uz_cyr": "Барча 114 суранинг арабча ва ўзбекча матни илова ичида офлайн жамланди — энди ҳар қандай сура бир зумда (кутишсиз!) очилади. Web ва Linux Desktopда ҳам офлайн аудио юклаб олиш ишга туширилди. Қуръон оятлари, Ҳадислар, Зикрлар ва Дуолар учун замонавий Nurul Islam PNG улашиш карталари қўшилди!",
-    "en": "All 114 Surahs (Arabic Uthmani + Uzbek Alouddin Mansur) are now bundled locally for instant offline reading with zero spinner delay! Added real offline Surah MP3 audio downloads on Web & Linux Desktop (matching Android), plus modern Nurul Islam shareable PNG cards for every Quran Ayah, Hadith, Zikr, and Dua.",
-    "ru": "Тексты всех 114 сур (арабский Усмани и узбекский перевод) теперь встроены офлайн — любая сура открывается мгновенно без ожидания! Добавлена офлайн-загрузка аудио сур для Web и Linux Desktop, а также современные PNG-открытки Nurul Islam для аятов Корана, хадисов, зикров и дуа."
+    "uz_lat": "Nurul Islam veb-sayti to'liq zamonaviy veb-ilova ko'rinishiga o'tkazildi: telefon ramkasisiz keng ekranli kompyuter rejimi, mobil brauzerda to'liq ekranli dizayn, to'g'ridan-to'g'ri havola (URL) ulashish va ilova yuklab olish oynasi qo'shildi.",
+    "uz_cyr": "Nurul Islam веб-сайти тўлиқ замонавий веб-илова кўринишига ўтказилди: телефон рамкасисиз кенг экранли компьютер режими, мобил браузерда тўлиқ экранли дизайн, тўғридан-тўғри ҳавола (URL) улашиш ва илова юклаб олиш ойнаси қўшилди.",
+    "en": "Upgraded nurulislam.mabdullayev.dev into a full native-feeling responsive Web App: widescreen desktop layout with 24-module dashboard, edge-to-edge mobile browser experience (no phone frame), deep-link URL routing & browser back support, and a localized PWA/APK/RPM download hub.",
+    "ru": "Сайт nurulislam.mabdullayev.dev обновлён до полноценного адаптивного веб-приложения: широкоэкранный режим для ПК, полноэкранный мобильный интерфейс без рамки телефона, поддержка ссылок на разделы и суры, а также удобное меню загрузки APK/PWA/RPM."
   }
 }

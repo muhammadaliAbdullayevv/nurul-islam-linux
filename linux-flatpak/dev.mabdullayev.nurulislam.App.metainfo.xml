@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.65" date="2026-11-22">
+      <description>
+        <p>Upgraded the Nurul Islam web edition into a full responsive web application with widescreen desktop navigation, full-screen mobile browser layout, shareable deep-link URLs, and a localized download hub for PWA, Android APK, and Fedora RPM.</p>
+      </description>
+    </release>
     <release version="1.8.64" date="2026-11-22">
       <description>
         <p>Bundled all 114 Quran Surahs (Arabic Uthmani and Uzbek Alouddin Mansur) locally for instant offline text loading without network delay, added offline Surah MP3 audio downloads on Linux Desktop and Web, and extended modern Nurul Islam PNG Quote Card sharing to Quran Ayahs, Hadiths, Zikr, and Duas.</p>
