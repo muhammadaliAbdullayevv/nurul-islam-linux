@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.61" date="2026-11-22">
+      <description>
+        <p>Upgraded Juma Mode with a fully customizable Friday Sunnah checklist featuring dedicated Men and Women Hanafi presets, custom user tasks, reordering, and item visibility toggles.</p>
+      </description>
+    </release>
     <release version="1.8.60" date="2026-11-22">
       <description>
         <p>Streamlined Scholars and Wisdom with a compact Daily Hikmat banner and added native PNG Quote Card saving and sharing on Android and Linux Desktop.</p>

@@ -1,14 +1,14 @@
 {
-  "versionCode": 79,
-  "versionName": "1.8.60",
+  "versionCode": 80,
+  "versionName": "1.8.61",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 79,
+  "minSupportedVersionCode": 80,
   "notes": {
-    "uz_lat": "'Allomalar va Hikmatlar' bo'limi yanada ixcham va qulay qilindi: yuqori karta ixcham Kunlik Hikmat ko'rinishiga keltirildi, Android va Linux Desktop uchun PNG Hikmat Kartasini to'g'ridan-to'g'ri ulashish va saqlash tizimi qo'shildi.",
-    "uz_cyr": "«Алломалар ва Ҳикматлар» бўлими янада ихчам ва қулай қилинди: юқори карта ихчам Кунлик Ҳикмат кўринишига келтирилди, Android ва Linux Desktop учун PNG Ҳикмат Картасини тўғридан-тўғри улашиш ва сақлаш тизими қўшилди.",
-    "en": "Polished Scholars & Wisdom UI with a compact Daily Wisdom banner so tabs & scholars appear immediately, and added native PNG Hikmat Card sharing for Android (system share sheet) and Linux Desktop (saves to ~/Pictures/Nurul-Islam, copies to clipboard & opens).",
-    "ru": "Улучшен раздел «Учёные и Мудрости»: верхняя карточка сделана компактной (только Мудрость дня), а также добавлена нативная отправка открыток PNG на Android и сохранение с копированием в буфер на Linux Desktop."
+    "uz_lat": "Juma Rejimi ro'yxati endi to'liq moslanuvchan! Erkaklar va Ayollar uchun alohida Hanafiy sunnatlar to'plami, o'zingizning shaxsiy Juma vazifalaringizni qo'shish, tartiblash va yashirish imkoniyati qo'shildi.",
+    "uz_cyr": "Жума Режими рўйхати энди тўлиқ мосланувчан! Эркаклар ва Аёллар учун алоҳида Ҳанафий суннатлар тўплами, ўзингизнинг шахсий Жума вазифаларингизни қўшиш, тартиблаш ва яшириш имконияти қўшилди.",
+    "en": "Juma Checklist is now fully customizable with dedicated Men & Women Hanafi Friday Sunnah presets, plus the ability to add personal tasks, reorder, hide/show items, and quick-add sunnahs.",
+    "ru": "Чек-лист Джумы теперь полностью настраиваемый: отдельные наборы сунн для мужчин и женщин по ханафитскому мазхабу, добавление личных задач, изменение порядка и скрытие пунктов."
   }
 }

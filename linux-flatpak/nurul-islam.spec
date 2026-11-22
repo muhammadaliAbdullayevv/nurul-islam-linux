@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.60
+Version:        1.8.61
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.61-1
+- Make Juma Mode checklist fully customizable with Men/Women Hanafi presets, custom tasks, ordering, and visibility toggles
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.60-1
 - Compact Daily Hikmat banner, remove font size switcher, and add native Android & Linux Desktop PNG Quote Card sharing
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.59-1
