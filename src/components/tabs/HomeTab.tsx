@@ -74,12 +74,12 @@ const HOME_ORDER_STORAGE_KEY = 'nq_home_feature_order_v1';
 const TILES_PER_PAGE = 12;
 
 const DEFAULT_FEATURE_ORDER: string[] = [
-  // Page 1 (12 tiles)
+  // Page 1 (12 tiles — Tasbih lives in bottom nav bar, replaced here by Scholars & Wisdom)
   'quran',
   'ramadan',
   'prayer',
   'qibla',
-  'tasbih',
+  'wisdom',
   'guide',
   'masjids',
   'juma',
@@ -109,7 +109,14 @@ function loadSavedFeatureOrder(): string[] {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         const validSet = new Set(DEFAULT_FEATURE_ORDER);
-        const cleaned = parsed.filter((id): id is string => typeof id === 'string' && validSet.has(id));
+        // Seamlessly migrate legacy 'tasbih' slot to 'wisdom' in-place (Tasbih is in bottom nav bar)
+        const migrated = parsed.map((id) => (id === 'tasbih' ? 'wisdom' : id));
+        const seen = new Set<string>();
+        const cleaned = migrated.filter((id): id is string => {
+          if (typeof id !== 'string' || !validSet.has(id) || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
         const missing = DEFAULT_FEATURE_ORDER.filter((id) => !cleaned.includes(id));
         return [...cleaned, ...missing];
       }
@@ -270,7 +277,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
       { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
       { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },
-      { id: 'tasbih', label: t.features.tasbih, icon: ZikrBeadsIcon, imageSrc: '/icons/home/tasbih.webp', badge: '' },
+      { id: 'wisdom', label: t.features.wisdom, icon: HadithBookIcon, imageSrc: '/icons/home/wisdom.webp', badge: '8' },
       { id: 'guide', label: t.features.guide, icon: WuduNamozGuideIcon, imageSrc: '/icons/home/guide.webp', badge: '' },
       { id: 'masjids', label: t.features.masjids, icon: MasjidDomeIcon, imageSrc: '/icons/home/masjids.webp', badge: '' },
       {

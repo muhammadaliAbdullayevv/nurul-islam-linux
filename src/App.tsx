@@ -64,6 +64,7 @@ const LifeGuideTab = lazy(tabLoaders.life);
 const FiqhTab = lazy(tabLoaders.fiqh);
 const TajweedTab = lazy(tabLoaders.tajweed);
 const SeerahTab = lazy(tabLoaders.seerah);
+const WisdomTab = lazy(tabLoaders.wisdom);
 const ProfileTab = lazy(tabLoaders.profile);
 const CitySelectorModal = lazy(modalLoaders.citySelector);
 const OnboardingModal = lazy(modalLoaders.onboarding);
@@ -986,6 +987,8 @@ function AppContent() {
               {activeTab === 'tajweed' && <TajweedTab />}
 
               {activeTab === 'seerah' && <SeerahTab />}
+
+              {activeTab === 'wisdom' && <WisdomTab />}
             </Suspense>
           </div>
         )}

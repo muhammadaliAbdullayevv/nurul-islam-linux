@@ -95,7 +95,7 @@ export function getLocalAppVersion(): LocalAppVersion {
       return { versionCode: dv.versionCode, versionName: dv.versionName };
     }
   }
-  return { versionCode: 77, versionName: '1.8.58' };
+  return { versionCode: 78, versionName: '1.8.59' };
 }
 
 export function getReleaseNoteText(release: RemoteAppRelease, language: AppLanguage): string {

@@ -110,6 +110,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
     { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
     { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
     { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },
+    { id: 'wisdom', label: t.features.wisdom, icon: MushafIcon, imageSrc: '/icons/home/wisdom.webp', badge: '8' },
     { id: 'tasbih', label: t.features.tasbih, icon: ZikrBeadsIcon, imageSrc: '/icons/home/tasbih.webp', badge: '' },
     {
       id: 'guide',
@@ -262,8 +263,8 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
             </div>
           </div>
 
-          {/* 2-Column × 13-Row Grid — All 26 Items Fit on Screen simultaneously */}
-          <div className="flex-1 min-h-0 p-2 grid grid-cols-2 grid-rows-[repeat(13,minmax(0,1fr))] gap-1.5 overflow-y-auto">
+          {/* 2-Column × 14-Row Grid — All 27 Items Fit on Screen simultaneously */}
+          <div className="flex-1 min-h-0 p-2 grid grid-cols-2 grid-rows-[repeat(14,minmax(0,1fr))] gap-1.5 overflow-y-auto">
             {desktopSidebarItems.map((item) => {
               const effectiveTab = activeSubTab || activeTab;
               const isActive =

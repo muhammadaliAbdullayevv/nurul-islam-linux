@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.59" date="2026-11-22">
+      <description>
+        <p>Added Scholars and Wisdom (Allomalar va Hikmatlar) featuring 48 curated works and commentaries from 8 Movarounnahr masters (Ahmad Yasawi, Bahauddin Naqshband, Alisher Navoi, Sufi Allahyar, Abdulkhaliq Ghijduwani, Imam al-Bukhari, Imam al-Maturidi, and Burhanuddin al-Marghinani), Daily Wisdom spotlight, bookmarks, and shareable PNG quote cards.</p>
+      </description>
+    </release>
     <release version="1.8.58" date="2026-11-22">
       <description>
         <p>Added native in-app and mandatory self-updater with PolicyKit authentication and automatic relaunch for RPM desktop installations, alongside 60% smaller startup bundle, zero-spinner tab prefetching, and gapless next-ayah audio pre-buffering.</p>

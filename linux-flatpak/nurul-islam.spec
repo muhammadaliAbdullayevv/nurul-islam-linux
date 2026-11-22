@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.58
+Version:        1.8.59
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.59-1
+- Add Scholars & Wisdom (Allomalar va Hikmatlar) featuring 8 Movarounnahr masters (Yasawi, Naqshband, Navoi, Sufi Allahyar, Ghijduwani, Bukhari, Maturidi, Marghinani) with 48 curated works, commentary, and PNG Quote Card generator
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.58-1
 - Add native in-app & forced RPM self-updater (PolicyKit + DNF/RPM + auto-relaunch) matching mobile OTA flow
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.57-1

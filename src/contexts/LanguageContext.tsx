@@ -74,6 +74,7 @@ export interface TranslationStrings {
     fiqh: string;
     tajweed: string;
     seerah: string;
+    wisdom: string;
   };
   home: {
     nextPrayer: string;
@@ -111,6 +112,7 @@ export interface TranslationStrings {
     fiqh: string;
     tajweed: string;
     seerah: string;
+    wisdom: string;
   };
   cityModal: {
     title: string;
@@ -470,6 +472,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Kunlik Savol-Javoblar',
       tajweed: 'Arab Alifbosi va Tajvid',
       seerah: "Siyrat va Payg'ambarlar",
+      wisdom: 'Allomalar va Hikmatlar',
     },
     home: {
       nextPrayer: 'Keyingi namoz',
@@ -507,6 +510,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Kunlik Savol-Javoblar',
       tajweed: 'Arab Alifbosi va Tajvid',
       seerah: "Siyrat va Payg'ambarlar",
+      wisdom: 'Allomalar & Hikmat',
     },
     cityModal: {
       title: 'Shahar, tuman yoki qishloq',
@@ -865,6 +869,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Кунлик Савол-Жавоблар',
       tajweed: 'Араб Алифбоси ва Тажвид',
       seerah: 'Сийрат ва Пайғамбарлар',
+      wisdom: 'Алломалар ва Ҳикматлар',
     },
     home: {
       nextPrayer: 'Кейинги намоз',
@@ -902,6 +907,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Савол-Жавоб',
       tajweed: 'Алифбо & Тажвид',
       seerah: 'Сийрат & Қиссалар',
+      wisdom: 'Алломалар & Ҳикмат',
     },
     cityModal: {
       title: 'Шаҳар, туман ёки қишлоқ',
@@ -1260,6 +1266,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Hanafi Fiqh Q&A',
       tajweed: 'Arabic & Tajweed',
       seerah: 'Seerah & 25 Prophets',
+      wisdom: 'Scholars & Wisdom',
     },
     home: {
       nextPrayer: 'Next Prayer',
@@ -1297,6 +1304,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Fiqh Q&A',
       tajweed: 'Alphabet & Tajweed',
       seerah: 'Seerah & Prophets',
+      wisdom: 'Scholars & Wisdom',
     },
     cityModal: {
       title: 'Select Location',
@@ -1655,6 +1663,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Вопросы и Ответы (Фикх)',
       tajweed: 'Арабский и Таджвид',
       seerah: 'Сира и 25 Пророков',
+      wisdom: 'Учёные и Мудрости',
     },
     home: {
       nextPrayer: 'Следующая молитва',
@@ -1692,6 +1701,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       fiqh: 'Фикх Q&A',
       tajweed: 'Алифба & Таджвид',
       seerah: 'Сира & Пророки',
+      wisdom: 'Учёные & Хикматы',
     },
     cityModal: {
       title: 'Выберите местоположение',

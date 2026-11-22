@@ -24,6 +24,7 @@ export const tabLoaders = {
   fiqh: () => import('../components/tabs/FiqhTab').then((m) => ({ default: m.FiqhTab })),
   tajweed: () => import('../components/tabs/TajweedTab').then((m) => ({ default: m.TajweedTab })),
   seerah: () => import('../components/tabs/SeerahTab').then((m) => ({ default: m.SeerahTab })),
+  wisdom: () => import('../components/tabs/WisdomTab').then((m) => ({ default: m.WisdomTab })),
   profile: () => import('../components/tabs/ProfileTab').then((m) => ({ default: m.ProfileTab })),
 } as const;
 

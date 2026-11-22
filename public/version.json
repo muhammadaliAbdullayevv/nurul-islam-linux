@@ -1,14 +1,14 @@
 {
-  "versionCode": 77,
-  "versionName": "1.8.58",
+  "versionCode": 78,
+  "versionName": "1.8.59",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 77,
+  "minSupportedVersionCode": 78,
   "notes": {
-    "uz_lat": "Linux Desktop (RPM) ilovasi uchun mobil ilovadagi kabi avtomatik va majburiy yangilash tizimi qo'shildi, shuningdek ilova ishga tushishi 60% ga tezlashtirildi, bo'limlar fonda oldindan yuklanadi hamda Qur'on va Hifz audio qiroati to'xtalishsiz uzluksiz ishlaydi.",
-    "uz_cyr": "Linux Desktop (RPM) иловаси учун мобил иловадаги каби автоматик ва мажбурий янгилаш тизими қўшилди, шунингдек илова ишга тушиши 60% га тезлаштирилди, бўлимлар фонда олдиндан юкланади ҳамда Қуръон ва Ҳифз аудио қироати тўхталишсиз узлуксиз ишлайди.",
-    "en": "Added native in-app & forced self-updater with auto-relaunch for the Linux Desktop RPM app (matching Android), plus 60% smaller cold-start bundle, zero-spinner background tab prefetching, and gapless next-ayah audio pre-buffering.",
-    "ru": "Добавлено встроенное принудительное автообновление RPM с автоперезапуском для Linux Desktop (как на Android), а также ускорен запуск на 60%, добавлена фоновая предзагрузка разделов и бесшовная буферизация аятов."
+    "uz_lat": "Yangi 'Allomalar va Hikmatlar' bo'limi qo'shildi! Xoja Ahmad Yassaviy (Devoni Hikmat), Bahouddin Naqshband (Dil ba yoru dast ba kor), Alisher Navoiy (Arba'in), So'fi Olloyor (Sabotul Ojizin), Abdulxoliq G'ijduvoniy, Imom al-Buxoriy, Imom al-Moturidiy va Burhoniddin Marg'inoniy ijodidan 48 ta sara hikmat, sharhlar, Kunlik Hikmat hamda rasm qilib ulashish (Hikmat Kartasi) imkoniyati!",
+    "uz_cyr": "Янги «Алломалар ва Ҳикматлар» бўлими қўшилди! Хожа Аҳмад Яссавий (Девони Ҳикмат), Баҳоуддин Нақшбанд (Дил ба ёру даст ба кор), Алишер Навоий (Арбаъин), Сўфи Оллоёр (Саботул Ожизин), Абдулхолиқ Ғиждувоний, Имом ал-Бухорий, Имом ал-Мотуридий ва Бурҳониддин Марғиноний ижодидан 48 та сара ҳикмат, шарҳлар, Кунлик Ҳикмат ҳамда расм қилиб улашиш (Ҳикмат Картаси) имконияти!",
+    "en": "Added the new 'Scholars & Wisdom' (Allomalar va Hikmatlar) heritage library featuring 48 curated works & commentaries from 8 great Central Asian scholars (Yasawi, Naqshband, Navoi, Sufi Allahyar, Ghijduwani, Bukhari, Maturidi & Marghinani), Daily Wisdom spotlight, bookmarks, and 1-tap shareable PNG Quote Cards!",
+    "ru": "Добавлен новый раздел «Учёные и Мудрости»! 48 избранных хикматов и комментариев 8 великих учёных Мавераннахра (Яссави, Накшбанд, Навои, Суфи Аллаяр, Гиждувани, Бухари, Матуриди и Маргинани), «Мудрость дня», закладки и создание красивых открыток PNG в одно касание!"
   }
 }
