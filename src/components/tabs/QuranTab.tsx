@@ -18,6 +18,7 @@ import {
   CloudDownload,
   Headphones,
   Layers,
+  Share2,
   Sparkles,
   X,
 } from 'lucide-react';
@@ -84,6 +85,23 @@ import {
   AudioDownloadProgress,
   NativeQuranAudioState,
 } from '../../utils/nativeQuranAudio';
+import {
+  buildSurahDetailFromLocal,
+  getLocalSurahRawSync,
+  loadLocalSurahRaw,
+} from '../../utils/localQuranData';
+import {
+  downloadWebSurahAudio,
+  getWebAudioDownloadSnapshot,
+  getWebOfflineAyahBlobUrl,
+  isWebAudioDownloaded,
+  removeWebSurahAudio,
+  subscribeWebAudioDownloads,
+} from '../../utils/webOfflineAudio';
+import {
+  generateNurulIslamShareCard,
+  shareOrSavePngCard,
+} from '../../utils/shareCardGenerator';
 
 interface QuranTabProps {
   initialSurahNumber?: number | null;
@@ -379,9 +397,11 @@ interface AyahCardProps {
   activeWordPos: number | null;
   isBookmarked: boolean;
   isCopied: boolean;
+  isSharing: boolean;
   onPlayAyah: (ayahNum: number) => void;
   onTogglePlayPause: () => void;
   onCopyAyah: (ayah: Ayah) => void;
+  onShareAyah: (ayah: Ayah) => void;
   onToggleBookmark: (surahNumber: number, surahName: string, ayahNumber: number) => void;
 }
 
@@ -397,9 +417,11 @@ const AyahCard = React.memo<AyahCardProps>(
     activeWordPos,
     isBookmarked,
     isCopied,
+    isSharing,
     onPlayAyah,
     onTogglePlayPause,
     onCopyAyah,
+    onShareAyah,
     onToggleBookmark,
   }) => {
     const transText = getAyahTranslation(ayah, selectedTranslation);
@@ -472,6 +494,23 @@ const AyahCard = React.memo<AyahCardProps>(
               aria-label="Play Ayah"
             >
               {isPlayingThis ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            </button>
+
+            <button
+              type="button"
+              disabled={isSharing}
+              onClick={(e) => {
+                e.stopPropagation();
+                onShareAyah(ayah);
+              }}
+              className={`p-2 rounded-xl transition disabled:opacity-50 ${
+                isDay
+                  ? 'bg-[#f1f5f9] text-[#0c4703] hover:bg-[#e1f5db]'
+                  : 'bg-slate-800 text-amber-300 hover:text-amber-200'
+              }`}
+              aria-label="Share Ayah Card"
+            >
+              <Share2 className={`w-3.5 h-3.5 ${isSharing ? 'animate-pulse' : ''}`} />
             </button>
 
             <button
@@ -576,6 +615,8 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'juz' | 'bookmarks'>('all');
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
+  const [sharingAyah, setSharingAyah] = useState<number | null>(null);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const [lastRead, setLastRead] = useState<LastReadState | null>(loadLastRead);
   const [completedSurahs, setCompletedSurahs] = useState<number[]>(loadCompletedSurahs);
   const [offlineSavedSet, setOfflineSavedSet] = useState<Set<number>>(() =>
@@ -583,7 +624,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   );
   const [isCurrentSavedOffline, setIsCurrentSavedOffline] = useState(false);
   const [downloadMap, setDownloadMap] = useState<Record<number, AudioDownloadProgress>>(() =>
-    getAllDownloadProgress()
+    hasNativeQuranAudioBridge() ? getAllDownloadProgress() : getWebAudioDownloadSnapshot()
   );
   const [visibleAyahCount, setVisibleAyahCount] = useState(35);
 
@@ -945,14 +986,17 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     [resolveWordForAyahTime]
   );
 
-  // Subscribe globally so background downloads persist across tab & surah switches
+  // Subscribe globally so background downloads persist across tab & surah switches (Android + Web/Desktop)
   useEffect(() => {
-    return subscribeAllAudioDownloads((map) => {
+    const onMapUpdate = (map: Record<number, AudioDownloadProgress>) => {
       setDownloadMap(map);
       if (Object.values(map).some((v) => v.status === 'done')) {
         setOfflineSavedSet(getAllOfflineSavedSurahNumbers(selectedTranslation));
       }
-    });
+    };
+    return hasNativeQuranAudioBridge()
+      ? subscribeAllAudioDownloads(onMapUpdate)
+      : subscribeWebAudioDownloads(onMapUpdate);
   }, [selectedTranslation]);
 
   // Sync React UI with background native QuranAudioService
@@ -1298,41 +1342,56 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         // Pre-buffer Ayah N+1 silently in background while Ayah N plays
         prebufferAyah(surah, ayahNumberInSurah + 1, reciterId);
 
-        const tryCandidate = (candIdx: number) => {
-          if (token !== playbackTokenRef.current || candIdx >= urls.length) {
-            if (token === playbackTokenRef.current) stopAudio();
-            return;
-          }
-
-          attachPlaybackHandlers(audio, () => {
-            if (candIdx + 1 < urls.length) {
-              tryCandidate(candIdx + 1);
-            } else {
-              stopAudio();
+        const playCandidatesList = (candidateUrls: string[]) => {
+          const tryCandidate = (candIdx: number) => {
+            if (token !== playbackTokenRef.current || candIdx >= candidateUrls.length) {
+              if (token === playbackTokenRef.current) stopAudio();
+              return;
             }
-          });
 
-          audio.src = urls[candIdx];
-          audio.load();
-          audio
-            .play()
-            .then(() => {
-              if (token !== playbackTokenRef.current) return;
-              setIsAudioPlaying(true);
-            })
-            .catch((err: unknown) => {
-              if (token !== playbackTokenRef.current) return;
-              const errName = (err as { name?: string })?.name;
-              if (errName === 'AbortError') return;
-              if (candIdx + 1 < urls.length) {
+            attachPlaybackHandlers(audio, () => {
+              if (candIdx + 1 < candidateUrls.length) {
                 tryCandidate(candIdx + 1);
               } else {
-                setIsAudioPlaying(false);
+                stopAudio();
               }
             });
+
+            audio.src = candidateUrls[candIdx];
+            audio.load();
+            audio
+              .play()
+              .then(() => {
+                if (token !== playbackTokenRef.current) return;
+                setIsAudioPlaying(true);
+              })
+              .catch((err: unknown) => {
+                if (token !== playbackTokenRef.current) return;
+                const errName = (err as { name?: string })?.name;
+                if (errName === 'AbortError') return;
+                if (candIdx + 1 < candidateUrls.length) {
+                  tryCandidate(candIdx + 1);
+                } else {
+                  setIsAudioPlaying(false);
+                }
+              });
+          };
+
+          tryCandidate(0);
         };
 
-        tryCandidate(0);
+        // On Web & Linux Desktop, play from local IndexedDB offline MP3 blob first when downloaded
+        if (isWebAudioDownloaded(surah.number, reciter.storageKey)) {
+          void getWebOfflineAyahBlobUrl(surah.number, reciter.storageKey, ayahNumberInSurah).then(
+            (offlineUrl) => {
+              if (token !== playbackTokenRef.current) return;
+              playCandidatesList(offlineUrl ? [offlineUrl, ...urls] : urls);
+            }
+          );
+          return;
+        }
+
+        playCandidatesList(urls);
       };
 
       if (canPromotePrebuffered && preEl) {
@@ -1535,8 +1594,25 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         loadOfflineSurah(surahNumber, selectedTranslation) ||
         (await getCachedSurahAsync(surahNumber, selectedTranslation));
       if (loadedSurahIdRef.current !== surahNumber) return;
-      if (PRELOADED_SURAHS[surahNumber] || cachedOffline) {
-        const rawBase = cachedOffline || PRELOADED_SURAHS[surahNumber];
+
+      const isUzbekTrans = selectedTranslation === 'uz_mansur' || selectedTranslation === 'uz_cyr';
+
+      // Fast-path: load bundled offline Surah text (/data/quran/{n}.json) in ~2ms for ALL 114 Surahs!
+      let localBundledSurah: SurahDetail | null = null;
+      if (!cachedOffline && !PRELOADED_SURAHS[surahNumber]) {
+        const localRaw =
+          getLocalSurahRawSync(surahNumber) || (await loadLocalSurahRaw(surahNumber));
+        if (loadedSurahIdRef.current !== surahNumber) return;
+        if (localRaw && isUzbekTrans) {
+          localBundledSurah = buildSurahDetailFromLocal(localRaw, selectedTranslation);
+          if (localBundledSurah) {
+            void putCachedSurahAsync(localBundledSurah, selectedTranslation);
+          }
+        }
+      }
+
+      if (PRELOADED_SURAHS[surahNumber] || cachedOffline || localBundledSurah) {
+        const rawBase = cachedOffline || localBundledSurah || PRELOADED_SURAHS[surahNumber];
         const reciterForLoad = selectedReciterIdRef.current;
 
         // Hydrate per-Qori timings & shared Uthmani words from on-device IndexedDB immediately (~2ms)
@@ -1673,17 +1749,33 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       }
 
       const meta = ALL_SURAHS.find((s) => s.number === surahNumber);
-      if (meta) {
-        setActiveSurahData({
-          ...meta,
-          bismillahPre: surahNumber !== 1 && surahNumber !== 9,
-          ayahs: [],
-        });
+      const localRawForNonUz =
+        getLocalSurahRawSync(surahNumber) || (await loadLocalSurahRaw(surahNumber));
+      if (loadedSurahIdRef.current !== surahNumber) return;
+
+      // Show local bundled Arabic text immediately while non-Uzbek translation fetches (0ms blank wait!)
+      const instantLocalSurah = localRawForNonUz
+        ? buildSurahDetailFromLocal(localRawForNonUz, selectedTranslation)
+        : null;
+
+      if (instantLocalSurah) {
+        activeSurahRef.current = instantLocalSurah;
+        setActiveSurahData(instantLocalSurah);
+        setIsLoadingSurah(false);
+        versesScrollRef.current?.scrollTo({ top: 0 });
+      } else {
+        if (meta) {
+          setActiveSurahData({
+            ...meta,
+            bismillahPre: surahNumber !== 1 && surahNumber !== 9,
+            ayahs: [],
+          });
+        }
+        setIsLoadingSurah(true);
+        versesScrollRef.current?.scrollTo({ top: 0 });
       }
-      setIsLoadingSurah(true);
-      versesScrollRef.current?.scrollTo({ top: 0 });
+
       try {
-        const isUzbekTrans = selectedTranslation === 'uz_mansur' || selectedTranslation === 'uz_cyr';
         let edition = 'en.sahih';
         if (isUzbekTrans) edition = 'uz.sodik';
         else if (selectedTranslation === 'ru_kuliev') edition = 'ru.kuliev';
@@ -1714,23 +1806,28 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         };
 
         const reciterForFetch = selectedReciterIdRef.current;
-        const [arabicRes, mansurMap, fallbackTransRes, qdcData] = await Promise.all([
-          fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`),
-          fetchUzMansur(),
+
+        // NEVER block Surah text display on heavy qurancdn word timings — kick off in background!
+        const qdcBgPromise = fetchSurahAudioAndWords(surahNumber, reciterForFetch).catch(() => ({
+          fullAudioUrl: undefined,
+          audioDurationMs: undefined,
+          verseTimings: undefined,
+          wordsByAyah: {} as Record<number, AyahWord[]>,
+        }));
+
+        const [arabicRes, mansurMap, fallbackTransRes] = await Promise.all([
+          localRawForNonUz
+            ? Promise.resolve(null)
+            : fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`),
+          localRawForNonUz ? Promise.resolve(null) : fetchUzMansur(),
           isUzbekTrans
             ? Promise.resolve(null)
             : fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${edition}`),
-          fetchSurahAudioAndWords(surahNumber, reciterForFetch).catch(() => ({
-            fullAudioUrl: undefined,
-            audioDurationMs: undefined,
-            verseTimings: undefined,
-            wordsByAyah: {} as Record<number, AyahWord[]>,
-          })),
         ]);
 
         // Only fetch uz.sodik if Alauddin Mansur concise endpoint was unavailable
         let sodikJson: { data?: { ayahs?: Array<{ text?: string }> } } | null = null;
-        if (isUzbekTrans && !mansurMap) {
+        if (isUzbekTrans && !localRawForNonUz && !mansurMap) {
           try {
             const r = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/uz.sodik`);
             if (r.ok) sodikJson = await r.json();
@@ -1741,97 +1838,142 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
         if (loadedSurahIdRef.current !== surahNumber) return;
 
-        const arabicJson = await arabicRes.json();
         const transJson = fallbackTransRes ? await fallbackTransRes.json() : sodikJson;
+        let builtSurah: SurahDetail;
 
-        const stripLongTafsirNote = (text: string): string => {
-          // If uz.sodik fallback is used, remove multi-sentence inline parenthetical tafsir commentary
-          const stripped = text.replace(/\([^()]{70,}\)/g, '').replace(/\s{2,}/g, ' ').trim();
-          return stripped || text;
-        };
+        if (localRawForNonUz) {
+          const extMap: Record<number, string> = {};
+          const transRows = (transJson?.data?.ayahs || []) as Array<{
+            numberInSurah?: number;
+            text?: string;
+          }>;
+          transRows.forEach((row, idx) => {
+            const num = row.numberInSurah || idx + 1;
+            if (row.text) extMap[num] = row.text;
+          });
+          builtSurah =
+            buildSurahDetailFromLocal(localRawForNonUz, selectedTranslation, extMap) ||
+            instantLocalSurah!;
+        } else {
+          const arabicJson = await arabicRes!.json();
 
-        const meta = ALL_SURAHS.find((s) => s.number === surahNumber)!;
-        const ayahs: Ayah[] = (arabicJson.data.ayahs || []).map(
-          (
-            a: { numberInSurah: number; number: number; text: string; juz?: number; page?: number },
-            idx: number
-          ) => {
-            const concMansur = mansurMap?.[a.numberInSurah];
-            const rawFallback = transJson?.data?.ayahs?.[idx]?.text;
-            const rawText = concMansur
-              ? concMansur
-              : rawFallback
-              ? isUzbekTrans
-                ? stripLongTafsirNote(rawFallback)
+          const stripLongTafsirNote = (text: string): string => {
+            const stripped = text.replace(/\([^()]{70,}\)/g, '').replace(/\s{2,}/g, ' ').trim();
+            return stripped || text;
+          };
+
+          const sMeta = ALL_SURAHS.find((s) => s.number === surahNumber)!;
+          const ayahs: Ayah[] = (arabicJson.data.ayahs || []).map(
+            (
+              a: { numberInSurah: number; number: number; text: string; juz?: number; page?: number },
+              idx: number
+            ) => {
+              const concMansur = mansurMap?.[a.numberInSurah];
+              const rawFallback = transJson?.data?.ayahs?.[idx]?.text;
+              const rawText = concMansur
+                ? concMansur
                 : rawFallback
-              : 'Translation unavailable offline.';
-            const transText = selectedTranslation === 'uz_mansur' ? cyrillicToLatinUz(rawText) : rawText;
-            const sNum = surahNumber.toString().padStart(3, '0');
-            const aNum = a.numberInSurah.toString().padStart(3, '0');
+                ? isUzbekTrans
+                  ? stripLongTafsirNote(rawFallback)
+                  : rawFallback
+                : 'Translation unavailable offline.';
+              const transText =
+                selectedTranslation === 'uz_mansur' ? cyrillicToLatinUz(rawText) : rawText;
+              const sNum = surahNumber.toString().padStart(3, '0');
+              const aNum = a.numberInSurah.toString().padStart(3, '0');
 
-            return {
-              numberInSurah: a.numberInSurah,
-              number: a.number,
-              text: a.text,
-              words: qdcData.wordsByAyah[a.numberInSurah],
-              translation: transText,
-              translations: {
-                [selectedTranslation]: transText,
-                ...(isUzbekTrans
-                  ? { uz_cyr: rawText, uz_mansur: cyrillicToLatinUz(rawText) }
-                  : {}),
-              },
-              juz: a.juz,
-              page: a.page,
-              audioUrl: `https://everyayah.com/data/Alafasy_128kbps/${sNum}${aNum}.mp3`,
-            };
-          }
-        );
+              return {
+                numberInSurah: a.numberInSurah,
+                number: a.number,
+                text: a.text,
+                translation: transText,
+                translations: {
+                  [selectedTranslation]: transText,
+                  ...(isUzbekTrans
+                    ? { uz_cyr: rawText, uz_mansur: cyrillicToLatinUz(rawText) }
+                    : {}),
+                },
+                juz: a.juz,
+                page: a.page,
+                audioUrl: `https://everyayah.com/data/Alafasy_128kbps/${sNum}${aNum}.mp3`,
+              };
+            }
+          );
 
-        const builtSurah: SurahDetail = {
-          ...meta,
-          ayahs,
-          bismillahPre: surahNumber !== 1 && surahNumber !== 9,
-          fullAudioUrl: qdcData.fullAudioUrl,
-          audioDurationMs: qdcData.audioDurationMs,
-          audioReciterId: reciterForFetch,
-          verseTimings: qdcData.verseTimings,
-        };
+          builtSurah = {
+            ...sMeta,
+            ayahs,
+            bismillahPre: surahNumber !== 1 && surahNumber !== 9,
+          };
+        }
+
         activeSurahRef.current = builtSurah;
         setActiveSurahData(builtSurah);
+        setIsLoadingSurah(false);
         void putCachedSurahAsync(builtSurah, selectedTranslation);
-        if (qdcData.audioDurationMs) {
-          setAudioDuration(qdcData.audioDurationMs / 1000);
-        }
 
         if (pendingAutoPlayRef.current) {
           pendingAutoPlayRef.current = false;
-          startPlayingFromAyah(1, 0);
+          startPlayingFromAyah(1, 0, reciterForFetch);
+        } else {
+          prebufferAyah(builtSurah, targetAyah, reciterForFetch);
         }
+
+        // Hydrate word timings & fullAudioUrl silently in the background once text is visible
+        void qdcBgPromise.then((qdcData) => {
+          if (
+            loadedSurahIdRef.current !== surahNumber ||
+            selectedReciterIdRef.current !== reciterForFetch
+          ) {
+            return;
+          }
+          if (qdcData.verseTimings?.length || Object.keys(qdcData.wordsByAyah).length > 0) {
+            const latest = activeSurahRef.current || builtSurah;
+            const enriched: SurahDetail = {
+              ...latest,
+              fullAudioUrl: qdcData.fullAudioUrl ?? latest.fullAudioUrl,
+              audioDurationMs: qdcData.audioDurationMs ?? latest.audioDurationMs,
+              audioReciterId: qdcData.verseTimings?.length ? reciterForFetch : latest.audioReciterId,
+              verseTimings: qdcData.verseTimings ?? latest.verseTimings,
+              ayahs: latest.ayahs.map((a) => ({
+                ...a,
+                words: qdcData.wordsByAyah[a.numberInSurah] || a.words,
+              })),
+            };
+            activeSurahRef.current = enriched;
+            setActiveSurahData(enriched);
+            void putCachedSurahAsync(enriched, selectedTranslation);
+            if (enriched.audioDurationMs) {
+              setAudioDuration(enriched.audioDurationMs / 1000);
+            }
+          }
+        });
       } catch {
         if (loadedSurahIdRef.current !== surahNumber) return;
-        const meta = ALL_SURAHS.find((s) => s.number === surahNumber)!;
-        const locMeta = getLocalizedSurahMeta(
-          meta.number,
-          meta.englishName,
-          meta.englishNameTranslation,
-          language
-        );
-        setActiveSurahData({
-          ...meta,
-          bismillahPre: surahNumber !== 1 && surahNumber !== 9,
-          ayahs: [
-            {
-              numberInSurah: 1,
-              number: 1,
-              text: meta.name,
-              translation: `${meta.number}. ${locMeta.name} (${locMeta.meaning}) — ${meta.numberOfAyahs} ${t.quran.versesUnit}.`,
-              audioUrl: `https://everyayah.com/data/Alafasy_128kbps/${surahNumber
-                .toString()
-                .padStart(3, '0')}001.mp3`,
-            },
-          ],
-        });
+        if (!instantLocalSurah) {
+          const sMeta = ALL_SURAHS.find((s) => s.number === surahNumber)!;
+          const locMeta = getLocalizedSurahMeta(
+            sMeta.number,
+            sMeta.englishName,
+            sMeta.englishNameTranslation,
+            language
+          );
+          setActiveSurahData({
+            ...sMeta,
+            bismillahPre: surahNumber !== 1 && surahNumber !== 9,
+            ayahs: [
+              {
+                numberInSurah: 1,
+                number: 1,
+                text: sMeta.name,
+                translation: `${sMeta.number}. ${locMeta.name} (${locMeta.meaning}) — ${sMeta.numberOfAyahs} ${t.quran.versesUnit}.`,
+                audioUrl: `https://everyayah.com/data/Alafasy_128kbps/${surahNumber
+                  .toString()
+                  .padStart(3, '0')}001.mp3`,
+              },
+            ],
+          });
+        }
         pendingAutoPlayRef.current = false;
       } finally {
         if (loadedSurahIdRef.current === surahNumber) {
@@ -1945,31 +2087,47 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
     const nativeDownloaded =
       hasNativeQuranAudioBridge() && isNativeAudioDownloaded(surahNum, reciter.storageKey);
+    const webDownloaded =
+      !hasNativeQuranAudioBridge() && isWebAudioDownloaded(surahNum, reciter.storageKey);
     const alreadyDone = hasNativeQuranAudioBridge()
       ? nativeDownloaded && isCurrentSavedOffline
-      : isCurrentSavedOffline;
+      : webDownloaded && isCurrentSavedOffline;
 
     if (alreadyDone) {
       removeOfflineSurah(surahNum, selectedTranslation);
       if (hasNativeQuranAudioBridge()) {
         removeNativeSurahAudio(surahNum, reciter.storageKey);
+      } else {
+        void removeWebSurahAudio(surahNum, reciter.storageKey, activeSurahData.ayahs.length);
       }
       setIsCurrentSavedOffline(false);
     } else {
       saveOfflineSurah(activeSurahData, selectedTranslation);
+      void putCachedSurahAsync(activeSurahData, selectedTranslation);
       setIsCurrentSavedOffline(true);
-      if (hasNativeQuranAudioBridge() && !nativeDownloaded) {
-        const qdcUrl =
-          activeSurahData.audioReciterId === reciterId ? activeSurahData.fullAudioUrl : undefined;
-        downloadNativeSurahAudio(surahNum, {
-          reciterKey: reciter.storageKey,
-          preferFullSurah: Boolean(reciter.preferFullSurahStream),
-          ayahs: activeSurahData.ayahs.map((a) => ({
+      if (hasNativeQuranAudioBridge()) {
+        if (!nativeDownloaded) {
+          const qdcUrl =
+            activeSurahData.audioReciterId === reciterId ? activeSurahData.fullAudioUrl : undefined;
+          downloadNativeSurahAudio(surahNum, {
+            reciterKey: reciter.storageKey,
+            preferFullSurah: Boolean(reciter.preferFullSurahStream),
+            ayahs: activeSurahData.ayahs.map((a) => ({
+              ayahNumber: a.numberInSurah,
+              urls: getAyahAudioCandidates(surahNum, a, reciterId),
+            })),
+            fullUrls: getFullSurahAudioCandidates(surahNum, qdcUrl, reciterId),
+          });
+        }
+      } else if (!webDownloaded) {
+        void downloadWebSurahAudio(
+          surahNum,
+          reciter.storageKey,
+          activeSurahData.ayahs.map((a) => ({
             ayahNumber: a.numberInSurah,
             urls: getAyahAudioCandidates(surahNum, a, reciterId),
-          })),
-          fullUrls: getFullSurahAudioCandidates(surahNum, qdcUrl, reciterId),
-        });
+          }))
+        );
       }
     }
     setOfflineSavedSet(getAllOfflineSavedSurahNumbers(selectedTranslation));
@@ -2061,11 +2219,103 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       );
       const transText = getAyahTranslation(ayah, selectedTranslation);
       const textToCopy = `${ayah.text}\n\n"${transText}"\n- ${loc.name} (${surah.number}:${ayah.numberInSurah})`;
-      navigator.clipboard.writeText(textToCopy);
+      navigator.clipboard.writeText(textToCopy).catch(() => undefined);
       setCopiedAyah(ayah.numberInSurah);
       setTimeout(() => setCopiedAyah(null), 2000);
     },
     [language, selectedTranslation]
+  );
+
+  const showShareToast = useCallback((msg: string) => {
+    setShareToast(msg);
+    window.setTimeout(() => {
+      setShareToast((cur) => (cur === msg ? null : cur));
+    }, 2400);
+  }, []);
+
+  const handleShareAyahCard = useCallback(
+    async (ayah: Ayah) => {
+      const surah = activeSurahRef.current;
+      if (!surah) return;
+      setSharingAyah(ayah.numberInSurah);
+      try {
+        const loc = getLocalizedSurahMeta(
+          surah.number,
+          surah.englishName,
+          surah.englishNameTranslation,
+          language
+        );
+        const transText = getAyahTranslation(ayah, selectedTranslation);
+        const trMeta = TRANSLATION_OPTIONS.find((o) => o.id === selectedTranslation);
+
+        const quranTitle =
+          language === 'ru'
+            ? 'Священный Коран'
+            : language === 'en'
+            ? 'The Holy Quran'
+            : language === 'uz_cyr'
+            ? 'Қуръони Карим'
+            : "Qur'oni Karim";
+        const ayahWord =
+          language === 'ru'
+            ? 'Аят'
+            : language === 'en'
+            ? 'Ayah'
+            : language === 'uz_cyr'
+            ? 'Оят'
+            : 'Oyat';
+        const transLabel =
+          language === 'ru'
+            ? 'Перевод смысла'
+            : language === 'en'
+            ? 'Translation'
+            : language === 'uz_cyr'
+            ? 'Маънолар таржимаси'
+            : "Ma'nolar tarjimasi";
+        const savedLabel =
+          language === 'ru'
+            ? 'Открытка аята сохранена (PNG)'
+            : language === 'en'
+            ? 'Ayah card saved as PNG'
+            : language === 'uz_cyr'
+            ? 'Оят картаси юклаб олинди'
+            : 'Oyat kartasi yuklab olindi';
+
+        const rendered = await generateNurulIslamShareCard({
+          isDay,
+          eyebrow: `${quranTitle} · ${loc.name}`,
+          metaPill: `${surah.number}:${ayah.numberInSurah}  •  ${ayahWord} ${ayah.numberInSurah}  •  \u2067${surah.name}\u2069`,
+          title: `${surah.number}. ${loc.name}`,
+          subtitle: loc.meaning,
+          featuredText: ayah.text,
+          featuredIsArabic: true,
+          bodyText: transText,
+          noteLabel: trMeta ? transLabel : undefined,
+          noteText: trMeta ? trMeta.author : undefined,
+          footerSectionTitle: quranTitle,
+        });
+        if (!rendered) throw new Error('Canvas unavailable');
+
+        const fileName = `nurul-islam-ayah-${surah.number}-${ayah.numberInSurah}.png`;
+        const caption = `${ayah.text}\n\n«${transText}»\n— ${loc.name} (${surah.number}:${ayah.numberInSurah})\nNurul Islam · nurulislam.mabdullayev.dev`;
+        const res = await shareOrSavePngCard({
+          rendered,
+          fileName,
+          shareTitle: `${loc.name} (${surah.number}:${ayah.numberInSurah})`,
+          caption,
+        });
+        if (res.method === 'desktop') {
+          showShareToast(res.savedPath ? `${savedLabel}: ${res.savedPath}` : savedLabel);
+        } else if (res.method === 'download') {
+          showShareToast(savedLabel);
+        }
+      } catch {
+        handleCopyAyah(ayah);
+      } finally {
+        setSharingAyah(null);
+      }
+    },
+    [handleCopyAyah, isDay, language, selectedTranslation, showShareToast]
   );
 
   const filteredSurahs = ALL_SURAHS.filter((surah) => {
@@ -2203,13 +2453,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
     const dlEntry = downloadMap[activeSurahData.number];
     const isDlActive = dlEntry?.status === 'downloading';
-    const isNativeAudioDone =
-      hasNativeQuranAudioBridge() &&
-      (dlEntry?.status === 'done' ||
-        isNativeAudioDownloaded(activeSurahData.number, activeReciter.storageKey));
-    const isOfflineReady = hasNativeQuranAudioBridge()
-      ? isCurrentSavedOffline && isNativeAudioDone
-      : isCurrentSavedOffline;
+    const isAudioDone = hasNativeQuranAudioBridge()
+      ? dlEntry?.status === 'done' ||
+        isNativeAudioDownloaded(activeSurahData.number, activeReciter.storageKey)
+      : dlEntry?.status === 'done' ||
+        isWebAudioDownloaded(activeSurahData.number, activeReciter.storageKey);
+    const isOfflineReady = isCurrentSavedOffline && isAudioDone;
 
     return (
       <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
@@ -2339,9 +2588,11 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                     activeWordPos={isActive ? activeWordPos : null}
                     isBookmarked={bookmarkedSet.has(ayah.numberInSurah)}
                     isCopied={copiedAyah === ayah.numberInSurah}
+                    isSharing={sharingAyah === ayah.numberInSurah}
                     onPlayAyah={handlePlayAyahCard}
                     onTogglePlayPause={handleTogglePlayPause}
                     onCopyAyah={handleCopyAyah}
+                    onShareAyah={handleShareAyahCard}
                     onToggleBookmark={handleToggleBookmarkStable}
                   />
                 );
@@ -2519,6 +2770,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         </div>
 
         {reciterPickerModal}
+
+        {shareToast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-xl border border-emerald-600/50 max-w-[90vw] truncate">
+            {shareToast}
+          </div>
+        )}
       </div>
     );
   }
@@ -2796,11 +3053,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
             const cardDl = downloadMap[surah.number];
             const cardDlActive = cardDl?.status === 'downloading';
-            const cardAudioDone =
-              hasNativeQuranAudioBridge() &&
-              (cardDl?.status === 'done' ||
-                isNativeAudioDownloaded(surah.number, activeReciter.storageKey));
-            const cardFullySaved = hasNativeQuranAudioBridge() ? isCached && cardAudioDone : isCached;
+            const cardAudioDone = hasNativeQuranAudioBridge()
+              ? cardDl?.status === 'done' ||
+                isNativeAudioDownloaded(surah.number, activeReciter.storageKey)
+              : cardDl?.status === 'done' ||
+                isWebAudioDownloaded(surah.number, activeReciter.storageKey);
+            const cardFullySaved = isCached && cardAudioDone;
 
             return (
               <div

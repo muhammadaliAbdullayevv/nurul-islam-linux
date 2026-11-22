@@ -1,14 +1,14 @@
 {
-  "versionCode": 82,
-  "versionName": "1.8.63",
+  "versionCode": 83,
+  "versionName": "1.8.64",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 82,
+  "minSupportedVersionCode": 83,
   "notes": {
-    "uz_lat": "Hikmat PNG ulashish kartasi butunlay yangi, zamonaviy va Nurul Islam dizayniga mukammal mos ko'rinishga keltirildi: Kunduzgi/Tungi mavzuga mos zumrad va oltin palitra, nafis islomiy naqshlar, ilova logotipi hamda muvozanatli tipografiya.",
-    "uz_cyr": "Ҳикмат PNG улашиш картаси бутунлай янги, замонавий ва Nurul Islam дизайнига мукаммал мос кўринишга келтирилди: Кундузги/Тунги мавзуга мос зумрад ва олтин палитра, нафис исломий нақшлар, илова логотипи ҳамда мувозанатли типография.",
-    "en": "Redesigned the shareable Wisdom PNG Quote Card with a modern Nurul Islam visual identity: Day & Night emerald-and-gold palettes, elevated card framing, subtle geometric star watermarks, the Nurul Islam app crest, and balanced typography.",
-    "ru": "Полностью обновлён дизайн открытки-цитаты (PNG) в разделе «Учёные и Мудрости» в современном стиле Nurul Islam: дневная и ночная изумрудно-золотая палитра, изящные исламские узоры, фирменный логотип и сбалансированная типографика."
+    "uz_lat": "Barcha 114 suraning arabcha va o'zbekcha matni ilova ichida oflayn jamlandi — endi har qanday sura bir zumda (kutishsiz!) ochiladi. Web va Linux Desktopda ham oflayn audio yuklab olish ishga tushirildi. Qur'on oyatlari, Hadislar, Zikrlar va Duolar uchun zamonaviy Nurul Islam PNG ulashish kartalari qo'shildi!",
+    "uz_cyr": "Барча 114 суранинг арабча ва ўзбекча матни илова ичида офлайн жамланди — энди ҳар қандай сура бир зумда (кутишсиз!) очилади. Web ва Linux Desktopда ҳам офлайн аудио юклаб олиш ишга туширилди. Қуръон оятлари, Ҳадислар, Зикрлар ва Дуолар учун замонавий Nurul Islam PNG улашиш карталари қўшилди!",
+    "en": "All 114 Surahs (Arabic Uthmani + Uzbek Alouddin Mansur) are now bundled locally for instant offline reading with zero spinner delay! Added real offline Surah MP3 audio downloads on Web & Linux Desktop (matching Android), plus modern Nurul Islam shareable PNG cards for every Quran Ayah, Hadith, Zikr, and Dua.",
+    "ru": "Тексты всех 114 сур (арабский Усмани и узбекский перевод) теперь встроены офлайн — любая сура открывается мгновенно без ожидания! Добавлена офлайн-загрузка аудио сур для Web и Linux Desktop, а также современные PNG-открытки Nurul Islam для аятов Корана, хадисов, зикров и дуа."
   }
 }

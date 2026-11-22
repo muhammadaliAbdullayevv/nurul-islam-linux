@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.64" date="2026-11-22">
+      <description>
+        <p>Bundled all 114 Quran Surahs (Arabic Uthmani and Uzbek Alouddin Mansur) locally for instant offline text loading without network delay, added offline Surah MP3 audio downloads on Linux Desktop and Web, and extended modern Nurul Islam PNG Quote Card sharing to Quran Ayahs, Hadiths, Zikr, and Duas.</p>
+      </description>
+    </release>
     <release version="1.8.63" date="2026-11-22">
       <description>
         <p>Redesigned the shareable Scholars and Wisdom PNG Quote Card with modern Nurul Islam Day and Night emerald-and-gold palettes, elevated card framing, subtle Rub el Hizb watermarks, and the Nurul Islam app icon footer.</p>

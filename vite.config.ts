@@ -48,6 +48,20 @@ export default defineConfig(() => {
           globPatterns: ['**/*.{js,css,html,ico,png,webp,svg,woff,woff2,jpg}'],
           runtimeCaching: [
             {
+              urlPattern: /\/data\/quran\/\d+\.json$/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'quran-local-text-cache',
+                expiration: {
+                  maxEntries: 120,
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
               options: {

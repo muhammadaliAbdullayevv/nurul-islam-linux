@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Sparkles,
   Search,
@@ -9,6 +9,7 @@ import {
   Bookmark,
   ArrowUpRight,
   Layers,
+  Share2,
 } from 'lucide-react';
 import {
   DuaHandsIcon,
@@ -32,6 +33,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { cyrillicToLatinUz, latinToCyrillicUz } from '../../utils/uzbekScript';
 import { getHadithCollectionSync, loadHadithCollectionAsync } from '../../utils/hadithIdbCache';
+import { loadLocalSurahRaw } from '../../utils/localQuranData';
+import {
+  ShareCardPayload,
+  generateNurulIslamShareCard,
+  shareOrSavePngCard,
+} from '../../utils/shareCardGenerator';
 
 export type HubSection = 'hub' | 'duas' | 'zikr' | 'hadith' | 'ayats' | 'farz' | 'niyat' | 'saved';
 
@@ -73,6 +80,8 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
   }, [initialSection]);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [sharingKey, setSharingKey] = useState<string | null>(null);
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   // Duas sub-filter + tasbih counter state
   const [duaFilter, setDuaFilter] = useState<'all' | 'curated' | 'morning' | 'rabbana' | 'ramadan'>('all');
@@ -176,6 +185,56 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
     setCopiedKey(key);
     window.setTimeout(() => setCopiedKey(null), 1800);
   };
+
+  const showShareToast = useCallback((msg: string) => {
+    setShareToast(msg);
+    window.setTimeout(() => {
+      setShareToast((cur) => (cur === msg ? null : cur));
+    }, 2400);
+  }, []);
+
+  const handleSharePngCard = useCallback(
+    async (
+      key: string,
+      fileName: string,
+      shareTitle: string,
+      caption: string,
+      payload: Omit<ShareCardPayload, 'isDay'>
+    ) => {
+      setSharingKey(key);
+      try {
+        const rendered = await generateNurulIslamShareCard({
+          ...payload,
+          isDay,
+        });
+        if (!rendered) throw new Error('Canvas unavailable');
+        const savedLabel =
+          language === 'ru'
+            ? 'Открытка сохранена (PNG)'
+            : language === 'en'
+            ? 'Card saved as PNG'
+            : language === 'uz_cyr'
+            ? 'Карта юклаб олинди (PNG)'
+            : 'Karta yuklab olindi (PNG)';
+        const res = await shareOrSavePngCard({
+          rendered,
+          fileName,
+          shareTitle,
+          caption: `${caption}\nNurul Islam · nurulislam.mabdullayev.dev`,
+        });
+        if (res.method === 'desktop') {
+          showShareToast(res.savedPath ? `${savedLabel}: ${res.savedPath}` : savedLabel);
+        } else if (res.method === 'download') {
+          showShareToast(savedLabel);
+        }
+      } catch {
+        handleCopy(key, caption);
+      } finally {
+        setSharingKey(null);
+      }
+    },
+    [isDay, language, showShareToast]
+  );
 
   const handleIncrementDua = (id: string, max: number) => {
     setCounterState((prev) => {
@@ -590,6 +649,40 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
+                        disabled={sharingKey === `dua_${dua.id}`}
+                        onClick={() =>
+                          void handleSharePngCard(
+                            `dua_${dua.id}`,
+                            `nurul-islam-dua-${dua.id}.png`,
+                            loc.title,
+                            copyText,
+                            {
+                              eyebrow: `${ui.cards.duas.title} · ${dua.reference}`,
+                              metaPill: dua.reference,
+                              title: loc.title,
+                              featuredText: dua.arabic,
+                              featuredIsArabic: true,
+                              transliteration: dua.transliteration,
+                              bodyText: `«${loc.translation}»`,
+                              footerSectionTitle: ui.cards.duas.title,
+                            }
+                          )
+                        }
+                        aria-label="Share Dua Card"
+                        className={`p-1.5 rounded-lg disabled:opacity-50 ${
+                          isDay
+                            ? 'text-[#0c4703] hover:bg-[#eef9ea]'
+                            : 'text-amber-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <Share2
+                          className={`w-3.5 h-3.5 ${
+                            sharingKey === `dua_${dua.id}` ? 'animate-pulse' : ''
+                          }`}
+                        />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => toggleSaved(`dua_${dua.id}`, loc.title, copyText)}
                         className={`p-1.5 rounded-lg ${
                           savedKeys.has(`dua_${dua.id}`)
@@ -699,6 +792,38 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        disabled={sharingKey === d.id}
+                        onClick={() =>
+                          void handleSharePngCard(
+                            d.id,
+                            `nurul-islam-dua-${d.id}.png`,
+                            occasion,
+                            copyText,
+                            {
+                              eyebrow: `${ui.cards.duas.title} · ${ref}`,
+                              metaPill: ref,
+                              title: occasion,
+                              featuredText: d.arabic || undefined,
+                              featuredIsArabic: Boolean(d.arabic),
+                              transliteration: d.arabic ? translit : undefined,
+                              bodyText: d.arabic ? uzText : `${translit}\n\n${uzText}`,
+                              footerSectionTitle: ui.cards.duas.title,
+                            }
+                          )
+                        }
+                        aria-label="Share Dua Card"
+                        className={`p-1.5 rounded-lg disabled:opacity-50 ${
+                          isDay
+                            ? 'text-[#0c4703] hover:bg-[#eef9ea]'
+                            : 'text-amber-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <Share2
+                          className={`w-3.5 h-3.5 ${sharingKey === d.id ? 'animate-pulse' : ''}`}
+                        />
+                      </button>
                       <button
                         type="button"
                         onClick={() => toggleSaved(d.id, occasion, copyText)}
@@ -868,6 +993,47 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
+                      disabled={sharingKey === itemKey}
+                      onClick={() => {
+                        const secTitle = section === 'zikr' ? ui.cards.zikr.title : ui.cards.hadith.title;
+                        const numLabel = `#${row.n || idx + 1}`;
+                        void handleSharePngCard(
+                          itemKey,
+                          `nurul-islam-${section}-${cid}-${row.n || idx + 1}.png`,
+                          `${colLabel} ${numLabel}`,
+                          `${colLabel} ${numLabel}\n\n${displayBody}`,
+                          {
+                            eyebrow: `${secTitle} · ${colLabel}`,
+                            metaPill: `${colLabel}  •  ${numLabel}`,
+                            title: colLabel,
+                            subtitle:
+                              section === 'zikr'
+                                ? ui.cards.zikr.desc
+                                : language === 'ru'
+                                ? 'Достоверный хадис'
+                                : language === 'en'
+                                ? 'Authentic Prophetic Tradition'
+                                : language === 'uz_cyr'
+                                ? 'Ҳадиси шариф'
+                                : 'Hadisi sharif',
+                            bodyText: displayBody,
+                            footerSectionTitle: secTitle,
+                          }
+                        );
+                      }}
+                      aria-label="Share Card"
+                      className={`p-1.5 rounded-lg disabled:opacity-50 ${
+                        isDay
+                          ? 'text-[#0c4703] hover:bg-[#eef9ea]'
+                          : 'text-amber-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <Share2
+                        className={`w-3.5 h-3.5 ${sharingKey === itemKey ? 'animate-pulse' : ''}`}
+                      />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => toggleSaved(itemKey, `${colLabel} #${row.n}`, displayBody)}
                       className={`p-1.5 rounded-lg ${
                         savedKeys.has(itemKey)
@@ -944,6 +1110,56 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
                 </span>
 
                 <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={sharingKey === itemKey}
+                    onClick={() => {
+                      void (async () => {
+                        let arabicVerse: string | undefined;
+                        if (ayah.surahNumber && ayah.ayahNumber) {
+                          const rawSurah = await loadLocalSurahRaw(ayah.surahNumber);
+                          const row = rawSurah?.a?.[ayah.ayahNumber - 1];
+                          if (row && row[1]) arabicVerse = row[1];
+                        }
+                        const quranTitle =
+                          language === 'ru'
+                            ? 'Священный Коран'
+                            : language === 'en'
+                            ? 'The Holy Quran'
+                            : language === 'uz_cyr'
+                            ? 'Қуръони Карим'
+                            : "Qur'oni Karim";
+                        await handleSharePngCard(
+                          itemKey,
+                          `nurul-islam-ayah-${ayah.surahNumber || ayah.id}-${ayah.ayahNumber || 1}.png`,
+                          refDisplay,
+                          `${arabicVerse ? `${arabicVerse}\n\n` : ''}«${textDisplay}»\n— ${refDisplay}`,
+                          {
+                            eyebrow: `${quranTitle} · ${ui.cards.ayats.title}`,
+                            metaPill:
+                              ayah.surahNumber && ayah.ayahNumber
+                                ? `${refDisplay}  •  ${ayah.surahNumber}:${ayah.ayahNumber}`
+                                : refDisplay,
+                            title: refDisplay,
+                            featuredText: arabicVerse,
+                            featuredIsArabic: Boolean(arabicVerse),
+                            bodyText: `«${textDisplay}»`,
+                            footerSectionTitle: quranTitle,
+                          }
+                        );
+                      })();
+                    }}
+                    aria-label="Share Ayah Card"
+                    className={`p-1.5 rounded-lg disabled:opacity-50 ${
+                      isDay
+                        ? 'text-[#0c4703] hover:bg-[#eef9ea]'
+                        : 'text-amber-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <Share2
+                      className={`w-3.5 h-3.5 ${sharingKey === itemKey ? 'animate-pulse' : ''}`}
+                    />
+                  </button>
                   <button
                     type="button"
                     onClick={() => toggleSaved(itemKey, refDisplay, textDisplay)}
@@ -1207,6 +1423,12 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
             </div>
           ))
         ))}
+
+      {shareToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-xl border border-emerald-600/50 max-w-[90vw] truncate">
+          {shareToast}
+        </div>
+      )}
     </div>
   );
 };
