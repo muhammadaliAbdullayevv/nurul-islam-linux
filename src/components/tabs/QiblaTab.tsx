@@ -28,6 +28,18 @@ export const QiblaTab: React.FC<QiblaTabProps> = ({ currentCity, onOpenCitySelec
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [hasCompassSensor, setHasCompassSensor] = useState(false);
   const [manualHeading, setManualHeading] = useState<number>(0);
+  const [iosPermState, setIosPermState] = useState<'idle' | 'needed' | 'granted' | 'denied'>(() => {
+    if (
+      typeof window !== 'undefined' &&
+      !(window as Window & { NqCompassBridge?: CompassBridge }).NqCompassBridge &&
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
+        .requestPermission === 'function'
+    ) {
+      return 'needed';
+    }
+    return 'idle';
+  });
 
   // Continuous unwrapped CSS angles so crossing 0°/360° never spins backwards
   const unwrappedDialRef = useRef<number>(0);
@@ -111,7 +123,7 @@ export const QiblaTab: React.FC<QiblaTabProps> = ({ currentCity, onOpenCitySelec
       }
     };
 
-    if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
+    if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && iosPermState !== 'needed') {
       window.addEventListener('deviceorientationabsolute', handleAbsoluteOrientation, true);
       window.addEventListener('deviceorientation', handleAbsoluteOrientation, true);
     }
@@ -122,7 +134,25 @@ export const QiblaTab: React.FC<QiblaTabProps> = ({ currentCity, onOpenCitySelec
         window.removeEventListener('deviceorientation', handleAbsoluteOrientation, true);
       }
     };
-  }, [currentCity.latitude, currentCity.longitude]);
+  }, [currentCity.latitude, currentCity.longitude, iosPermState]);
+
+  const handleRequestIosCompass = async () => {
+    try {
+      const req = (
+        DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+      ).requestPermission;
+      if (typeof req === 'function') {
+        const res = await req();
+        if (res === 'granted') {
+          setIosPermState('granted');
+        } else {
+          setIosPermState('denied');
+        }
+      }
+    } catch {
+      setIosPermState('denied');
+    }
+  };
 
   const currentHeading = hasCompassSensor ? deviceHeading : manualHeading;
 
@@ -171,6 +201,73 @@ export const QiblaTab: React.FC<QiblaTabProps> = ({ currentCity, onOpenCitySelec
           <span>{localizedCity.city}</span>
         </button>
       </div>
+
+      {/* iOS Safari Explicit Compass Permission Card */}
+      {(iosPermState === 'needed' || iosPermState === 'denied') && !hasCompassSensor && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+            isDay
+              ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+              : 'bg-emerald-950/75 border-amber-400/50 text-amber-200'
+          }`}
+        >
+          <div className="min-w-0">
+            <p className="text-xs font-extrabold">
+              {iosPermState === 'denied'
+                ? language === 'ru'
+                  ? 'Доступ к компасу отклонён в Safari'
+                  : language === 'en'
+                  ? 'Compass permission was denied in Safari'
+                  : language === 'uz_cyr'
+                  ? 'Safari да компасга рухсат рад этилди'
+                  : 'Safari da kompasga ruxsat rad etildi'
+                : language === 'ru'
+                ? 'Включите живой компас iPhone'
+                : language === 'en'
+                ? 'Enable Live iPhone Compass'
+                : language === 'uz_cyr'
+                ? 'iPhone жонли компасини ёқинг'
+                : 'iPhone jonli kompasini yoqing'}
+            </p>
+            <p className="text-[11px] opacity-85 mt-0.5 leading-snug">
+              {iosPermState === 'denied'
+                ? language === 'ru'
+                  ? 'Закройте вкладку и откройте снова или используйте ручной компас ниже.'
+                  : language === 'en'
+                  ? 'Reopen this page to retry or use the manual compass slider below.'
+                  : language === 'uz_cyr'
+                  ? 'Саҳифани қайта очинг ёки пастдаги қўлда компасдан фойдаланинг.'
+                  : 'Sahifani qayta oching yoki pastdagi qo‘lda kompasdan foydalaning.'
+                : language === 'ru'
+                ? 'iOS требует одно нажатие для доступа к датчику направления.'
+                : language === 'en'
+                ? 'Safari requires one tap to unlock the orientation sensor.'
+                : language === 'uz_cyr'
+                ? 'iOS компас датчигини ёқиш учун бир марта рухсат сўрайди.'
+                : 'iOS kompas datchigini yoqish uchun bir marta ruxsat so‘raydi.'}
+            </p>
+          </div>
+          {iosPermState === 'needed' && (
+            <button
+              type="button"
+              onClick={() => void handleRequestIosCompass()}
+              className={`px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 transition active:scale-95 ${
+                isDay
+                  ? 'bg-[#158509] text-white nq-keep-dark'
+                  : 'bg-amber-400 text-slate-950'
+              }`}
+            >
+              {language === 'ru'
+                ? 'Включить'
+                : language === 'en'
+                ? 'Enable'
+                : language === 'uz_cyr'
+                ? 'Ёқиш'
+                : 'Yoqish'}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Alignment Status Banner */}
       <div

@@ -49,7 +49,59 @@ export interface LastReadState {
 
 const LAST_READ_KEY = 'nq_quran_last_read';
 const COMPLETED_SURAHS_KEY = 'nq_quran_completed_surahs';
-const OFFLINE_CACHE_PREFIX = 'nq_quran_offline_v1_';
+const LEGACY_OFFLINE_CACHE_PREFIX = 'nq_quran_offline_v1_';
+const OFFLINE_INDEX_KEY = 'nq_quran_offline_ids_v2';
+
+let legacyMigrated = false;
+
+/**
+ * Migrate any legacy full-Surah JSON blobs out of localStorage (which has a strict 5MB limit)
+ * into a lightweight ID index. Full Surah texts live in bundled /data/quran/*.json + IndexedDB.
+ */
+function ensureOfflineIndexMigrated(): Set<string> {
+  const indexSet = new Set<string>();
+  try {
+    const rawIdx = localStorage.getItem(OFFLINE_INDEX_KEY);
+    if (rawIdx) {
+      const parsed = JSON.parse(rawIdx);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (typeof item === 'string') indexSet.add(item);
+        }
+      }
+    }
+
+    if (!legacyMigrated) {
+      legacyMigrated = true;
+      const legacyKeysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(LEGACY_OFFLINE_CACHE_PREFIX)) {
+          const rest = key.slice(LEGACY_OFFLINE_CACHE_PREFIX.length);
+          if (rest) indexSet.add(rest);
+          legacyKeysToRemove.push(key);
+        }
+      }
+      if (legacyKeysToRemove.length > 0) {
+        for (const k of legacyKeysToRemove) {
+          localStorage.removeItem(k);
+        }
+        localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(Array.from(indexSet)));
+      }
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+  return indexSet;
+}
+
+function writeOfflineIndex(indexSet: Set<string>): void {
+  try {
+    localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(Array.from(indexSet)));
+  } catch {
+    // Ignore storage access errors
+  }
+}
 
 export function loadLastRead(): LastReadState | null {
   try {
@@ -112,27 +164,22 @@ export function saveCompletedSurahs(nums: number[]): void {
   }
 }
 
-function getCacheKey(surahNumber: number, translation: TranslationId): string {
-  return `${OFFLINE_CACHE_PREFIX}${surahNumber}_${translation}`;
+function entryKey(surahNumber: number, translation: TranslationId): string {
+  return `${surahNumber}_${translation}`;
 }
 
-export function loadOfflineSurah(surahNumber: number, translation: TranslationId): SurahDetail | null {
-  try {
-    const raw = localStorage.getItem(getCacheKey(surahNumber, translation));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as SurahDetail;
-    if (parsed && parsed.number === surahNumber && Array.isArray(parsed.ayahs) && parsed.ayahs.length > 0) {
-      return parsed;
-    }
-  } catch {
-    // Ignore
-  }
+export function loadOfflineSurah(_surahNumber: number, _translation: TranslationId): SurahDetail | null {
+  // Full Surah objects are served from bundled /data/quran/*.json and IndexedDB (surahIdbCache.ts)
+  // so localStorage never fills up its 5MB quota.
+  ensureOfflineIndexMigrated();
   return null;
 }
 
 export function saveOfflineSurah(surah: SurahDetail, translation: TranslationId): boolean {
   try {
-    localStorage.setItem(getCacheKey(surah.number, translation), JSON.stringify(surah));
+    const idx = ensureOfflineIndexMigrated();
+    idx.add(entryKey(surah.number, translation));
+    writeOfflineIndex(idx);
     return true;
   } catch {
     return false;
@@ -141,33 +188,29 @@ export function saveOfflineSurah(surah: SurahDetail, translation: TranslationId)
 
 export function removeOfflineSurah(surahNumber: number, translation: TranslationId): void {
   try {
-    localStorage.removeItem(getCacheKey(surahNumber, translation));
+    const idx = ensureOfflineIndexMigrated();
+    idx.delete(entryKey(surahNumber, translation));
+    writeOfflineIndex(idx);
+    localStorage.removeItem(`${LEGACY_OFFLINE_CACHE_PREFIX}${entryKey(surahNumber, translation)}`);
   } catch {
     // Ignore
   }
 }
 
 export function isSurahSavedOffline(surahNumber: number, translation: TranslationId): boolean {
-  try {
-    return localStorage.getItem(getCacheKey(surahNumber, translation)) !== null;
-  } catch {
-    return false;
-  }
+  const idx = ensureOfflineIndexMigrated();
+  return idx.has(entryKey(surahNumber, translation));
 }
 
 export function getAllOfflineSavedSurahNumbers(translation: TranslationId): Set<number> {
   const result = new Set<number>();
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(OFFLINE_CACHE_PREFIX) && key.endsWith(`_${translation}`)) {
-        const rest = key.slice(OFFLINE_CACHE_PREFIX.length);
-        const num = parseInt(rest.split('_')[0], 10);
-        if (num >= 1 && num <= 114) result.add(num);
-      }
+  const idx = ensureOfflineIndexMigrated();
+  const suffix = `_${translation}`;
+  for (const key of idx) {
+    if (key.endsWith(suffix)) {
+      const num = parseInt(key.slice(0, key.length - suffix.length), 10);
+      if (num >= 1 && num <= 114) result.add(num);
     }
-  } catch {
-    // Ignore
   }
   return result;
 }

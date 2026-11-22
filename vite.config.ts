@@ -48,40 +48,12 @@ export default defineConfig(() => {
           globPatterns: ['**/*.{js,css,html,ico,png,webp,svg,woff,woff2,jpg}'],
           runtimeCaching: [
             {
-              urlPattern: /\/data\/quran\/\d+\.json$/i,
+              urlPattern: /\/data\/.+\.json$/i,
               handler: 'CacheFirst',
               options: {
-                cacheName: 'quran-local-text-cache',
+                cacheName: 'nurul-islam-static-data-cache',
                 expiration: {
-                  maxEntries: 120,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
+                  maxEntries: 160,
                   maxAgeSeconds: 60 * 60 * 24 * 365,
                 },
                 cacheableResponse: {

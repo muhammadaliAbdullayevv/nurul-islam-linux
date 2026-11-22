@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownCircle,
   Bell,
@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Download,
   Flame,
   Globe,
   GraduationCap,
@@ -21,10 +22,12 @@ import {
   RefreshCw,
   RotateCcw,
   Sliders,
+  Smartphone,
   Sparkles,
   Sun,
   Trash2,
   Trophy,
+  Upload,
   X,
 } from 'lucide-react';
 import { AppLanguage, Bookmark as BookmarkType, CalcMethod, Coordinates, TranslationId } from '../../types';
@@ -42,10 +45,13 @@ import {
 } from '../../utils/nativePrayerBridge';
 import {
   RemoteAppRelease,
+  UPDATE_SITE_URL,
   UpdateDownloadStatus,
   getLocalAppVersion,
   getReleaseNoteText,
+  isNativeUpdaterSupported,
 } from '../../utils/appUpdater';
+import { downloadUserBackupJson, restoreUserBackupJson } from '../../utils/backupData';
 import {
   ACTIVITY_UPDATED_EVENT,
   AchievementBadge,
@@ -78,7 +84,7 @@ interface ProfileTabProps {
   onRemoveBookmark: (id: string) => void;
   onClearBookmarks: () => void;
   onResetPreferences: () => void;
-  onOpenSurah: (surahNumber: number) => void;
+  onOpenSurah: (surahNumber: number, ayahNumber?: number) => void;
   onNavigateTab: (tabId: string) => void;
   onOpenNamesQuiz: () => void;
 }
@@ -115,6 +121,18 @@ const PROFILE_UI: Record<
     widgetStrip: string;
     widgetRamadan: string;
     shortLang: Record<AppLanguage, string>;
+    webAlertsTitle: string;
+    webAlertsDesc: string;
+    downloadApkBtn: string;
+    webAutoUpdateSub: string;
+    refreshWebBtn: string;
+    backupTitle: string;
+    backupDesc: string;
+    exportBtn: string;
+    importBtn: string;
+    exportSuccess: (n: number) => string;
+    importSuccess: (n: number) => string;
+    importInvalid: string;
   }
 > = {
   uz_lat: {
@@ -127,7 +145,7 @@ const PROFILE_UI: Record<
     startQuizBtn: 'Bilim testini boshlash (+20 XP)',
     ilmCardTitle: 'Ilm Viktorinasi',
     ilmMoreNeeded: (rank, c) => `${rank} maqomigacha yana ${c} savol`,
-    ilmMasteredAll: "Barcha 48 savol o'zlashtirildi!",
+    ilmMasteredAll: "Barcha 120 savol o'zlashtirildi!",
     ilmPlayBtn: 'Yechish',
     tasbihSub: 'Tasbeh zikri',
     quranSub: "Qur'on tinglash",
@@ -147,6 +165,18 @@ const PROFILE_UI: Record<
     widgetStrip: 'Faqat 5 vaqt (4×1)',
     widgetRamadan: 'Ramazon (4×2)',
     shortLang: { uz_lat: "O'zb", uz_cyr: 'Ўзб', ru: 'Рус', en: 'Eng' },
+    webAlertsTitle: 'Azon bildirishnomalari va Vidjetlar',
+    webAlertsDesc: "Brauzerlar yopiq sahifada fon azonini chalolmaydi. 5 vaqt namoz azoni va bosh ekran vidjetlari uchun rasmiy Android ilovani o'rnating.",
+    downloadApkBtn: 'Android APK yuklab olish',
+    webAutoUpdateSub: 'Veb-ilova avtomatik yangilanadi',
+    refreshWebBtn: 'Yangilash',
+    backupTitle: "Ma'lumotlarni zaxiralash",
+    backupDesc: "Xatcho'plar, Qazo, Hifz, Tasbeh, Juma ro'yxati va barcha sozlamalarni faylga saqlang yoki tiklang.",
+    exportBtn: 'Zaxira (.json)',
+    importBtn: 'Tiklash',
+    exportSuccess: (n) => `Zaxira fayli yuklab olindi (${n} ta yozuv)`,
+    importSuccess: (n) => `${n} ta yozuv tiklandi! Ilova qayta yuklanmoqda...`,
+    importInvalid: "Noto'g'ri fayl. Faqat Nurul Islam .json zaxira faylini tanlang.",
   },
   uz_cyr: {
     progressTab: 'Натижалар & Даража',
@@ -158,7 +188,7 @@ const PROFILE_UI: Record<
     startQuizBtn: 'Билим тестини бошлаш (+20 XP)',
     ilmCardTitle: 'Илм Викторинаси',
     ilmMoreNeeded: (rank, c) => `${rank} мақомигача яна ${c} савол`,
-    ilmMasteredAll: 'Барча 48 савол ўзлаштирилди!',
+    ilmMasteredAll: 'Барча 120 савол ўзлаштирилди!',
     ilmPlayBtn: 'Ечиш',
     tasbihSub: 'Тасбеҳ зикри',
     quranSub: 'Қуръон тинглаш',
@@ -178,6 +208,18 @@ const PROFILE_UI: Record<
     widgetStrip: 'Фақат 5 вақт (4×1)',
     widgetRamadan: 'Рамазон (4×2)',
     shortLang: { uz_lat: "O'zb", uz_cyr: 'Ўзб', ru: 'Рус', en: 'Eng' },
+    webAlertsTitle: 'Азон билдиришномалари ва Виджетлар',
+    webAlertsDesc: 'Браузерлар ёпиқ саҳифада фон азонини чалолмайди. 5 вақт намоз азони ва бош экран виджетлари учун расмий Android иловани ўрнатинг.',
+    downloadApkBtn: 'Android APK юклаб олиш',
+    webAutoUpdateSub: 'Веб-илова автоматик янгиланади',
+    refreshWebBtn: 'Янгилаш',
+    backupTitle: 'Маълумотларни захиралаш',
+    backupDesc: 'Хатчўплар, Қазо, Ҳифз, Тасбеҳ, Жума рўйхати ва барча созламаларни файлга сақланг ёки тикланг.',
+    exportBtn: 'Захира (.json)',
+    importBtn: 'Тиклаш',
+    exportSuccess: (n) => `Захира файли юклаб олинди (${n} та ёзув)`,
+    importSuccess: (n) => `${n} та ёзув тикланди! Илова қайта юкланмоқда...`,
+    importInvalid: 'Нотўғри файл. Фақат Nurul Islam .json захира файлини танланг.',
   },
   ru: {
     progressTab: 'Прогресс и Уровень',
@@ -189,7 +231,7 @@ const PROFILE_UI: Record<
     startQuizBtn: 'Начать тест знаний (+20 XP)',
     ilmCardTitle: 'Исламская викторина',
     ilmMoreNeeded: (rank, c) => `До ранга «${rank}» ещё ${c} вопр.`,
-    ilmMasteredAll: 'Все 48 вопросов освоены!',
+    ilmMasteredAll: 'Все 120 вопросов освоены!',
     ilmPlayBtn: 'Играть',
     tasbihSub: 'Зикры в Тасбихе',
     quranSub: 'Прослушано Корана',
@@ -209,6 +251,18 @@ const PROFILE_UI: Record<
     widgetStrip: 'Только 5 молитв (4×1)',
     widgetRamadan: 'Рамадан (4×2)',
     shortLang: { uz_lat: "O'zb", uz_cyr: 'Ўзб', ru: 'Рус', en: 'Eng' },
+    webAlertsTitle: 'Уведомления азана и виджеты',
+    webAlertsDesc: 'Браузеры не могут воспроизводить фоновый азан при закрытой вкладке. Установите Android-приложение для точных будильников азана и виджетов.',
+    downloadApkBtn: 'Скачать Android APK',
+    webAutoUpdateSub: 'Веб-приложение обновляется автоматически',
+    refreshWebBtn: 'Обновить',
+    backupTitle: 'Резервная копия данных',
+    backupDesc: 'Сохраните или восстановите закладки, Казо, Хифз, Тасбих, список Джума и все настройки в файл.',
+    exportBtn: 'Сохранить (.json)',
+    importBtn: 'Восстановить',
+    exportSuccess: (n) => `Резервная копия сохранена (${n} записей)`,
+    importSuccess: (n) => `Восстановлено ${n} записей! Перезагрузка...`,
+    importInvalid: 'Неверный файл. Выберите файл резервной копии Nurul Islam (.json).',
   },
   en: {
     progressTab: 'Progress & Ranks',
@@ -220,7 +274,7 @@ const PROFILE_UI: Record<
     startQuizBtn: 'Start 99 Names Quiz (+20 XP)',
     ilmCardTitle: 'Islamic Knowledge Quiz',
     ilmMoreNeeded: (rank, c) => `${c} more Qs to reach ${rank}`,
-    ilmMasteredAll: 'All 48 questions mastered!',
+    ilmMasteredAll: 'All 120 questions mastered!',
     ilmPlayBtn: 'Play',
     tasbihSub: 'Tasbih Dhikr',
     quranSub: 'Quran Listening',
@@ -240,6 +294,18 @@ const PROFILE_UI: Record<
     widgetStrip: '5 Prayers Only (4×1)',
     widgetRamadan: 'Ramadan (4×2)',
     shortLang: { uz_lat: "O'zb", uz_cyr: 'Ўзб', ru: 'Рус', en: 'Eng' },
+    webAlertsTitle: 'Adhan Alarms & Home Widgets',
+    webAlertsDesc: 'Web browsers pause closed tabs and cannot ring background Adhan alarms. Install the official Android app for 5-time alarms and widgets.',
+    downloadApkBtn: 'Download Android APK',
+    webAutoUpdateSub: 'Web app stays updated automatically',
+    refreshWebBtn: 'Refresh',
+    backupTitle: 'Backup & Restore Data',
+    backupDesc: 'Export or restore your Bookmarks, Qazo, Hifz, Tasbih, custom Juma list, and preferences as a JSON file.',
+    exportBtn: 'Backup (.json)',
+    importBtn: 'Restore',
+    exportSuccess: (n) => `Backup downloaded (${n} items)`,
+    importSuccess: (n) => `Restored ${n} items! Reloading app...`,
+    importInvalid: 'Invalid backup file. Please pick a Nurul Islam .json backup.',
   },
 };
 
@@ -354,6 +420,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const { language, setLanguage, t } = useLanguage();
   const ui = PROFILE_UI[language] || PROFILE_UI.uz_lat;
   const isNativeAndroid = isNativeAndroidBridgeAvailable();
+  const isNativeUpdater = isNativeUpdaterSupported();
+  const isPureWeb = !isNativeAndroid && !isNativeUpdater;
 
   const [subTab, setSubTab] = useState<'progress' | 'settings'>('progress');
   const [userHandle, setUserHandleState] = useState<string>(() => getUserHandle());
@@ -369,6 +437,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [showAdvancedCalc, setShowAdvancedCalc] = useState(false);
   const [showAllBookmarks, setShowAllBookmarks] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [backupNotice, setBackupNotice] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+  const [refreshingWeb, setRefreshingWeb] = useState(false);
+  const restoreInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const refresh = () => {
@@ -413,6 +484,49 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       setGpsStatus('err');
     }
     window.setTimeout(() => setGpsStatus('idle'), 2600);
+  };
+
+  const handleExportBackup = () => {
+    const res = downloadUserBackupJson();
+    if (res.ok) {
+      setBackupNotice({ kind: 'ok', msg: ui.exportSuccess(res.count) });
+    } else {
+      setBackupNotice({ kind: 'err', msg: ui.importInvalid });
+    }
+    window.setTimeout(() => setBackupNotice(null), 3500);
+  };
+
+  const handleRestoreFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const res = restoreUserBackupJson(text);
+      if (res.ok) {
+        setBackupNotice({ kind: 'ok', msg: ui.importSuccess(res.restoredCount) });
+        window.setTimeout(() => window.location.reload(), 950);
+      } else {
+        setBackupNotice({ kind: 'err', msg: ui.importInvalid });
+        window.setTimeout(() => setBackupNotice(null), 4000);
+      }
+    } catch {
+      setBackupNotice({ kind: 'err', msg: ui.importInvalid });
+      window.setTimeout(() => setBackupNotice(null), 4000);
+    }
+  };
+
+  const handleRefreshWebApp = async () => {
+    setRefreshingWeb(true);
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        await reg?.update();
+      }
+    } catch {
+      // Reload anyway
+    }
+    window.location.reload();
   };
 
   const cardCls = isDay
@@ -1083,7 +1197,34 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           <div className="space-y-1.5">
             <div className={groupHeadingCls}>{ui.prayerGroup}</div>
             <div className={`${cardCls} divide-y ${dividerCls}`}>
-              {/* Notifications */}
+              {/* Notifications (Native Android/Desktop controls, or honest Web guidance on pure browsers) */}
+              {isPureWeb ? (
+                <div className="p-3.5 space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className={iconBoxCls}>
+                      <Smartphone className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold">{ui.webAlertsTitle}</div>
+                      <p className={`text-[11px] leading-relaxed mt-0.5 ${subTextCls}`}>
+                        {ui.webAlertsDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={`${UPDATE_SITE_URL}/downloads/nurul-quran-latest.apk`}
+                    download="Nurul-Islam-latest.apk"
+                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                      isDay
+                        ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                        : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                    }`}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{ui.downloadApkBtn}</span>
+                  </a>
+                </div>
+              ) : (
               <div className="p-3.5 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -1239,6 +1380,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   {testSent ? t.alerts.testSent : `${t.alerts.testBtn} (${todayFajrTime})`}
                 </button>
               </div>
+              )}
 
               {/* Native Android Widgets (Hidden cleanly on Web/Browser) */}
               {isNativeAndroid && (
@@ -1356,7 +1498,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     >
                       <button
                         type="button"
-                        onClick={() => onOpenSurah(bm.surahNumber)}
+                        onClick={() => onOpenSurah(bm.surahNumber, bm.ayahNumber)}
                         className="flex-1 min-w-0 flex items-center gap-2 text-left"
                       >
                         <BookOpen className={`w-3.5 h-3.5 shrink-0 ${isDay ? 'text-[#158509]' : 'text-amber-400'}`} />
@@ -1376,7 +1518,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() => onOpenSurah(bm.surahNumber)}
+                          onClick={() => onOpenSurah(bm.surahNumber, bm.ayahNumber)}
                           className="p-0.5 text-slate-400"
                           aria-label="Open bookmark"
                         >
@@ -1402,6 +1544,65 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             )}
           </div>
 
+          {/* Group 3b: Backup & Restore User Progress (.json) */}
+          <div className={`${cardCls} p-3.5 space-y-2.5`}>
+            <div className="flex items-start gap-2.5">
+              <div className={iconBoxCls}>
+                <Download className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold">{ui.backupTitle}</div>
+                <p className={`text-[11px] leading-relaxed mt-0.5 ${subTextCls}`}>{ui.backupDesc}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleExportBackup}
+                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                  isDay
+                    ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{ui.exportBtn}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => restoreInputRef.current?.click()}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                  isDay
+                    ? 'bg-[#ecf1f5] hover:bg-[#eef9ea] border-[#dde3ea] text-[#0c4703]'
+                    : 'bg-slate-950 hover:bg-emerald-950 border-slate-800 text-emerald-300'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{ui.importBtn}</span>
+              </button>
+              <input
+                ref={restoreInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleRestoreFileChange}
+                className="hidden"
+              />
+            </div>
+            {backupNotice && (
+              <p
+                className={`text-[11px] font-semibold ${
+                  backupNotice.kind === 'ok'
+                    ? isDay
+                      ? 'text-[#158509]'
+                      : 'text-emerald-400'
+                    : 'text-rose-500'
+                }`}
+              >
+                {backupNotice.msg}
+              </p>
+            )}
+          </div>
+
           {/* Group 4: Unified Updates, About & Safe Reset Card */}
           <div className={`${cardCls} divide-y ${dividerCls}`}>
             <div className="p-3.5 space-y-2.5">
@@ -1412,27 +1613,45 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   </div>
                   <div>
                     <div className="text-xs font-bold">
-                      Nurul Islam · v{getLocalAppVersion().versionName} ({getLocalAppVersion().versionCode})
+                      Nurul Islam{isPureWeb ? ' Web' : ''} · v{getLocalAppVersion().versionName} ({getLocalAppVersion().versionCode})
                     </div>
-                    <div className={`text-[11px] ${subTextCls}`}>{t.updates.title}</div>
+                    <div className={`text-[11px] ${subTextCls}`}>
+                      {isPureWeb ? ui.webAutoUpdateSub : t.updates.title}
+                    </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={onCheckUpdate}
-                  disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border transition disabled:opacity-50 ${
-                    isDay
-                      ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
-                      : 'bg-emerald-950 border-emerald-800 text-emerald-300'
-                  }`}
-                >
-                  <RefreshCw className={`w-3 h-3 ${updateStatus === 'checking' ? 'animate-spin' : ''}`} />
-                  <span>{updateStatus === 'checking' ? t.updates.checking : t.updates.checkBtn}</span>
-                </button>
+                {isPureWeb ? (
+                  <button
+                    type="button"
+                    onClick={handleRefreshWebApp}
+                    disabled={refreshingWeb}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border transition disabled:opacity-50 ${
+                      isDay
+                        ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+                        : 'bg-emerald-950 border-emerald-800 text-emerald-300'
+                    }`}
+                  >
+                    <RefreshCw className={`w-3 h-3 ${refreshingWeb ? 'animate-spin' : ''}`} />
+                    <span>{ui.refreshWebBtn}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onCheckUpdate}
+                    disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border transition disabled:opacity-50 ${
+                      isDay
+                        ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+                        : 'bg-emerald-950 border-emerald-800 text-emerald-300'
+                    }`}
+                  >
+                    <RefreshCw className={`w-3 h-3 ${updateStatus === 'checking' ? 'animate-spin' : ''}`} />
+                    <span>{updateStatus === 'checking' ? t.updates.checking : t.updates.checkBtn}</span>
+                  </button>
+                )}
               </div>
 
-              {updateRelease && updateStatus !== 'up_to_date' && (
+              {!isPureWeb && updateRelease && updateStatus !== 'up_to_date' && (
                 <div
                   className={`p-3 rounded-xl border space-y-2 ${
                     isDay ? 'bg-[#eef9ea] border-[#c5e8bc]' : 'bg-emerald-950/60 border-emerald-700/60'

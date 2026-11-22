@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, laz
 import { Capacitor } from '@capacitor/core';
 import { ArrowDownCircle, CloudDownload, X } from 'lucide-react';
 import { AndroidShell } from './components/AndroidShell';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { LanguageProvider, LANGUAGE_OPTIONS, useLanguage } from './contexts/LanguageContext';
 import { HomeTab } from './components/tabs/HomeTab';
@@ -16,6 +17,11 @@ import {
   AudioDownloadProgress,
   NativeQuranAudioState,
 } from './utils/nativeQuranAudio';
+import { webQuranPlayer } from './utils/webQuranPlayer';
+import {
+  getWebAudioDownloadSnapshot,
+  subscribeWebAudioDownloads,
+} from './utils/webOfflineAudio';
 import type { HubSection } from './components/tabs/AzkarTab';
 import { AppLanguage, AsrMethod, Bookmark, CalcMethod, Coordinates, TranslationId } from './types';
 import {
@@ -230,11 +236,21 @@ function AppContent() {
   const [updateProgress, setUpdateProgress] = useState<number>(0);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [nativeAudioState, setNativeAudioState] = useState<NativeQuranAudioState>(() =>
-    getNativeAudioState()
+    hasNativeQuranAudioBridge() ? getNativeAudioState() : webQuranPlayer.getState()
   );
   const [downloadMap, setDownloadMap] = useState<Record<number, AudioDownloadProgress>>(() =>
-    getAllDownloadProgress()
+    hasNativeQuranAudioBridge() ? getAllDownloadProgress() : getWebAudioDownloadSnapshot()
   );
+  const hadSavedCityOnBootRef = useRef<boolean>(
+    (() => {
+      try {
+        return Boolean(localStorage.getItem('nq_city'));
+      } catch {
+        return true;
+      }
+    })()
+  );
+  const userSelectedCityRef = useRef<boolean>(false);
   const tabHistoryRef = useRef<string[]>([]);
   const updateStatusRef = useRef<UpdateDownloadStatus>('idle');
   const updateReleaseRef = useRef<RemoteAppRelease | null>(null);
@@ -615,6 +631,7 @@ function AppContent() {
   });
 
   const handleSelectCity = useCallback((nextCity: Coordinates) => {
+    userSelectedCityRef.current = true;
     setCurrentCity(nextCity);
     try {
       localStorage.setItem('nq_city', JSON.stringify(nextCity));
@@ -622,6 +639,89 @@ function AppContent() {
       // Ignore storage error
     }
   }, []);
+
+  // First-visit silent HTTPS IP geolocation on public Web so visitors outside Tashkent get accurate prayer times automatically
+  useEffect(() => {
+    if (hadSavedCityOnBootRef.current || Capacitor.isNativePlatform()) return;
+    const isDesktopApp =
+      typeof window !== 'undefined' &&
+      (new URLSearchParams(window.location.search).get('desktop') === '1' ||
+        Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__));
+    if (isDesktopApp) return;
+    try {
+      if (localStorage.getItem('nq_geoip_tried_v1') === '1') return;
+      localStorage.setItem('nq_geoip_tried_v1', '1');
+    } catch {
+      return;
+    }
+
+    let cancelled = false;
+    const detectByIp = async () => {
+      const endpoints = ['https://ipinfo.io/json', 'https://ipwho.is/'];
+      for (const url of endpoints) {
+        if (cancelled || userSelectedCityRef.current) return;
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 3500);
+        try {
+          const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+          if (!res.ok) continue;
+          const data = (await res.json()) as {
+            latitude?: number | string;
+            longitude?: number | string;
+            lat?: number | string;
+            lon?: number | string;
+            loc?: string;
+          };
+          let lat = Number(data.latitude ?? data.lat);
+          let lng = Number(data.longitude ?? data.lon);
+          if ((!Number.isFinite(lat) || !Number.isFinite(lng)) && typeof data.loc === 'string') {
+            const parts = data.loc.split(',');
+            if (parts.length === 2) {
+              lat = Number(parts[0]);
+              lng = Number(parts[1]);
+            }
+          }
+          if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
+            if (cancelled || userSelectedCityRef.current) return;
+            const nearest = findNearestCity(lat, lng);
+            const resolved = await resolveRegionFromCoords(lat, lng, language);
+            if (cancelled || userSelectedCityRef.current) return;
+            const nextCity: Coordinates = {
+              cityName: resolved.cityName,
+              countryName: resolved.countryName,
+              latitude: lat,
+              longitude: lng,
+              timezone:
+                resolved.timezone ||
+                Intl.DateTimeFormat().resolvedOptions().timeZone ||
+                nearest.timezone,
+              region: resolved.region || nearest.region,
+              subtitle: resolved.subtitle,
+            };
+            setCurrentCity(nextCity);
+            try {
+              localStorage.setItem('nq_city', JSON.stringify(nextCity));
+            } catch {
+              // Ignore storage error
+            }
+            return;
+          }
+        } catch {
+          // Silently try next endpoint; Tashkent default stays intact if offline
+        } finally {
+          window.clearTimeout(timer);
+        }
+      }
+    };
+
+    const startTimer = window.setTimeout(() => {
+      void detectByIp();
+    }, 900);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(startTimer);
+    };
+  }, [language]);
 
   // Save changes to localStorage (only persist nq_city once onboarding is done so fresh installs cannot bypass onboarding)
   useEffect(() => {
@@ -649,9 +749,9 @@ function AppContent() {
     localStorage.setItem('nq_bookmarks', JSON.stringify(bookmarks));
   }, [bookmarks]);
 
-  // Track cumulative Quran listening duration while native Android audio plays
+  // Track cumulative Quran listening duration while native Android audio plays (webQuranPlayer tracks its own)
   useEffect(() => {
-    if (!nativeAudioState.active || !nativeAudioState.isPlaying) return;
+    if (!hasNativeQuranAudioBridge() || !nativeAudioState.active || !nativeAudioState.isPlaying) return;
     const id = window.setInterval(() => {
       addQuranListenSeconds(5);
     }, 5000);
@@ -818,9 +918,11 @@ function AppContent() {
     [activeTab, pushWebHash]
   );
 
-  // Sync global native QuranAudioService state + handle tapping notification to jump straight to Surah
+  // Sync global Quran audio state (Native Android QuranAudioService + persistent Web/Desktop webQuranPlayer)
   useEffect(() => {
-    if (!hasNativeQuranAudioBridge()) return;
+    if (!hasNativeQuranAudioBridge()) {
+      return webQuranPlayer.subscribe((st) => setNativeAudioState(st));
+    }
     const refreshFromNative = () => setNativeAudioState(getNativeAudioState());
     refreshFromNative();
     const unsub = subscribeNativeAudioState((st) => {
@@ -856,7 +958,9 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    if (!hasNativeQuranAudioBridge()) return;
+    if (!hasNativeQuranAudioBridge()) {
+      return subscribeWebAudioDownloads((map) => setDownloadMap(map));
+    }
     return subscribeAllAudioDownloads((map) => setDownloadMap(map));
   }, []);
 
@@ -1049,20 +1153,25 @@ function AppContent() {
           ) : undefined
         }
       >
-        {/* Render Tab Contents */}
-        {activeTab === 'home' && (
-          <HomeTab
-            prayerTimes={prayerTimes}
-            currentCity={currentCity}
-            onOpenSurah={handleOpenSurah}
-            onNavigateTab={navigateToTab}
-            selectedTranslation={selectedTranslation}
-            onOpenCitySelector={() => setIsCityModalOpen(true)}
-            isOnboardingOpen={showOnboarding}
-          />
-        )}
+        {/* Render Tab Contents inside resilient ErrorBoundary so a stale chunk or tab crash never white-screens the app */}
+        <AppErrorBoundary
+          scope="tab"
+          resetKey={`${activeTab}:${azkarInitialSection}:${selectedSurahNumber ?? ''}`}
+          onGoHome={() => navigateToTab('home')}
+        >
+          {activeTab === 'home' && (
+            <HomeTab
+              prayerTimes={prayerTimes}
+              currentCity={currentCity}
+              onOpenSurah={handleOpenSurah}
+              onNavigateTab={navigateToTab}
+              selectedTranslation={selectedTranslation}
+              onOpenCitySelector={() => setIsCityModalOpen(true)}
+              isOnboardingOpen={showOnboarding}
+            />
+          )}
 
-        {activeTab !== 'home' && activeTab !== 'profile' && (
+          {activeTab !== 'home' && activeTab !== 'profile' && (
           <div
             className={
               activeTab === 'quran' && isReadingSurah
@@ -1236,6 +1345,7 @@ function AppContent() {
             />
           </Suspense>
         )}
+        </AppErrorBoundary>
       </AndroidShell>
 
       {/* First-Run Onboarding Intro (lazy-loaded only for first-run users) */}

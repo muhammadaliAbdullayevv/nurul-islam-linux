@@ -4,11 +4,13 @@ import { Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   NativeQuranAudioState,
+  hasNativeQuranAudioBridge,
   nativeNextAyah,
   nativePrevAyah,
   nativeStopAudio,
   nativeTogglePlayPause,
 } from '../utils/nativeQuranAudio';
+import { webQuranPlayer } from '../utils/webQuranPlayer';
 import { MushafIcon } from './icons/IslamicFeatureIcons';
 
 interface QuranMiniPlayerProps {
@@ -25,7 +27,29 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
   const { isDay } = useTheme();
   const isNative = Capacitor.isNativePlatform();
 
+  const isNativeAudio = hasNativeQuranAudioBridge();
+
   if (!audioState.active || audioState.surahNumber <= 0) return null;
+
+  const handlePrev = () => {
+    if (isNativeAudio) nativePrevAyah();
+    else webQuranPlayer.prevAyah();
+  };
+
+  const handleToggle = () => {
+    if (isNativeAudio) nativeTogglePlayPause();
+    else webQuranPlayer.togglePlayPause();
+  };
+
+  const handleNext = () => {
+    if (isNativeAudio) nativeNextAyah();
+    else webQuranPlayer.nextAyah();
+  };
+
+  const handleStop = () => {
+    if (isNativeAudio) nativeStopAudio();
+    else webQuranPlayer.stop();
+  };
 
   return (
     <div
@@ -73,21 +97,21 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={() => nativePrevAyah()}
-            disabled={audioState.surahNumber <= 1}
+            onClick={handlePrev}
+            disabled={isNativeAudio ? audioState.surahNumber <= 1 : audioState.ayahNumber <= 1}
             className={`p-2 rounded-xl transition active:scale-95 disabled:opacity-35 ${
               isDay
                 ? 'bg-[#f1f5f9] text-[#0c4703] hover:bg-[#e1f5db]'
                 : 'bg-slate-800 text-slate-200 hover:text-white'
             }`}
-            aria-label="Previous Surah"
+            aria-label={isNativeAudio ? 'Previous Surah' : 'Previous Ayah'}
           >
             <SkipBack className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
-            onClick={() => nativeTogglePlayPause()}
+            onClick={handleToggle}
             className={`p-2 rounded-xl transition active:scale-95 ${
               isDay
                 ? 'bg-[#158509] text-white'
@@ -104,21 +128,25 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
 
           <button
             type="button"
-            onClick={() => nativeNextAyah()}
-            disabled={audioState.surahNumber >= 114}
+            onClick={handleNext}
+            disabled={
+              isNativeAudio
+                ? audioState.surahNumber >= 114
+                : audioState.ayahNumber >= audioState.totalAyahs
+            }
             className={`p-2 rounded-xl transition active:scale-95 disabled:opacity-35 ${
               isDay
                 ? 'bg-[#f1f5f9] text-[#0c4703] hover:bg-[#e1f5db]'
                 : 'bg-slate-800 text-slate-200 hover:text-white'
             }`}
-            aria-label="Next Surah"
+            aria-label={isNativeAudio ? 'Next Surah' : 'Next Ayah'}
           >
             <SkipForward className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
-            onClick={() => nativeStopAudio()}
+            onClick={handleStop}
             className={`p-2 rounded-xl transition active:scale-95 ${
               isDay
                 ? 'bg-[#f1f5f9] text-slate-500 hover:text-rose-600'

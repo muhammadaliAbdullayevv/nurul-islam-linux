@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.66" date="2026-11-22">
+      <description>
+        <p>Major quality and reliability release: persistent cross-tab Quran audio with floating mini-player and Media Session controls on Linux Desktop and Web, iOS Safari Qibla compass permission support, 100% offline self-hosted DM Sans and Lora fonts, one-tap JSON user progress Backup and Restore, resilient React ErrorBoundary recovery, automatic scroll-to-top on tab switches, direct ayah jump from Profile bookmarks, honest Web settings, and elimination of localStorage quota bloat.</p>
+      </description>
+    </release>
     <release version="1.8.65" date="2026-11-22">
       <description>
         <p>Upgraded the Nurul Islam web edition into a full responsive web application with widescreen desktop navigation, full-screen mobile browser layout, shareable deep-link URLs, and a localized download hub for PWA, Android APK, and Fedora RPM.</p>

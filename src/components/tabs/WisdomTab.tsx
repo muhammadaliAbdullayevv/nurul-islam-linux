@@ -36,6 +36,7 @@ import {
   generateNurulIslamShareCard,
   shareOrSavePngCard,
 } from '../../utils/shareCardGenerator';
+import { copyTextSafely } from '../../utils/clipboard';
 
 const SAVED_WISDOM_KEY = 'nq_wisdom_bookmarks_v1';
 
@@ -396,27 +397,7 @@ export const WisdomTab: React.FC = () => {
       ]
         .filter((l, i, arr) => !(l === '' && arr[i - 1] === ''))
         .join('\n');
-      try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(lines);
-        } else {
-          throw new Error('Clipboard API unavailable');
-        }
-      } catch {
-        // Fallback for non-HTTPS localhost WebKit2GTK or older WebViews
-        const ta = document.createElement('textarea');
-        ta.value = lines;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand('copy');
-        } catch {
-          // ignore
-        }
-        ta.remove();
-      }
+      await copyTextSafely(lines);
       setCopiedId(entry.id);
       window.setTimeout(() => setCopiedId((cur) => (cur === entry.id ? null : cur)), 1800);
     },

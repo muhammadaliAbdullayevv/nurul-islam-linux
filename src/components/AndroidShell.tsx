@@ -70,6 +70,14 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
   );
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const viewportScrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset main viewport scroll cleanly to top whenever switching tabs or Azkar sub-sections
+  useEffect(() => {
+    if (viewportScrollRef.current) {
+      viewportScrollRef.current.scrollTop = 0;
+    }
+  }, [activeTab, activeSubTab]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || isCapacitorNative) return;
@@ -169,7 +177,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
       label: language === 'ru' ? 'Хадисы' : language === 'en' ? 'Hadiths' : language === 'uz_cyr' ? 'Ҳадислар' : 'Hadislar',
       icon: MushafIcon,
       imageSrc: '/icons/home/hadith.webp',
-      badge: '42',
+      badge: '8.2K',
     },
     {
       id: 'azkar:ayats',
@@ -481,6 +489,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               }`}
             >
               <div
+                ref={viewportScrollRef}
                 className={`flex-1 min-h-0 h-full no-scrollbar relative ${
                   activeTab === 'home'
                     ? 'flex flex-col overflow-y-auto p-5'
@@ -653,6 +662,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
 
         {/* Viewport Content */}
         <div
+          ref={viewportScrollRef}
           style={
             isSecondaryFeature
               ? {

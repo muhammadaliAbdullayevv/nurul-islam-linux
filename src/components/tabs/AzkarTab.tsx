@@ -34,6 +34,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { cyrillicToLatinUz, latinToCyrillicUz } from '../../utils/uzbekScript';
 import { getHadithCollectionSync, loadHadithCollectionAsync } from '../../utils/hadithIdbCache';
 import { loadLocalSurahRaw } from '../../utils/localQuranData';
+import { copyTextSafely } from '../../utils/clipboard';
 import {
   ShareCardPayload,
   generateNurulIslamShareCard,
@@ -181,7 +182,7 @@ export const AzkarTab: React.FC<AzkarTabProps> = ({
   }, [section, selectedCollectionId, collectionsMeta]);
 
   const handleCopy = (key: string, text: string) => {
-    navigator.clipboard.writeText(text).catch(() => undefined);
+    void copyTextSafely(text);
     setCopiedKey(key);
     window.setTimeout(() => setCopiedKey(null), 1800);
   };

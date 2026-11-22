@@ -311,7 +311,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         label: language === 'ru' ? 'Хадисы' : language === 'en' ? 'Hadiths' : language === 'uz_cyr' ? 'Ҳадислар' : 'Hadislar',
         icon: HadithBookIcon,
         imageSrc: '/icons/home/hadith.webp',
-        badge: '42',
+        badge: '8.2K',
       },
       {
         id: 'azkar:ayats',
@@ -388,7 +388,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             : 'Alifbo & Tajvid',
         icon: MushafIcon,
         imageSrc: '/icons/home/tajweed.webp',
-        badge: '28',
+        badge: '10',
       },
       {
         id: 'seerah',

@@ -16,6 +16,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AppLanguage } from '../types';
 import { DEFAULT_LINUX_RPM_URL, UPDATE_SITE_URL } from '../utils/appUpdater';
+import { copyTextSafely } from '../utils/clipboard';
 
 const APK_DOWNLOAD_URL = `${UPDATE_SITE_URL}/downloads/nurul-quran-latest.apk`;
 
@@ -195,9 +196,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   const siteUrl = UPDATE_SITE_URL;
 
   const handleCopyUrl = () => {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(siteUrl).catch(() => undefined);
-    }
+    void copyTextSafely(siteUrl);
     setCopiedUrl(true);
     window.setTimeout(() => setCopiedUrl(false), 2000);
   };

@@ -56,8 +56,6 @@ import {
 } from '../../data/juz';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { isConstrainedNetwork } from '../../utils/tabLoaders';
-import { addQuranListenSeconds } from '../../utils/userActivity';
 import { cyrillicToLatinUz, latinToCyrillicUz } from '../../utils/uzbekScript';
 import {
   getCachedReciterTimingAsync,
@@ -93,11 +91,12 @@ import {
 import {
   downloadWebSurahAudio,
   getWebAudioDownloadSnapshot,
-  getWebOfflineAyahBlobUrl,
   isWebAudioDownloaded,
   removeWebSurahAudio,
   subscribeWebAudioDownloads,
 } from '../../utils/webOfflineAudio';
+import { webQuranPlayer } from '../../utils/webQuranPlayer';
+import { copyTextSafely } from '../../utils/clipboard';
 import {
   generateNurulIslamShareCard,
   shareOrSavePngCard,
@@ -641,14 +640,6 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   selectedReciterIdRef.current = selectedReciterId;
   const activeReciter = getReciterById(selectedReciterId);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
-  const preloadedAyahMetaRef = useRef<{
-    surahNumber: number;
-    ayahNumber: number;
-    reciterId: QuranReciterId;
-    url: string;
-  } | null>(null);
   const versesScrollRef = useRef<HTMLDivElement | null>(null);
   const ayahSentinelRef = useRef<HTMLDivElement | null>(null);
   const directoryListRef = useRef<HTMLDivElement | null>(null);
@@ -656,7 +647,6 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const tappedListSurahRef = useRef<number | null>(null);
   const shouldRestoreListScrollRef = useRef<boolean>(false);
   const prevTranslationRef = useRef<TranslationId>(selectedTranslation);
-  const playbackTokenRef = useRef<number>(0);
   const activeSurahRef = useRef<SurahDetail | null>(null);
   const loadedSurahIdRef = useRef<number | null>(null);
   const currentAyahRef = useRef<number | null>(null);
@@ -735,97 +725,17 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     }
   }, []);
 
-  const clearPrebufferedAyah = useCallback(() => {
-    if (preloadAudioRef.current) {
-      preloadAudioRef.current.onerror = null;
-      preloadAudioRef.current.pause();
-      preloadAudioRef.current.removeAttribute('src');
-      preloadAudioRef.current.load();
-    }
-    preloadedAyahMetaRef.current = null;
-  }, []);
-
   const prebufferAyah = useCallback(
     (surah: SurahDetail | null, ayahNum: number, reciterId: QuranReciterId) => {
-      if (!surah || hasNativeQuranAudioBridge() || isConstrainedNetwork()) return;
-      const targetObj = surah.ayahs.find((a) => a.numberInSurah === ayahNum);
-      if (!targetObj) return;
-      const prevMeta = preloadedAyahMetaRef.current;
-      if (
-        prevMeta &&
-        prevMeta.surahNumber === surah.number &&
-        prevMeta.ayahNumber === ayahNum &&
-        prevMeta.reciterId === reciterId
-      ) {
-        return;
-      }
-
-      const candidates = getAyahAudioCandidates(surah.number, targetObj, reciterId);
-      if (candidates.length === 0) return;
-
-      if (!preloadAudioRef.current) {
-        const el = new Audio();
-        el.preload = 'auto';
-        preloadAudioRef.current = el;
-      }
-      const pre = preloadAudioRef.current;
-
-      const tryPreload = (candIdx: number) => {
-        if (candIdx >= candidates.length) {
-          preloadedAyahMetaRef.current = null;
-          return;
-        }
-        const url = candidates[candIdx];
-        preloadedAyahMetaRef.current = {
-          surahNumber: surah.number,
-          ayahNumber: ayahNum,
-          reciterId,
-          url,
-        };
-        pre.onerror = () => {
-          tryPreload(candIdx + 1);
-        };
-        pre.src = url;
-        pre.preload = 'auto';
-        pre.load();
-      };
-
-      tryPreload(0);
+      if (!surah || hasNativeQuranAudioBridge()) return;
+      webQuranPlayer.prebufferAyah(surah.number, surah.ayahs, ayahNum, reciterId);
     },
     []
   );
 
-  const stopAudio = useCallback(() => {
-    playbackTokenRef.current += 1;
-    stopRaf();
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onended = null;
-      audioRef.current.ontimeupdate = null;
-      audioRef.current.onloadedmetadata = null;
-      audioRef.current.onerror = null;
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
-    }
-    clearPrebufferedAyah();
-    setIsAudioPlaying(false);
-    setCurrentPlayingAyah(null);
-    setActiveWordPos(null);
-    currentAyahRef.current = null;
-    activeWordRef.current = null;
-    setAudioCurrentTime(0);
-    setAudioDuration(getSurahTotalDurationSec(activeSurahRef.current));
-  }, [clearPrebufferedAyah, stopRaf]);
-
   useEffect(() => {
     return () => {
-      playbackTokenRef.current += 1;
       stopRaf();
-      if (!hasNativeQuranAudioBridge() && audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      preloadAudioRef.current = null;
     };
   }, [stopRaf]);
 
@@ -1015,7 +925,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         return;
       }
       if (!currentSurah || !st.active || st.surahNumber !== currentSurah.number) {
-        if (hasNativeQuranAudioBridge() && !st.active) {
+        if (!st.active) {
           setIsAudioPlaying(false);
           setCurrentPlayingAyah(null);
           setActiveWordPos(null);
@@ -1102,19 +1012,13 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   );
 
   useEffect(() => {
-    if (!hasNativeQuranAudioBridge()) return;
-    applyNativeState(getNativeAudioState());
-    return subscribeNativeAudioState(applyNativeState);
+    if (hasNativeQuranAudioBridge()) {
+      applyNativeState(getNativeAudioState());
+      return subscribeNativeAudioState(applyNativeState);
+    }
+    applyNativeState(webQuranPlayer.getState());
+    return webQuranPlayer.subscribe(applyNativeState);
   }, [applyNativeState, activeSurahData?.number]);
-
-  // Track cumulative Quran listening duration for web audio playback
-  useEffect(() => {
-    if (!isAudioPlaying || hasNativeQuranAudioBridge()) return;
-    const id = window.setInterval(() => {
-      addQuranListenSeconds(5);
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [isAudioPlaying]);
 
   // 60fps smooth progress animation & real-time word highlight loop
   useEffect(() => {
@@ -1137,11 +1041,10 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     }
 
     const tick = () => {
-      const audio = audioRef.current;
       const ayahNum = currentAyahRef.current;
-      if (!audio || ayahNum === null) return;
-
-      syncProgressAndWord(ayahNum, audio.currentTime, audio.duration);
+      if (ayahNum === null) return;
+      const { currentTimeSec, durationSec } = webQuranPlayer.getLiveAudioTiming();
+      syncProgressAndWord(ayahNum, currentTimeSec, durationSec);
       rafRef.current = requestAnimationFrame(tick);
     };
 
@@ -1268,181 +1171,38 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         return;
       }
 
-      playbackTokenRef.current += 1;
-      const token = playbackTokenRef.current;
-
+      const curWeb = webQuranPlayer.getState();
       currentAyahRef.current = ayahNumberInSurah;
       activeWordRef.current = null;
       setCurrentPlayingAyah(ayahNumberInSurah);
       setActiveWordPos(null);
       syncProgressAndWord(ayahNumberInSurah, offsetWithinAyahSec, 0);
 
-      // Check if Ayah N is already pre-buffered in preloadAudioRef for instant 0ms gapless playback!
-      const preEl = preloadAudioRef.current;
-      const preMeta = preloadedAyahMetaRef.current;
-      const canPromotePrebuffered = Boolean(
-        offsetWithinAyahSec <= 0 &&
-          preEl &&
-          preMeta &&
-          preMeta.surahNumber === surah.number &&
-          preMeta.ayahNumber === ayahNumberInSurah &&
-          preMeta.reciterId === reciterId &&
-          urls.includes(preMeta.url) &&
-          preEl.readyState >= 2
-      );
+      const sameWebSurahAndReciter =
+        curWeb.active &&
+        curWeb.surahNumber === surah.number &&
+        curWeb.reciterKey === reciter.storageKey;
 
-      // Reuse a single persistent <audio> element so Android WebView preserves playback unlock across ayahs
-      if (!audioRef.current) {
-        const created = new Audio();
-        created.preload = 'auto';
-        audioRef.current = created;
-      }
-
-      const attachPlaybackHandlers = (
-        el: HTMLAudioElement,
-        onFail: () => void
-      ) => {
-        let appliedSeek = false;
-        el.onloadedmetadata = () => {
-          if (token !== playbackTokenRef.current) return;
-          if (!appliedSeek && offsetWithinAyahSec > 0 && el.duration && Number.isFinite(el.duration)) {
-            appliedSeek = true;
-            el.currentTime = Math.min(offsetWithinAyahSec, Math.max(0, el.duration - 0.15));
-          }
-          syncProgressAndWord(ayahNumberInSurah, el.currentTime, el.duration);
-        };
-
-        el.onerror = () => {
-          if (token !== playbackTokenRef.current) return;
-          onFail();
-        };
-
-        el.onended = () => {
-          if (token !== playbackTokenRef.current) return;
-          const latestSurah = activeSurahRef.current;
-          if (latestSurah) {
-            const nextAyah = latestSurah.ayahs.find(
-              (a) => a.numberInSurah === ayahNumberInSurah + 1
-            );
-            if (nextAyah) {
-              playAyahRef.current(nextAyah.numberInSurah, 0);
-              return;
-            }
-          }
-          stopAudio();
-        };
-      };
-
-      const startStandardFlow = () => {
-        const audio = audioRef.current!;
-        audio.onended = null;
-        audio.onloadedmetadata = null;
-        audio.onerror = null;
-
-        // Pre-buffer Ayah N+1 silently in background while Ayah N plays
-        prebufferAyah(surah, ayahNumberInSurah + 1, reciterId);
-
-        const playCandidatesList = (candidateUrls: string[]) => {
-          const tryCandidate = (candIdx: number) => {
-            if (token !== playbackTokenRef.current || candIdx >= candidateUrls.length) {
-              if (token === playbackTokenRef.current) stopAudio();
-              return;
-            }
-
-            attachPlaybackHandlers(audio, () => {
-              if (candIdx + 1 < candidateUrls.length) {
-                tryCandidate(candIdx + 1);
-              } else {
-                stopAudio();
-              }
-            });
-
-            audio.src = candidateUrls[candIdx];
-            audio.load();
-            audio
-              .play()
-              .then(() => {
-                if (token !== playbackTokenRef.current) return;
-                setIsAudioPlaying(true);
-              })
-              .catch((err: unknown) => {
-                if (token !== playbackTokenRef.current) return;
-                const errName = (err as { name?: string })?.name;
-                if (errName === 'AbortError') return;
-                if (candIdx + 1 < candidateUrls.length) {
-                  tryCandidate(candIdx + 1);
-                } else {
-                  setIsAudioPlaying(false);
-                }
-              });
-          };
-
-          tryCandidate(0);
-        };
-
-        // On Web & Linux Desktop, play from local IndexedDB offline MP3 blob first when downloaded
-        if (isWebAudioDownloaded(surah.number, reciter.storageKey)) {
-          void getWebOfflineAyahBlobUrl(surah.number, reciter.storageKey, ayahNumberInSurah).then(
-            (offlineUrl) => {
-              if (token !== playbackTokenRef.current) return;
-              playCandidatesList(offlineUrl ? [offlineUrl, ...urls] : urls);
-            }
-          );
-          return;
-        }
-
-        playCandidatesList(urls);
-      };
-
-      if (canPromotePrebuffered && preEl) {
-        const prevActive = audioRef.current;
-        if (prevActive) {
-          prevActive.onended = null;
-          prevActive.onloadedmetadata = null;
-          prevActive.onerror = null;
-          prevActive.pause();
-        }
-        // Swap roles: pre-buffered element becomes active; old active becomes the N+1 preloader
-        audioRef.current = preEl;
-        preloadAudioRef.current = prevActive || new Audio();
-        preloadAudioRef.current.preload = 'auto';
-        preloadedAyahMetaRef.current = null;
-
-        preEl.onerror = null;
-        preEl.currentTime = 0;
-        attachPlaybackHandlers(preEl, () => {
-          // If promoted element fails mid-stream, retry standard flow on fallback element
-          if (token === playbackTokenRef.current) startStandardFlow();
+      if (sameWebSurahAndReciter) {
+        webQuranPlayer.jumpToAyah(ayahNumberInSurah, offsetWithinAyahSec);
+      } else {
+        const loc = getLocalizedSurahMeta(
+          surah.number,
+          surah.englishName,
+          surah.englishNameTranslation,
+          language
+        );
+        webQuranPlayer.loadAndPlay({
+          surahNumber: surah.number,
+          surahName: loc.name,
+          reciterId,
+          ayahs: surah.ayahs,
+          startAyahNumber: ayahNumberInSurah,
+          offsetSec: offsetWithinAyahSec,
         });
-
-        // Immediately start pre-buffering Ayah N+1 on the recycled element
-        prebufferAyah(surah, ayahNumberInSurah + 1, reciterId);
-
-        syncProgressAndWord(ayahNumberInSurah, 0, preEl.duration || 0);
-        preEl
-          .play()
-          .then(() => {
-            if (token !== playbackTokenRef.current) return;
-            setIsAudioPlaying(true);
-          })
-          .catch((err: unknown) => {
-            if (token !== playbackTokenRef.current) return;
-            const errName = (err as { name?: string })?.name;
-            if (errName === 'AbortError') return;
-            // Fallback cleanly to the originally unlocked audio element if gesture policy rejected swap
-            if (prevActive) {
-              audioRef.current = prevActive;
-              preloadAudioRef.current = preEl;
-              preEl.pause();
-            }
-            startStandardFlow();
-          });
-        return;
       }
-
-      startStandardFlow();
     },
-    [language, prebufferAyah, stopAudio, syncProgressAndWord]
+    [language, syncProgressAndWord]
   );
 
   useEffect(() => {
@@ -1471,22 +1231,21 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       return;
     }
 
-    if (audioRef.current && currentAyahRef.current !== null && audioRef.current.src) {
-      if (!audioRef.current.paused) {
-        audioRef.current.pause();
-        setIsAudioPlaying(false);
-      } else {
-        const curAyah = currentAyahRef.current;
-        audioRef.current
-          .play()
-          .then(() => setIsAudioPlaying(true))
-          .catch(() => playAyahRef.current(curAyah, 0));
-      }
+    const curWeb = webQuranPlayer.getState();
+    const reciter = getReciterById(selectedReciterIdRef.current);
+    if (
+      curWeb.active &&
+      surah &&
+      curWeb.surahNumber === surah.number &&
+      curWeb.reciterKey === reciter.storageKey
+    ) {
+      webQuranPlayer.togglePlayPause();
+      setIsAudioPlaying(!curWeb.isPlaying);
       return;
     }
 
     if (surah && surah.ayahs.length > 0) {
-      playAyahRef.current(surah.ayahs[0].numberInSurah, 0);
+      playAyahRef.current(currentAyahRef.current ?? surah.ayahs[0].numberInSurah, 0);
     }
   }, []);
 
@@ -1536,19 +1295,14 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         }
         return;
       }
-      if (audioRef.current && currentAyahRef.current === timing.ayahNumber && audioRef.current.src) {
-        const clamped =
-          audioRef.current.duration && Number.isFinite(audioRef.current.duration)
-            ? Math.min(offsetSec, Math.max(0, audioRef.current.duration - 0.1))
-            : offsetSec;
-        audioRef.current.currentTime = clamped;
-        syncProgressAndWord(timing.ayahNumber, clamped, audioRef.current.duration);
-        if (!isAudioPlaying) {
-          audioRef.current
-            .play()
-            .then(() => setIsAudioPlaying(true))
-            .catch(() => startPlayingFromAyah(timing.ayahNumber, offsetSec));
-        }
+      const curWeb = webQuranPlayer.getState();
+      if (
+        curWeb.active &&
+        curWeb.surahNumber === surah.number &&
+        curWeb.ayahNumber === timing.ayahNumber
+      ) {
+        webQuranPlayer.seekWithinCurrentAyah(offsetSec);
+        syncProgressAndWord(timing.ayahNumber, offsetSec, curWeb.durationMs / 1000);
       } else {
         startPlayingFromAyah(timing.ayahNumber, offsetSec);
       }
@@ -1575,18 +1329,16 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       setVisibleAyahCount(Math.max(35, targetAyah + 12));
       setLastRead(saveLastRead(surahNumber, targetAyah));
       setActiveSurahNumber(surahNumber);
-      if (!hasNativeQuranAudioBridge()) {
-        stopAudio();
-      } else {
-        const curNative = getNativeAudioState();
-        if (!curNative.active || curNative.surahNumber !== surahNumber) {
-          setIsAudioPlaying(false);
-          setCurrentPlayingAyah(null);
-          setActiveWordPos(null);
-          currentAyahRef.current = null;
-          activeWordRef.current = null;
-          setAudioCurrentTime(0);
-        }
+      const curPlayer = hasNativeQuranAudioBridge()
+        ? getNativeAudioState()
+        : webQuranPlayer.getState();
+      if (!curPlayer.active || curPlayer.surahNumber !== surahNumber) {
+        setIsAudioPlaying(false);
+        setCurrentPlayingAyah(null);
+        setActiveWordPos(null);
+        currentAyahRef.current = null;
+        activeWordRef.current = null;
+        setAudioCurrentTime(0);
       }
 
       const cachedOffline =
@@ -1655,9 +1407,9 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
         activeSurahRef.current = baseSurah;
         setActiveSurahData(baseSurah);
-        if (hasNativeQuranAudioBridge()) {
-          applyNativeState(getNativeAudioState());
-        }
+        applyNativeState(
+          hasNativeQuranAudioBridge() ? getNativeAudioState() : webQuranPlayer.getState()
+        );
         if (targetAyah <= 1) {
           versesScrollRef.current?.scrollTo({ top: 0 });
         }
@@ -1982,10 +1734,11 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       }
     },
     [
+      applyNativeState,
       language,
+      prebufferAyah,
       selectedTranslation,
       startPlayingFromAyah,
-      stopAudio,
       t.quran.versesUnit,
     ]
   );
@@ -2155,15 +1908,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   }, [selectedTranslation, activeSurahNumber, loadSurah]);
 
   const closeSurahDetail = useCallback(() => {
-    if (!hasNativeQuranAudioBridge()) {
-      stopAudio();
-    }
     loadedSurahIdRef.current = null;
     shouldRestoreListScrollRef.current = true;
     setActiveSurahNumber(null);
     setActiveSurahData(null);
     if (onCloseSurahDetail) onCloseSurahDetail();
-  }, [onCloseSurahDetail, stopAudio]);
+  }, [onCloseSurahDetail]);
 
   // Restore exact Surah directory scroll position synchronously before paint (zero shake/flicker)
   useLayoutEffect(() => {
@@ -2219,7 +1969,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       );
       const transText = getAyahTranslation(ayah, selectedTranslation);
       const textToCopy = `${ayah.text}\n\n"${transText}"\n- ${loc.name} (${surah.number}:${ayah.numberInSurah})`;
-      navigator.clipboard.writeText(textToCopy).catch(() => undefined);
+      void copyTextSafely(textToCopy);
       setCopiedAyah(ayah.numberInSurah);
       setTimeout(() => setCopiedAyah(null), 2000);
     },
