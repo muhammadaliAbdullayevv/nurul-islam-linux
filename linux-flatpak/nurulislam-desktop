@@ -30,8 +30,8 @@ from gi.repository import Gio, GLib, Gtk, WebKit2  # noqa: E402
 APP_ID = "dev.mabdullayev.nurulislam.App"
 APP_TITLE = "Nurul Islam"
 PREFERRED_PORT = 47871
-FALLBACK_VERSION_CODE = 80
-FALLBACK_VERSION_NAME = "1.8.61"
+FALLBACK_VERSION_CODE = 81
+FALLBACK_VERSION_NAME = "1.8.62"
 ALLOWED_UPDATE_HOST = "nurulislam.mabdullayev.dev"
 DEFAULT_RPM_URL = "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm"
 

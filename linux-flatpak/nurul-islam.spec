@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.61
+Version:        1.8.62
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.62-1
+- Add Muhammad Sharif Gulkhani (Zarbulmasal) and enrich Scholars & Wisdom library to 9 scholars and 83 source-cited works
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.61-1
 - Make Juma Mode checklist fully customizable with Men/Women Hanafi presets, custom tasks, ordering, and visibility toggles
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.60-1

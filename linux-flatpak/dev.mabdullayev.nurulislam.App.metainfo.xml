@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.62" date="2026-11-22">
+      <description>
+        <p>Added Muhammad Sharif Gulkhani (Zarbulmasal parables and proverbs) and enriched the Scholars and Wisdom library to 9 Movarounnahr masters and 83 verified, source-cited works.</p>
+      </description>
+    </release>
     <release version="1.8.61" date="2026-11-22">
       <description>
         <p>Upgraded Juma Mode with a fully customizable Friday Sunnah checklist featuring dedicated Men and Women Hanafi presets, custom user tasks, reordering, and item visibility toggles.</p>

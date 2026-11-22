@@ -110,7 +110,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
     { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
     { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
     { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },
-    { id: 'wisdom', label: t.features.wisdom, icon: MushafIcon, imageSrc: '/icons/home/wisdom.webp', badge: '8' },
+    { id: 'wisdom', label: t.features.wisdom, icon: MushafIcon, imageSrc: '/icons/home/wisdom.webp', badge: '9' },
     { id: 'tasbih', label: t.features.tasbih, icon: ZikrBeadsIcon, imageSrc: '/icons/home/tasbih.webp', badge: '' },
     {
       id: 'guide',

@@ -277,7 +277,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
       { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
       { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },
-      { id: 'wisdom', label: t.features.wisdom, icon: HadithBookIcon, imageSrc: '/icons/home/wisdom.webp', badge: '8' },
+      { id: 'wisdom', label: t.features.wisdom, icon: HadithBookIcon, imageSrc: '/icons/home/wisdom.webp', badge: '9' },
       { id: 'guide', label: t.features.guide, icon: WuduNamozGuideIcon, imageSrc: '/icons/home/guide.webp', badge: '' },
       { id: 'masjids', label: t.features.masjids, icon: MasjidDomeIcon, imageSrc: '/icons/home/masjids.webp', badge: '' },
       {

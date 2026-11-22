@@ -1,14 +1,14 @@
 {
-  "versionCode": 80,
-  "versionName": "1.8.61",
+  "versionCode": 81,
+  "versionName": "1.8.62",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 80,
+  "minSupportedVersionCode": 81,
   "notes": {
-    "uz_lat": "Juma Rejimi ro'yxati endi to'liq moslanuvchan! Erkaklar va Ayollar uchun alohida Hanafiy sunnatlar to'plami, o'zingizning shaxsiy Juma vazifalaringizni qo'shish, tartiblash va yashirish imkoniyati qo'shildi.",
-    "uz_cyr": "Жума Режими рўйхати энди тўлиқ мосланувчан! Эркаклар ва Аёллар учун алоҳида Ҳанафий суннатлар тўплами, ўзингизнинг шахсий Жума вазифаларингизни қўшиш, тартиблаш ва яшириш имконияти қўшилди.",
-    "en": "Juma Checklist is now fully customizable with dedicated Men & Women Hanafi Friday Sunnah presets, plus the ability to add personal tasks, reorder, hide/show items, and quick-add sunnahs.",
-    "ru": "Чек-лист Джумы теперь полностью настраиваемый: отдельные наборы сунн для мужчин и женщин по ханафитскому мазхабу, добавление личных задач, изменение порядка и скрытие пунктов."
+    "uz_lat": "'Allomalar va Hikmatlar' bo'limi sezilarli boyitildi! Muhammad Sharif Gulxaniy ('Zarbulmasal' — Toshbaqa va Chayon, Maymun va Najjor, Tuya va Bo'taloq hamda mashhur maqollar) qo'shildi, barcha 9 alloma ijodidan jami 83 ta ishonchli va manbali hikmatlar jamlandi.",
+    "uz_cyr": "«Алломалар ва Ҳикматлар» бўлими сезиларли бойитилди! Муҳаммад Шариф Гулханий («Зарбулмасал» — Тошбақа ва Чаён, Маймун ва Нажжор, Туя ва Бўталоқ ҳамда машҳур мақоллар) қўшилди, барча 9 аллома ижодидан жами 83 та ишончли ва манбали ҳикматлар жамланди.",
+    "en": "Expanded 'Scholars & Wisdom' to 9 Movarounnahr masters and 83 source-cited works: added Muhammad Sharif Gulkhani (Zarbulmasal parables & proverbs) and enriched Yasawi, Naqshband, Navoi, Sufi Allahyar, Ghijduwani, Bukhari, Maturidi & Marghinani.",
+    "ru": "Раздел «Учёные и Мудрости» расширен до 9 великих мастеров и 83 проверенных хикматов: добавлен Мухаммад Шариф Гульхани («Зарбулмасал» — знаменитые притчи и пословицы) и пополнены труды всех остальных учёных."
   }
 }

@@ -5,6 +5,7 @@ export type ScholarId =
   | 'yassaviy'
   | 'naqshband'
   | 'navoiy'
+  | 'gulxaniy'
   | 'olloyor'
   | 'gijduvoniy'
   | 'buxoriy'
@@ -22,7 +23,7 @@ export interface LocalizedTriple {
 export interface WisdomScholarRaw {
   id: ScholarId;
   years: string;
-  accent: 'emerald' | 'amber' | 'teal' | 'indigo' | 'rose' | 'sky' | 'violet' | 'lime';
+  accent: 'emerald' | 'amber' | 'teal' | 'indigo' | 'rose' | 'sky' | 'violet' | 'lime' | 'orange';
   name: LocalizedTriple;
   title: LocalizedTriple;
   place: LocalizedTriple;
@@ -122,6 +123,20 @@ export const WISDOM_SCHOLARS: WisdomScholarRaw[] = [
       uz: "Naqshbandiya tariqatining yirik namoyandasi, mutafakkir, davlat arbobi va shoir. «Arba'in» asarida Payg'ambarimizning ﷺ 40 ta sahih hadisini go'zal o'zbekcha to'rtliklarda talqin qilgan, «Mahbub ul-Qulub»da esa yuksak insoniy odoblarni bayon etgan.",
       en: 'Statesman, thinker, and supreme poet of the Uzbek language who followed the Naqshbandi tradition. In Arba’in he rendered 40 Prophetic hadiths into luminous Uzbek quatrains, and in Mahbub al-Qulub distilled timeless ethics.',
       ru: 'Великий мыслитель, поэт и последователь традиции Накшбандия. В труде «Арбаин» поэтически переложил 40 достоверных хадисов Пророка ﷺ на тюркский язык, а в «Махбуб аль-Кулуб» раскрыл высшие нормы благонравия.',
+    },
+  },
+  {
+    id: 'gulxaniy',
+    years: '1770–1827',
+    accent: 'orange',
+    name: { uz: 'Muhammad Sharif Gulxaniy', en: 'Muhammad Sharif Gulkhani', ru: 'Мухаммад Шариф Гульхани' },
+    title: { uz: "Qo'qon adabiy muhiti · Masalnavis alloma", en: 'Master of Uzbek Fables & Proverbs', ru: 'Мастер узбекской притчи и пословиц' },
+    place: { uz: "Qo'qon (Farg'ona vodiysi)", en: 'Kokand (Fergana Valley)', ru: 'Коканд (Ферганская долина)' },
+    masterwork: { uz: 'Zarbulmasal · G‘azallar', en: 'Zarbulmasal (Book of Parables) · Ghazals', ru: 'Зарбулмасал (Свод притч) · Газели' },
+    bio: {
+      uz: "O'zbek mumtoz adabiyotining yorqin vakili, Qo'qon adabiy muhitining mashhur shoiri va masalnavisi. 400 dan ortiq xalq maqoli va o'tkir axloqiy masallarni jamlagan «Zarbulmasal» asari orqali adolat, halollik, kamtarlik, ilm-hunar va hayo qadriyatlarini kuylagan.",
+      en: 'Renowned classical Uzbek poet and fabulist of Kokand. Through his masterpiece Zarbulmasal—weaving over 400 folk proverbs and piercing moral parables—he championed honesty, craft, modesty, consultation, and justice.',
+      ru: 'Выдающийся узбекский поэт и баснописец Кокандской литературной школы. В бессмертном труде «Зарбулмасал», объединившем более 400 народных пословиц и притч, воспел справедливость, честность, мастерство и скромность.',
     },
   },
   {
@@ -1116,6 +1131,689 @@ export const WISDOM_ENTRIES: WisdomEntryRaw[] = [
       uz: "Namozni shoshilib ado etish o'rniga ruku va sajdalarda bir oz sokin to'xtash, o'qiyotgan sura va tasbehlarning ma'nosini his qilish ibodatimizni haqiqiy rohatga aylantiradi.",
       en: 'Slowing down in ruku and sujud instead of rushing through prayer—and feeling the meaning of the words—turns every salah into genuine rest for the soul.',
       ru: 'Если не торопиться в поясном и земном поклонах, а прочувствовать смысл произносимых слов, каждый намаз становится настоящим отдохновением для души.',
+    },
+  },
+
+  // ==================== 9. MUHAMMAD SHARIF GULXANIY ====================
+  {
+    id: 'gul_01',
+    scholarId: 'gulxaniy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · «Toshbaqa bilan Chayon» masali', en: 'Zarbulmasal · The Tortoise & the Scorpion', ru: 'Зарбулмасал · Притча о Черепахе и Скорпионе' },
+    heading: { uz: 'Toshbaqa bilan Chayon: Do‘st tanlashda farosat', en: 'The Tortoise & Scorpion: Discernment in Friendship', ru: 'Черепаха и Скорпион: разборчивость в дружбе' },
+    original: '«Yaxshiga yondash, yomondan qoch!»',
+    excerpt: {
+      uz: "Toshbaqa daryodan o'tolmay turgan chayonga rahm qilib yelkasiga mindiradi. Suv o'rtasida chayon toshbaqaning kosasiga nishini sancha boshlaydi va «Odatim shunday — chaqmay turolmayman» deydi. Shunda toshbaqa suvga sho'ng'ib, xoin hamrohdan qutuladi.",
+      en: 'A kind tortoise carries a stranded scorpion across a river on its shell. Midway across, the scorpion strikes its back, excusing itself: “It is simply my nature to sting.” Recognizing treachery, the tortoise dives beneath the water to save itself.',
+      ru: 'Добрая черепаха переправляет скорпиона через реку на своём панцире. Посреди реки скорпион начинает жалить её, оправдываясь: «Такова моя природа». Поняв коварство спутника, черепаха ныряет в глубину и избавляется от предателя.',
+    },
+    sharh: {
+      uz: "Gulxaniy bu mashhur masal orqali mo'min kishining hushyor va farosatli bo'lishini uqtiradi: tabiatida hasad, xiyonat va ozor berish odati bor kimsaga sir va ishonch topshirilmaydi.",
+      en: 'Through this classic parable, Gulkhani teaches moral discernment: compassion never requires naivety—do not entrust your secrets or safety to someone whose proven habit is betrayal.',
+      ru: 'Этой знаменитой притчей Гульхани учит проницательности: доброта не означает наивности — нельзя доверять тайны и судьбу тому, чья привычка — коварство и предательство.',
+    },
+  },
+  {
+    id: 'gul_02',
+    scholarId: 'gulxaniy',
+    topic: 'ilm',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · «Maymun bilan Najjor» masali', en: 'Zarbulmasal · The Monkey & the Carpenter', ru: 'Зарбулмасал · Притча об Обезьяне и Плотнике' },
+    heading: { uz: 'Maymun bilan Najjor: Bilmagan ishga aralashmaslik', en: 'The Monkey & Carpenter: Respecting True Craft', ru: 'Обезьяна и Плотник: опасность невежества' },
+    original: '«O‘z hunaringni bil — bilmagan ishga burun suqma!»',
+    excerpt: {
+      uz: "Duradgor (najjor) yog'ochni arra bilan yorib, orasiga pona qoqib dam olgani ketadi. Uni chetdan kuzatgan maymun o'zini usta sanab yog'och ustiga o'tirib ponani sug'urib oladi — yoriq yopilib, qattiq qisilib sharmanda va azobga qoladi.",
+      en: 'A carpenter splits a log with a wedge and steps away to rest. Thinking it looks easy, an observing monkey climbs onto the log and pulls out the wedge—only for the timber to snap shut and trap it in pain.',
+      ru: 'Плотник расщепляет бревно, вставляет клин и уходит передохнуть. Обезьяна, вообразив себя мастером, садится на бревно и выдергивает клин — бревно захлопывается, прищемляя её.',
+    },
+    sharh: {
+      uz: "Ilmsiz va tajribasiz holda o'zgalarga ko'r-ko'rona taqlid qilish yoki o'z sohasi bo'lmagan nozik ishlarga (ayniqsa din, tabobat va huquqqa) aralashish kishini ham, atrofdagilarni ham ziyon ko'rishiga olib keladi.",
+      en: 'Blind imitation without training—or meddling arrogantly in fields you have not studied—inevitably backfires. Master your craft honestly and respect genuine expertise.',
+      ru: 'Слепое подражание без знаний и самонадеянное вмешательство в чужое ремесло всегда приводят к беде. Уважай мастерство и сначала основательно учись сам.',
+    },
+  },
+  {
+    id: 'gul_03',
+    scholarId: 'gulxaniy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · «Tuya bilan Bo‘taloq» masali', en: 'Zarbulmasal · The Camel & Her Calf', ru: 'Зарбулмасал · Притча о Верблюдице и Верблюжонке' },
+    heading: { uz: 'Tuya bilan Bo‘taloq: Mazlumlarga rahm va adolat', en: 'The Camel & Calf: Compassion & Justice', ru: 'Верблюдица и Верблюжонок: сострадание и справедливость' },
+    excerpt: {
+      uz: "Jazirama cho'lda og'ir yuk ostida borayotgan ona tuyaga och qolgan bo'taloq yalinadi: «Onajon, biroz to'xtang, sut emayin!» Ona tuya ko'z yosh bilan javob beradi: «Bolajonim, burundug'im sarbonning qo'lida — ixtiyorim o'zimda bo'lsa, seni shunday qiynarmidim?»",
+      en: 'Beneath scorching desert sun, a hungry calf pleads with its burdened mother camel to pause so it may nurse. Weeping, the mother replies: “My child, the halter is in the driver’s hand—had I any choice, would I let you suffer?”',
+      ru: 'В палящей пустыне голодный верблюжонок просит нагруженную мать остановиться хоть на миг. Верблюдица отвечает со слезами: «Дитя моё, поводья в чужих руках — разве по своей воле я мучила бы тебя?»',
+    },
+    sharh: {
+      uz: "Gulxaniy bu yurakni titratuvchi masal bilan insonlarni adolatli bo'lishga, qo'l ostidagi xodim, ojiz va mazlumlarga haddan tashqari og'ir yuk yuklamaslikka va rahm-shafqatli bo'lishga chaqiradi.",
+      en: 'Through this deeply moving fable, Gulkhani awakens empathy for the overburdened and reminds anyone holding authority to rule with mercy and fairness.',
+      ru: 'Этой пронзительной притчей Гульхани пробуждает сострадание к обездоленным и напоминает каждому, кто наделён властью, о милосердии и справедливости.',
+    },
+  },
+  {
+    id: 'gul_04',
+    scholarId: 'gulxaniy',
+    topic: 'nafs',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · Yapaloqqush va Boyo‘g‘li qissasi', en: 'Zarbulmasal · Story of the Owls', ru: 'Зарбулмасал · Повесть о Совах' },
+    heading: { uz: 'Isrof, kibr va soxta dabdabaning kulgili oqibati', en: 'Exposing Greed, Vanity & Wasteful Boasting', ru: 'Обличение алчности, тщеславия и расточительства' },
+    excerpt: {
+      uz: "Yapaloqqush bilan Boyo'g'li quda bo'lish chog'ida bir-biriga quruq maqtanib, hatto xaroba va vayronalarni «mingta saroy» deb qalin qilib talab qiladilar. Gulxaniy bu hajv orqali to'y-hashamdagi isrof, manmanlik va tama'girlikni ayovsiz fosh etadi.",
+      en: 'While arranging a marriage, two boastful owls demand a thousand ruined estates as dowry, pretending wasteland is royal splendor. Gulkhani uses sharp satire to expose greed, vanity, and wasteful wedding ostentation.',
+      ru: 'Сватаясь друг с другом, тщеславные совы требуют в калым тысячу развалин, выдавая руины за дворцы. Тонкой сатирой Гульхани высмеивает алчность, показуху и расточительство на тоях.',
+    },
+    sharh: {
+      uz: "Bugungi kunda ham ortiqcha dabdaba, qarzga botib to'y qilish va «odamlar nima deydi» deb isrofga berilish katta illatdir. Gulxaniy 200 yil avval bizni soddalik, qanoat va halol kamtarlikka chaqirgan.",
+      en: 'Two centuries later, Gulkhani’s satire still hits home: plunging into debt for lavish weddings and chasing social prestige brings only ruin. Simplicity and contentment bring real barakah.',
+      ru: 'Даже спустя двести лет сатира Гульхани поразительно актуальна: погоня за показухой и долги ради пышных торжеств разрушают благополучие. Истинная благодать — в скромности.',
+    },
+  },
+  {
+    id: 'gul_05',
+    scholarId: 'gulxaniy',
+    topic: 'ilm',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · Xalq hikmati', en: 'Zarbulmasal · Proverb of Consultation', ru: 'Зарбулмасал · Мудрость совета' },
+    heading: { uz: 'Maslahatli kengash tarqamas', en: 'Counselled Plans Never Fall Apart', ru: 'Дело, решённое советом, не распадётся' },
+    original: '«Maslahatli to‘y tarqamas, kengashli el buzilmas.»',
+    excerpt: {
+      uz: "Gulxaniy «Zarbulmasal»da ish boshlashdan avval dono va xolis kishilar bilan mashvarat (shuro) qilishni qayta-qayta ta'kidlaydi: o'z bilganidan qolmaydigan o'jar odam pushaymon bo'ladi, kengashib ish tutgan esa baraka topadi.",
+      en: 'Throughout Zarbulmasal, Gulkhani repeatedly highlights the wisdom of shura (consultation): stubbornness invites regret, while seeking wise, sincere counsel safeguards every venture.',
+      ru: 'На страницах «Зарбулмасала» Гульхани вновь и вновь подчёркивает силу доброго совета (шуры): упрямство ведёт к раскаянию, а мудрое совещание хранит дело от краха.',
+    },
+    sharh: {
+      uz: "Qur'oni Karimda ham mo'minlarning muhim sifati «ishlari o'zaro mashvarat bilan bo'lur» (Sho'ro, 38) deb madh etilgan. Oila, ilm va biznes qarorlarida tajribali kishilar fikrini tinglash — donolik belgisidir.",
+      en: 'The Quran praises believers as those “whose affairs are conducted by mutual consultation” (42:38). Listening to wise elders and trusted advisors is a mark of strength, not weakness.',
+      ru: 'Коран восхваляет верующих тем, что «их дела решаются взаимным советом» (42:38). Прислушиваться к опытным и искренним людям — признак зрелой мудрости.',
+    },
+  },
+  {
+    id: 'gul_06',
+    scholarId: 'gulxaniy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · Hayo va Or-nomus', en: 'Zarbulmasal · Modesty & Honor', ru: 'Зарбулмасал · Стыдливость и честь' },
+    heading: { uz: 'Uyat — o‘limdan qattiqdir', en: 'Loss of Honor Cuts Deeper Than Death', ru: 'Позор тяжелее смерти' },
+    original: '«Uyat o‘limdan qattiq.»',
+    excerpt: {
+      uz: "Gulxaniy keltirgan bu qadimiy hikmat inson qadr-qimmati, hayo va vijdonning naqadar muqaddasligini eslatadi: mol-dunyo ketishi mumkin, lekin nomus, uyat va halol nom yo'qolsa, uni qaytarish eng mushkuldir.",
+      en: 'This timeless proverb woven into Zarbulmasal reminds us how sacred modesty (haya) and integrity are: wealth may come and go, but preserving honor and conscience is priceless.',
+      ru: 'Эта древняя мудрость из «Зарбулмасала» напоминает о бесценности совести и стыдливости (хая): богатство приходит и уходит, но честное имя дороже всего.',
+    },
+    sharh: {
+      uz: "Payg'ambarimiz ﷺ: «Hayo iymondandir» deganlar. Har bir qadamda vijdon va hayoni mezonga aylantirgan kishi har ikki dunyoda izzat topadi.",
+      en: 'The Prophet ﷺ said: “Modesty (haya) is a branch of faith.” Letting conscience and dignity guide every choice protects a person in both worlds.',
+      ru: 'Пророк ﷺ сказал: «Стыдливость — часть веры». Человек, сверяющий каждый шаг с совестью, обретает уважение и покой.',
+    },
+  },
+  {
+    id: 'gul_07',
+    scholarId: 'gulxaniy',
+    topic: 'mehnat',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · Vaqt va Mehnat qadri', en: 'Zarbulmasal · Value of Time & Diligence', ru: 'Зарбулмасал · Ценность времени и труда' },
+    heading: { uz: 'Bugungi ishni ertaga qo‘yma', en: 'Never Put Off Today’s Duty Until Tomorrow', ru: 'Не откладывай сегодняшнее дело на завтра' },
+    original: '«Bugungi ishni ertaga qo‘yma; tomchi yig‘ilib ko‘l bo‘lur.»',
+    excerpt: {
+      uz: "Gulxaniy asarida dangasalik va ishni ortga surish keskin qoralanadi: kichik harakatlar uzluksiz davom etsa ulkan natija beradi («tomchi yig'ilib ko'l bo'lur»), ammo «ertaga qilaman» deb yurgan kishi fursatni boy beradi.",
+      en: 'Gulkhani sharply criticizes procrastination: steady small steps accumulate into a lake (“drops gather into a pool”), whereas endlessly delaying until tomorrow steals life’s blessings.',
+      ru: 'Гульхани осуждает лень и промедление: малые постоянные усилия наполняют целое озеро («из капель собирается озеро»), а привычка откладывать всё на завтра крадёт время и успех.',
+    },
+    sharh: {
+      uz: "Namozni vaqtida o'qish, va'dani kechiktirmaslik va har kuni kichik bo'lsa ham foydali ishni oxiriga yetkazish — muvaffaqiyat va barakaning sodda siridir.",
+      en: 'Praying on time, honoring commitments promptly, and finishing one meaningful task daily is the quiet formula behind lasting barakah.',
+      ru: 'Вовремя совершать намаз, не затягивать обещания и каждый день доводить до конца полезное дело — простой секрет благодати и успеха.',
+    },
+  },
+  {
+    id: 'gul_08',
+    scholarId: 'gulxaniy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · Rostgo‘ylik', en: 'Zarbulmasal · Enduring Truth', ru: 'Зарбулмасал · Сила правды' },
+    heading: { uz: 'Yolg‘on masal uzoqqa bormas', en: 'Falsehood Never Stands for Long', ru: 'Ложь не устоит долго' },
+    original: '«Yolg‘on masal turmas, egri tayoq to‘g‘ri soya bermas.»',
+    excerpt: {
+      uz: "Gulxaniy hiyla, laganbardorlik va yolg'on bilan kun ko'ruvchilarni hajv qilar ekan, haqiqat baribir yuzaga chiqishini va egri yo'l bilan to'g'ri natijaga erishib bo'lmasligini uqtiradi.",
+      en: 'Exposing flattery and deceit, Gulkhani underscores that a crooked stick never casts a straight shadow—falsehood eventually collapses, while honesty endures.',
+      ru: 'Высмеивая хитрость и лесть, Гульхани подчёркивает: кривая палка не даст прямой тени — ложь неизбежно раскроется, а правда выстоит.',
+    },
+    sharh: {
+      uz: "Qisqa muddatda yolg'on foyda bergandek tuyulishi mumkin, ammo uzoq muddatda faqat to'g'rilik, halollik va ishonch insonni yuksaltiradi.",
+      en: 'Deceit may seem like a shortcut in the moment, yet over a lifetime only integrity builds lasting trust and peace of heart.',
+      ru: 'Обман может казаться лёгким путём на мгновение, но на долгой дистанции только честность дарует доверие и спокойствие сердца.',
+    },
+  },
+  {
+    id: 'gul_09',
+    scholarId: 'gulxaniy',
+    topic: 'ilm',
+    isVerse: false,
+    work: { uz: 'Zarbulmasal · So‘z va Hikmat qadri', en: 'Zarbulmasal · Treasure of Stored Wisdom', ru: 'Зарбулмасал · Сокровище мудрых слов' },
+    heading: { uz: 'Yoshlikda o‘rganilgan hikmatning mevasi', en: 'Wisdom Learned Early Blossoms in Maturity', ru: 'Плоды мудрости, усвоенной смолоду' },
+    excerpt: {
+      uz: "Gulxaniy hikmat va maqollarni yod olib ulg'ayish haqida shunday yozadi: «Katta bo'lib, aql va tajriba egasi bo'lganlarida, yodlab olgan naqllari ustida tafakkur qilib ko'rsalar, dillari naqadar bebaho hikmatlar bilan to'lganini anglaydilar».",
+      en: 'Gulkhani reflects on memorizing proverbs and wisdom in youth: when people mature and gain life experience, reflecting on the wise sayings stored in their hearts reveals an inexhaustible inner treasury.',
+      ru: 'Гульхани писал о ценности мудрости, усвоенной с юных лет: когда человек взрослеет и обретает опыт, размышление над сохранёнными в памяти притчами открывает в сердце бесценное сокровище.',
+    },
+    sharh: {
+      uz: "Farzandlarga bolalikdan Qur'on oyatlari, hadislar va ajdodlarimizning hikmatli maqollarini singdirib borish — ularga butun umr yo'l ko'rsatuvchi ma'naviy chiroq berish demakdir.",
+      en: 'Planting Quranic values, Prophetic ethics, and ancestral proverbs in young hearts equips them with a moral compass for life.',
+      ru: 'Прививать детям с малых лет ценности Корана, хадисов и народной мудрости — значит подарить им надёжный духовный компас на всю жизнь.',
+    },
+  },
+  {
+    id: 'gul_10',
+    scholarId: 'gulxaniy',
+    topic: 'nafs',
+    isVerse: true,
+    work: { uz: 'Gulxaniy g‘azallari · «Bermoq» radifli g‘azal', en: 'Ghazals of Gulkhani · On Generosity & Dignity', ru: 'Газели Гульхани · О щедрости и достоинстве' },
+    heading: { uz: 'Saxovat va qanoat — mard kishining ziynati', en: 'Generosity & Contentment Adorn Noble Souls', ru: 'Щедрость и довольство — украшение благородных' },
+    original:
+      "Hirs-u tama' bandi bo'lma, ozga qanoat ayla,\nElga yaxshilik qilib, pokiza noming saqla.\nBirovning minnatidan qochib halol non yegan,\nShohlar taxtidan ortiq rohat-u izzat topar.",
+    excerpt: {
+      uz: "Hirs va tama'ga qul bo'lma, ozgina halol rizqqa qanoat qil va odamlarga yaxshilik ulashib pok nomingni saqla. Birovning minnatidan uzoq yurib o'z mehnati bilan kun ko'rgan kishi shohlar taxtidan ham ortiqroq xotirjamlik topadi.",
+      en: 'Never become a captive of greed; be content with pure sustenance and guard an honorable name through kindness. Whoever eats honest bread free of anyone’s favor enjoys greater peace than kings upon thrones.',
+      ru: 'Не становись пленником алчности, довольствуйся чистым уделом и храни доброе имя делами. Живущий честным трудом без одолжений обретает покой выше царского трона.',
+    },
+    sharh: {
+      uz: "Gulxaniy o'zi ham hayotda oddiy hammom go'laxisida mehnat qilib, kibr va laganbardorlikdan yiroq yashagan va shuning uchun «Gulxaniy» taxallusini tanlagan. Pok vijdon — eng oliy boylikdir.",
+      en: 'Gulkhani himself worked humbly tending a bathhouse furnace—taking his pen name from the stove (“gulxan”)—rather than compromising his dignity for flattery.',
+      ru: 'Сам Гульхани скромно трудился истопником (отсюда его псевдоним «Гульхани»), предпочитая честную независимость придворной лести.',
+    },
+  },
+
+  // ==================== ENRICHED VERIFIED WORKS FOR ALL 8 SCHOLARS ====================
+  // --- Xoja Ahmad Yassaviy (+3 verified from Devoni Hikmat) ---
+  {
+    id: 'yas_07',
+    scholarId: 'yassaviy',
+    topic: 'nafs',
+    isVerse: true,
+    work: { uz: 'Devoni Hikmat · 13–14 yosh hikmati', en: 'Diwan-i Hikmat · Verse of Humility', ru: 'Диван-и Хикмат · Стих о смирении' },
+    heading: { uz: 'Takabburni yerga urib, tuproqsifat bo‘lish', en: 'Crushing Arrogance & Becoming Humble as Earth', ru: 'Повергнуть гордыню и стать скромным как земля' },
+    original:
+      "O'n uchimda nafs havosin qo'lga oldim,\nNafs boshiga yuz-ming balo qamrab soldim.\nTakabburni yerga urib bosib oldim,\nO'n to'rtimda tufroqsifat bo'ldim mano.",
+    excerpt: {
+      uz: "Yoshlikdan nafs havosini jilovlab, kibr va manmanlikni yerga urdim; tuproq kabi kamtarin, hammaga manfaatli va xokisor bo'lishni o'rgandim.",
+      en: 'From youth I took hold of my ego’s whims, cast arrogance down to the ground, and learned to become as humble and nurturing as the earth itself.',
+      ru: 'С юных лет я обуздал страсти нафса, поверг высокомерие наземь и научился быть скромным и полезным всем, словно плодородная земля.',
+    },
+    sharh: {
+      uz: "Tuproq barcha mavjudotni ko'taradi, unga qancha og'irlik tushsa ham, u o'rniga gullar va mevalar undirib beradi. Yassaviy «tuproqsifat bo'lish» deganda ana shunday bag'rikeng kamtarlikni nazarda tutgan.",
+      en: 'Earth bears every footstep patiently and responds by growing flowers and fruit. To be “like dust” in Yasawi’s verse means carrying strength wrapped in boundless humility.',
+      ru: 'Земля терпеливо выносит любую тяжесть и отвечает цветами и плодами. Быть «подобным земле» в стихах Яссави — значит сочетать внутреннюю силу с глубоким смирением.',
+    },
+  },
+  {
+    id: 'yas_08',
+    scholarId: 'yassaviy',
+    topic: 'ilm',
+    isVerse: true,
+    work: { uz: 'Devoni Hikmat · Ona tilida ma’rifat', en: 'Diwan-i Hikmat · Wisdom in the Mother Tongue', ru: 'Диван-и Хикмат · Мудрость на родном языке' },
+    heading: { uz: 'Oyat va hadis ma’nosini xalq tilida yetkazish', en: 'Sharing Quran & Hadith Wisdom in Plain Language', ru: 'Доносить смысл Корана и хадисов на родном языке' },
+    original:
+      "Xushlamaydur olimlar bizni aytgan turkini,\nOriflardan eshitsang, ochar ko'ngil mulkini.\nOyat, hadis ma'nosi turkiy bo'lsa muvofiq,\nMa'nisiga yetganlar, yerga qo'yar bo'rkini.",
+    excerpt: {
+      uz: "Ba'zi kibor olimlar turkiy tilda hikmat aytganimizni xushlamasalar-da, oriflardan eshitsang qalb mulkini ochadi. Zero Qur'on oyati va hadis ma'nolari ona tilimizda ravon tushuntirilsa, haqiqatga yetgan kishi bosh egib hurmat qiladi.",
+      en: 'Even if elitists frowned upon our Turkic verse, sincere seekers find it opens the kingdom of the heart—for when Quranic and Prophetic meanings are conveyed clearly in people’s own tongue, those who grasp them bow in awe.',
+      ru: 'Пусть иные снобы недолюбливали нашу тюркскую речь, но для ищущего она открывает врата сердца: когда смысл аятов и хадисов ясно звучит на родном языке, постигшие его склоняют головы в почтении.',
+    },
+    sharh: {
+      uz: "Xoja Ahmad Yassaviy islomiy ma'rifatni oddiy xalq qalbiga ona tilimiz — turkiy-o'zbek tilida olib kirgan buyuk ustozdir. Ilm murakkab so'zlarda emas, inson qalbiga yetib boradigan tushunarli hikmatdadir.",
+      en: 'Ahmad Yasawi pioneered bringing Islamic ethics and spiritual wisdom directly to everyday people in Turkic/Uzbek—showing that real scholarship illuminates hearts rather than showing off jargon.',
+      ru: 'Ахмад Яссави стал первопроходцем, донёсшим исламскую мудрость до простого народа на родном языке. Подлинное знание призвано просвещать сердца, а не кичиться сложностью.',
+    },
+  },
+  {
+    id: 'yas_09',
+    scholarId: 'yassaviy',
+    topic: 'odob',
+    isVerse: true,
+    work: { uz: 'Devoni Hikmat · Yetim va mazlum haqqi', en: 'Diwan-i Hikmat · Rights of Orphans & the Poor', ru: 'Диван-и Хикмат · Права сирот и обездоленных' },
+    heading: { uz: 'G‘arib, faqir va yetimning haqqidan qo‘rqish', en: 'Protecting the Rights of Orphans & the Vulnerable', ru: 'Остерегайся посягать на права сирот и слабых' },
+    original:
+      "G'ariblig'da yuz yil tursa, erur mehmon,\nTaxtu baxtu bo'stonlari erur zindon.\nG'arib, faqir, yetimlarning haqqin yegan,\nO'shal zolim do'zax ichra qolur hayron.",
+    excerpt: {
+      uz: "Inson bu dunyoda yuz yil yashasa ham vaqtincha mehmondir. Shuning uchun g'arib, muhtoj va yetimlarning haqqiga xiyonat qilishdan qattiq saqlan — ularning ko'z yoshi va duosi Alloh huzurida pardasizdir.",
+      en: 'Even if one lives a hundred years in this world, they remain only a passing guest. Guard yourself strictly against consuming the rights of orphans, the poor, and the vulnerable.',
+      ru: 'Даже прожив сто лет в этом мире, человек остаётся лишь временным гостем. Строго оберегайся посягать на права сирот, бедняков и беззащитных.',
+    },
+    sharh: {
+      uz: "Yetimning boshini silash, xodimning haqqini kechiktirmay berish va ojizni himoya qilish — jamiyatga rahmat va baraka olib keluvchi eng buyuk amallardandir.",
+      en: 'Caring for orphans, paying workers promptly, and defending the vulnerable draw Allah’s mercy upon an entire community.',
+      ru: 'Забота о сиротах, честная и своевременная оплата труда и защита слабых призывают милость Всевышнего на всё общество.',
+    },
+  },
+
+  // --- Bahouddin Naqshband (+3 verified from Rashahot & Kalimoti Qudsiya) ---
+  {
+    id: 'naq_07',
+    scholarId: 'naqshband',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Anisut-tolibin · Suhbat fazilati', en: 'Anis al-Talibin · Virtue of Companionship', ru: 'Анис ат-Талибин · Благодать доброго общения' },
+    heading: { uz: '«Yo‘limiz xilvatda emas, solih suhbatdadir»', en: '“Our Path Is Righteous Companionship, Not Isolation”', ru: '«Наш путь — в благом общении, а не в затворничестве»' },
+    excerpt: {
+      uz: "Hazrat Bahouddin Naqshband aytdilar: «Bizning tariqatimiz suhbatdadir! Xilvatda (uzlatda) shuhrat va manmanlik xavfi bor, xayr-baraka esa solih insonlar bilan birgalikda, jamiyat ichida yaxshilik ulashishdadir».",
+      en: 'Bahauddin Naqshband declared: “Our path is rooted in righteous companionship (suhbah)! Seclusion carries the hidden danger of vanity and fame, whereas true blessing lies in community and shared goodness.”',
+      ru: 'Бахауддин Накшбанд говорил: «Наш путь — в благом общении (сухбате)! В затворничестве таится опасность тщеславия, а истинная благодать — в единстве с праведными людьми и пользе обществу».',
+    },
+    sharh: {
+      uz: "Insonlardan uzilib yolg'iz qolish emas, balki yaxshi insonlar bilan yelkama-yelka turib oilaga, mahallaga va jamiyatga foyda keltirish Naqshbandiya maktabining eng go'zal xususiyatidir.",
+      en: 'Rather than retreating from people, standing shoulder-to-shoulder with good people to uplift family and community is the hallmark of Naqshbandi wisdom.',
+      ru: 'Не бегство от мира, а совместное созидание с достойными людьми на благо семьи и общества — главная красота школы Накшбандия.',
+    },
+  },
+  {
+    id: 'naq_08',
+    scholarId: 'naqshband',
+    topic: 'qalb',
+    isVerse: false,
+    work: { uz: 'Kalimoti Qudsiya · Yodkard va Yoddosht', en: 'Kalimat-i Qudsiyya · Yodkard & Yoddosht', ru: 'Калимат-и Кудсийя · Йодкард и Йоддошт' },
+    heading: { uz: 'Yodkard va Yoddosht: Qalbda doimiy uyg‘oqlik', en: 'Yodkard & Yoddosht: Effortless Heart Awareness', ru: 'Йодкард и Йоддошт: живая память сердца' },
+    original: 'یَادکَرد · یَاددَاشت',
+    excerpt: {
+      uz: "«Yodkard» — til va qalb bilan Allohni muntazam zikr qilib borishdir. Bu odat qalbga chuqur o'rnashgach, «Yoddosht» — ya'ni mashaqqatsiz, tabiiy ravishda har doim Alloh huzurida ekanini his qilib yashash darajasiga yetiladi.",
+      en: '“Yodkard” is steady, intentional remembrance of Allah. Once rooted deeply, it blossoms into “Yoddosht”—an effortless, serene awareness of Allah’s presence in every moment of daily life.',
+      ru: '«Йодкард» — постоянное осознанное поминание Аллаха. Укоренившись в сердце, оно переходит в «Йоддошт» — естественное, спокойное ощущение близости Всевышнего в каждый миг жизни.',
+    },
+    sharh: {
+      uz: "Har kun tong va kechqurun oz bo'lsa-da muntazam zikr qilish vaqt o'tishi bilan qalbga osoyishtalik va stressga qarshi mustahkam immunitet beradi.",
+      en: 'A few consistent minutes of morning and evening remembrance gradually build deep emotional calm and resilience against daily anxiety.',
+      ru: 'Ежедневный утренний и вечерний зикр постепенно дарит душе глубокий покой и устойчивость перед житейскими тревогами.',
+    },
+  },
+  {
+    id: 'naq_09',
+    scholarId: 'naqshband',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Rashahot aynil-hayot', en: 'Rashahat Ayn al-Hayat', ru: 'Рашахат Айн аль-Хаят' },
+    heading: { uz: 'Yomonlikka yaxshilik bilan javob qaytarish', en: 'Answering Harshness with Grace', ru: 'Отвечать добром на грубость' },
+    excerpt: {
+      uz: "Hazrat Naqshband nasihat qilardilar: «Agar bir kishi senga ozor bersa, unga qahr bilan javob qaytarmagin; balki unga yaxshilik tila va duo qil. Zero olovni olov bilan emas, suv bilan o'chiradilar».",
+      en: 'Imam Naqshband counseled: “When someone wrongs you, do not answer with bitterness; wish them guidance and pray for them—for fire is never extinguished by fire, only by cool water.”',
+      ru: 'Хазрат Накшбанд наставлял: «Если кто-то обидел тебя, не отвечай злобой — пожелай ему добра и помолись за него, ибо огонь тушат не огнём, а водой».',
+    },
+    sharh: {
+      uz: "«Yomonlikni eng go'zal narsa (yaxshilik) bilan daf qil» (Fussilat, 34). G'azabga sabr va mehr bilan javob berish nafaqat raqib qalbini yumshatadi, balki o'zingizni ham adovat yukidan xalos qiladi.",
+      en: '“Repel evil with that which is better” (Quran 41:34). Responding with grace softens hearts and frees you from carrying resentment.',
+      ru: '«Оттолкни зло тем, что лучше» (Коран, 41:34). Добродушный ответ смягчает сердца и освобождает самого человека от тяжести обид.',
+    },
+  },
+
+  // --- Alisher Navoiy (+4 verified from Arba'in & Mahbub ul-Qulub) ---
+  {
+    id: 'nav_07',
+    scholarId: 'navoiy',
+    topic: 'odob',
+    isVerse: true,
+    work: { uz: "Arba'in (Qirq Hadis) · 3-hadis", en: "Arba'in (40 Hadiths) · Hadith 3", ru: 'Арбаин (40 хадисов) · Хадис 3' },
+    heading: { uz: 'Haqiqiy musulmon — tili va qo‘lidan el omon topgan kishidir', en: 'A True Muslim Brings Safety by Tongue and Hand', ru: 'Истинный мусульманин — от чьего языка и рук люди в безопасности' },
+    original:
+      "Kim musulmonlig' aylasa da'vo,\nChin emas, gar fido qilur jonlar.\nUl musulmondururki, solimdur\nTiliyu ilgidin musulmonlar.",
+    excerpt: {
+      uz: "«Haqiqiy musulmon — boshqa musulmonlar uning tili va qo'lidan salomat (omon) bo'lgan kishidir» (Sahihul Buxoriy, 10-hadis). Navoiy: «Quruq da'vo emas, balki tilidan ham, qo'lidan ham odamlarga ozor yetmasligi haqiqiy musulmonlik belgisidir».",
+      en: '“The true Muslim is the one from whose tongue and hand others are safe.” (Sahih al-Bukhari 10). Navoi writes that mere claims mean nothing unless people experience genuine safety from our speech and actions.',
+      ru: '«Мусульманин — это тот, от языка и рук которого защищены другие люди» (Сахих аль-Бухари, 10). Навои подчёркивает: подлинная вера подтверждается не словами, а безопасностью людей от нашей речи и поступков.',
+    },
+    sharh: {
+      uz: "Bugun «til va qo'l» deganda telefonimizdagi izohlar, xabarlar va internetdagi munosabatlarimiz ham kiradi. Hech kimga behuda dilozorlik qilmaslik — eng oliy musulmonlik odobidir.",
+      en: 'Today our “tongue and hand” also include our messages, comments, and posts online. Bringing safety and kindness wherever we interact is living Prophetic character.',
+      ru: 'Сегодня «язык и руки» включают и наши сообщения и комментарии в сети. Не причинять людям боли ни в жизни, ни в интернете — высшая культура верующего.',
+    },
+  },
+  {
+    id: 'nav_08',
+    scholarId: 'navoiy',
+    topic: 'tawhid',
+    isVerse: true,
+    work: { uz: "Arba'in (Qirq Hadis) · 2-hadis", en: "Arba'in (40 Hadiths) · Hadith 2", ru: 'Арбаин (40 хадисов) · Хадис 2' },
+    heading: { uz: 'Alloh uchun yaxshi ko‘rish va Alloh uchun berish', en: 'Loving and Giving Purely for Allah', ru: 'Любить и отдавать ради Аллаха' },
+    original:
+      "Kimgakim hubbu bug'zu man'u ato\nHaq uchun bo'ldi jazm, bil, oning\nKim erur Tangri lutfidin komil\nAhli iymon qoshida iymoni.",
+    excerpt: {
+      uz: "«Kim Alloh uchun bersa, Alloh uchun man qilsa, Alloh uchun yaxshi ko'rsa va Alloh uchun yomon ko'rsa, batahqiq, iymonini mukammal qilibdi» (Sunani Abu Dovud). Navoiy xolislikni komil iymonning mezoni sifatida tarannum etgan.",
+      en: '“Whoever gives for Allah, withholds for Allah, loves for Allah, and dislikes for Allah has perfected their faith.” Navoi celebrates pure sincerity as the summit of Iman.',
+      ru: '«Кто дарит ради Аллаха, удерживает ради Аллаха, любит и отвергает ради Аллаха — тот довёл свою веру до совершенства». Навои воспевает искренность как вершину веры.',
+    },
+    sharh: {
+      uz: "Do'stligimiz manfaat uchun emas, balki yaxshilik va taqvo ustida qurilsa, u abadiy va barakali bo'ladi. Har bir ehsonni Alloh roziligi uchun qilsangiz, minnat va xafagarchilik qolmaydi.",
+      en: 'Friendships built on goodness rather than selfish gain endure forever, and charity given purely for Allah frees you from expecting gratitude in return.',
+      ru: 'Дружба, основанная на добре, а не на выгоде, долговечна, а помощь ради Аллаха освобождает от обид и ожидания благодарности.',
+    },
+  },
+  {
+    id: 'nav_09',
+    scholarId: 'navoiy',
+    topic: 'ilm',
+    isVerse: true,
+    work: { uz: 'Mahbub ul-Qulub · Ustoz haqqi', en: 'Mahbub al-Qulub · Honoring Teachers', ru: 'Махбуб аль-Кулуб · Почтение к наставнику' },
+    heading: { uz: 'Ustozning bir harf o‘rgatgan haqqi', en: 'The Priceless Debt to a Teacher', ru: 'Бесценный труд учителя' },
+    original:
+      "Haq yo'lida kim senga bir harf o'qitmish ranj ila,\nAylamak bo'lmas ado oning haqin yuz ganj ila.",
+    excerpt: {
+      uz: "Kim senga haq va ilm yo'lida mashaqqat chekib bittagina harf o'rgatgan bo'lsa ham, uning haqqini yuzta xazina bilan ham to'liq ado etib bo'lmaydi!",
+      en: 'Whoever took the pains to teach you even a single letter on the path of truth—you could never fully repay their debt even with a hundred treasuries.',
+      ru: 'Тому, кто с трудом обучил тебя хоть одной букве на пути истины, не воздать сполна даже сотней сокровищ.',
+    },
+    sharh: {
+      uz: "Navoiyning bu o'lmas bayti o'zbek xalqining ustozga bo'lgan chuqur ehtiromini ifodalaydi. Ustozlarini e'zozlab, ularning haqqiga duo qilib yurgan shogird ilmida doimo baraka bo'ladi.",
+      en: 'This immortal couplet embodies Uzbek reverence for teachers. Honoring your mentors and praying for them brings lasting barakah into everything you learn.',
+      ru: 'Это бессмертное двустишие Навои воплощает глубокое уважение к наставникам. Почтение к учителям и молитва за них приносят особую благодать в знаниях.',
+    },
+  },
+  {
+    id: 'nav_10',
+    scholarId: 'navoiy',
+    topic: 'odob',
+    isVerse: true,
+    work: { uz: "Arba'in (Qirq Hadis) · 4-hadis", en: "Arba'in (40 Hadiths) · Hadith 4", ru: 'Арбаин (40 хадисов) · Хадис 4' },
+    heading: { uz: 'Mo‘minda baxillik va yomon xulq jamlanmaydi', en: 'Stinginess & Bad Character Do Not Fit a Believer', ru: 'Скупость и дурной нрав несовместимы с верой' },
+    original:
+      "Mo'min ersang, qilib duringni nisor,\nEl bila ravshan o'l nechukkim sham'.\nNegakim, Tangri hech mo'minda\nBuxlu badxulqliqni etmas jam'.",
+    excerpt: {
+      uz: "«Ikki xislat — baxillik va yomon xulq mo'minda aslo birga jamlanmaydi» (Sunani Termiziy). Navoiy mo'minni atrofdagilarga nur va saxovat ulashuvchi shamga qiyoslaydi.",
+      en: '“Two traits are never gathered together in a believer: stinginess and bad character.” (Jami at-Tirmidhi). Navoi likens the believer to a glowing candle radiating warmth and generosity.',
+      ru: '«Два качества не соединяются в верующем: скупость и дурной нрав» (Сунан ат-Тирмизи). Навои сравнивает верующего со свечой, дарящей людям свет и тепло.',
+    },
+    sharh: {
+      uz: "Saxiylik faqat pul bilan emas — tabassum, chiroyli muomala, vaqt ajratish va ilm ulashish bilan ham bo'ladi. Qalbi keng va xulqi go'zal inson hamma joyda azizdir.",
+      en: 'Generosity goes far beyond money—it shines through a warm smile, patience, time, and kindness. An open heart and gentle character are cherished everywhere.',
+      ru: 'Щедрость проявляется не только в деньгах, но и в улыбке, мягком нраве, внимании и доброте. Великодушного человека любят повсюду.',
+    },
+  },
+
+  // --- So'fi Olloyor (+3 verified from Sabotul Ojizin) ---
+  {
+    id: 'oll_07',
+    scholarId: 'olloyor',
+    topic: 'tawhid',
+    isVerse: true,
+    work: { uz: 'Sabotul Ojizin · Muqaddima (1–2-baytlar)', en: 'Sabat al-Ajizin · Opening Praise', ru: 'Сабат аль-Аджизин · Вступление' },
+    heading: { uz: 'Sano lil-xoliqi g‘abrovu aflok', en: 'Praise to the Creator of Earth and Heavens', ru: 'Хвала Создателю земли и небес' },
+    original:
+      "Sano lil-xoliqi g'abrovu aflok,\nYaratdi qatradin bir gavhari pok.\nSamovot uyini tutdi muallaq,\nJahona hukmini ko'rsatdi mutlaq.",
+    excerpt: {
+      uz: "Yer va osmonlarni yaratgan Xoliqqa behad hamd-u sano bo'lsin — U bir tomchidan pok gavhar (inson)ni yaratdi, osmonlarni ustunsiz tutib turdi va butun olamda mutlaq hikmatli hukmini joriy qildi.",
+      en: 'All praise to the Creator of earth and heavens, Who fashioned a pure jewel (humanity) from a single drop, raised the skies without pillars, and governs all worlds with absolute wisdom.',
+      ru: 'Хвала Создателю земли и небес, сотворившему из капли чистую жемчужину — человека, воздвигшему небосвод без опор и утвердившему во вселенной Свою совершенную власть.',
+    },
+    sharh: {
+      uz: "«Sabotul Ojizin»ning asrlar davomida yod olingan ushbu ilk baytlari insonni yaratilish mo'jizasi haqida tafakkur qilishga va Yaratganga shukr aytishga chorlaydi.",
+      en: 'Memorized for centuries across Uzbekistan, these opening couplets invite us to pause in awe at creation and begin every chapter of life with gratitude to Allah.',
+      ru: 'Эти знаменитые вступительные строки «Сабат аль-Аджизин», которые веками учили наизусть, побуждают к размышлению о чуде творения и благодарности Всевышнему.',
+    },
+  },
+  {
+    id: 'oll_08',
+    scholarId: 'olloyor',
+    topic: 'qalb',
+    isVerse: true,
+    work: { uz: 'Sabotul Ojizin · Na’ti Rasululloh ﷺ', en: 'Sabat al-Ajizin · Praise of the Prophet ﷺ', ru: 'Сабат аль-Аджизин · Восхваление Пророка ﷺ' },
+    heading: { uz: 'Olamlar rahmati Rasulullohga ﷺ salovot', en: 'Salawat Upon the Mercy to All Worlds ﷺ', ru: 'Салават Милости для миров ﷺ' },
+    original:
+      "Durudi beadad hodiyi ding'a,\nRasuli «rahmatan lil-olamin»g'a.\nXudoning do'sti muxtorul-qurayshiy,\nMudom ummat uchun talx erdi ayshi.",
+    excerpt: {
+      uz: "Din hidoyatchisi va «olamlarga rahmat» qilib yuborilgan Rasulullohga ﷺ behisob salovot va salomlar bo'lsin! U Zot ummatining g'amini chekib, ularning najoti uchun doim kuyunib yashaganlar.",
+      en: 'Countless blessings and peace upon the Guide of Faith, sent as “a mercy to all worlds” ﷺ — Allah’s beloved Messenger whose heart constantly cared and prayed for the salvation of his Ummah.',
+      ru: 'Бесчисленные благословения Наставнику веры, посланному как «милость для миров» ﷺ — возлюбленному Посланнику, всё сердце которого неустанно болело за спасение своей уммы.',
+    },
+    sharh: {
+      uz: "Payg'ambarimizga ﷺ muhabbat — ul Zotga ko'p salovot aytish va sunnatlariga — yumshoqlik, rostgo'ylik va ummatga g'amxo'rlik xulqlariga ergashish bilan isbotlanadi.",
+      en: 'Love for the Prophet ﷺ shines both through abundant Salawat and by living his Sunnah of gentleness, honesty, and care for others.',
+      ru: 'Любовь к Пророку ﷺ проявляется в частом салавате и следовании его Сунне — мягкости, честности и заботе о людях.',
+    },
+  },
+  {
+    id: 'oll_09',
+    scholarId: 'olloyor',
+    topic: 'qalb',
+    isVerse: true,
+    work: { uz: 'Sabotul Ojizin · Nasihat qabul qilish', en: 'Sabat al-Ajizin · Softness of Heart', ru: 'Сабат аль-Аджизин · Восприимчивость к совету' },
+    heading: { uz: 'Qattiq toshga yomg‘ir yog‘sa ham ko‘karmas', en: 'Rain Cannot Make Hard Stone Bloom', ru: 'На жёстком камне трава не взойдёт даже от дождя' },
+    original:
+      "Nasihat tinglamas dil saxti mahjub,\nKo'karmas toshga yomg'ur yog'sa ham ko'p.",
+    excerpt: {
+      uz: "Qotib qolgan, pardalangan qalb qancha pand-nasihat eshitsa ham ta'sirlanmaydi — xuddi qattiq xarsang tosh ustiga qancha ko'p yomg'ir yog'masin, undan maysa unib chiqmaganidek.",
+      en: 'A hardened, veiled heart takes no benefit from counsel—just as even abundant rain falling upon solid stone brings forth no green blade of grass.',
+      ru: 'Очерствевшее, закрытое сердце не внемлет наставлениям — точно так же, как на голом камне не вырастет зелень, сколько бы ни шёл дождь.',
+    },
+    sharh: {
+      uz: "Qalbni yumshoq tutish uchun Qur'on tilovati, istig'for, yetimlarga mehr va xolis nasihatni kibrsiz tinglay olish fazilati juda muhimdir.",
+      en: 'Keep the heart fertile and receptive through Quran recitation, istighfar, kindness to the vulnerable, and the humility to welcome sincere advice.',
+      ru: 'Чтобы сердце оставалось мягким и живым, нужны чтение Корана, покаяние, доброта к слабым и смирение, позволяющее принимать добрый совет.',
+    },
+  },
+
+  // --- Abdulxoliq G'ijduvoniy (+3 verified from Vasiyatnoma & Kalimoti Qudsiya) ---
+  {
+    id: 'gij_07',
+    scholarId: 'gijduvoniy',
+    topic: 'qalb',
+    isVerse: false,
+    work: { uz: 'Kalimoti Qudsiya · Vuqufi Qalbiy & Adadiy', en: 'Kalimat-i Qudsiyya · Heart Presence in Dhikr', ru: 'Калимат-и Кудсийя · Присутствие сердца в зикре' },
+    heading: { uz: 'Vuqufi qalbiy: Til emas, qalb ham uyg‘oq bo‘lsin', en: 'Wuquf-i Qalbi: Let the Heart Join the Tongue', ru: 'Вукуф-и кальби: пусть сердце бодрствует вместе с языком' },
+    original: 'وُقُوفِ قَلْبِی · وُقُوفِ عَدَدِی',
+    excerpt: {
+      uz: "«Vuqufi qalbiy» — zikr va ibodat chog'ida faqat tilni qimirlatib qo'ymay, qalbni ham Allohga yuzlantirib hushyor tutishdir. «Vuqufi adadiy» esa zikr soniga e'tibor berib, xayol tarqalib ketishining oldini olishdir.",
+      en: '“Wuquf-i qalbi” means keeping the heart genuinely attentive to Allah rather than letting the tongue move mechanically. “Wuquf-i adadi” uses mindful counting to anchor focus and prevent wandering thoughts.',
+      ru: '«Вукуф-и кальби» — обращать к Аллаху само сердце, чтобы зикр не был лишь механическим движением языка. «Вукуф-и адади» — внимательный счёт зикра, удерживающий мысли от рассеивания.',
+    },
+    sharh: {
+      uz: "Tasbeh o'girganda shoshilmay, har bir «Subhanalloh», «Alhamdulillah» va «Allohu Akbar»ning ma'nosini qalbda his qilib aytish — g'aflat bilan aytilgan mingta zikrdan afzaldir.",
+      en: 'Thirty-three unhurried tasbihs felt deeply in the heart outweigh a thousand rushed repetitions uttered in distraction.',
+      ru: 'Тридцать три неспешных тасбиха, прочувствованных сердцем, ценнее тысячи рассеянных повторений.',
+    },
+  },
+  {
+    id: 'gij_08',
+    scholarId: 'gijduvoniy',
+    topic: 'mehnat',
+    isVerse: false,
+    work: { uz: 'Vasiyatnoma · Yashirin sadaqa', en: 'Wasiyyatnama · Secret Generosity', ru: 'Васиятнома · Тайная щедрость' },
+    heading: { uz: 'Halol topib, yashirincha ehson qilish', en: 'Earn Lawfully and Give Quietly', ru: 'Зарабатывай честно и помогай тайно' },
+    excerpt: {
+      uz: "«O'z peshona tering bilan topgan halol rizqingdan muhtojlarga yashirincha ulashgin. O'ng qo'ling berganini chap qo'ling bilmasin — shunda sening sadaqang ham riyodan pok, muhtojning esa izzati omon qoladi».",
+      en: '“Share secretly with those in need from the lawful bread earned by your own sweat. Let not your left hand know what your right hand gives—so your charity stays pure and the recipient’s dignity stays intact.”',
+      ru: '«Делись с нуждающимися тайно из честного заработка своих рук. Пусть левая рука не знает, что даёт правая — так твоя милостыня останется искренней, а достоинство человека не будет задето».',
+    },
+    sharh: {
+      uz: "Birovga yordam berganda uni rasmga tushirib maqtanmaslik va muhtojni xijolat qilmaslik — haqiqiy ehson odobidir.",
+      en: 'Helping quietly without filming, boasting, or embarrassing the person in need preserves both sincerity and human dignity.',
+      ru: 'Помогать тихо, без хвастовства и смущения нуждающегося — высшая культура благотворительности.',
+    },
+  },
+  {
+    id: 'gij_09',
+    scholarId: 'gijduvoniy',
+    topic: 'ilm',
+    isVerse: false,
+    work: { uz: 'Vasiyatnoma · Ilm va Ustoz odobi', en: 'Wasiyyatnama · Respecting Scholars & Humility', ru: 'Васиятнома · Почтение к учёным' },
+    heading: { uz: 'Haqiqiy olimlarni e’zozlash va da’vodan saqlanish', en: 'Honor True Scholars & Avoid Empty Claims', ru: 'Почитай истинных учёных и сторонись самозванства' },
+    excerpt: {
+      uz: "«O'zingni hech qachon avliyo yoki kamolot egasi deb da'vo qilma; ahli ilm va solih ulamolarni hurmat qil, din ishlarida shaxsiy havoyi fikringni emas, Qur'on, Sunnat va mujtahid imomlar yo'lini ustun tut».",
+      en: '“Never claim spiritual rank for yourself; honor people of authentic knowledge, and prioritize the Quran, Sunnah, and grounded scholarship over personal whims.”',
+      ru: '«Никогда не приписывай себе высоких духовных степеней; уважай истинных учёных и ставь Коран, Сунну и прочное знание выше личных домыслов».',
+    },
+    sharh: {
+      uz: "Xojai Jahon G'ijduvoniyning bu o'giti bugungi kunda ham har xil asossiz da'volar va bilimsiz maslahatchilardan saqlanishda mustahkam mezon bo'lib xizmat qiladi.",
+      en: 'Ghijduwani’s counsel remains a timely safeguard against self-proclaimed gurus—always measure claims against sound knowledge and humility.',
+      ru: 'Это наставление Гиждувани остаётся надёжной защитой от самозванцев: любое духовное слово проверяется прочным знанием и скромностью.',
+    },
+  },
+
+  // --- Imom al-Buxoriy (+3 verified from Sahih al-Bukhari) ---
+  {
+    id: 'bux_07',
+    scholarId: 'buxoriy',
+    topic: 'mehnat',
+    isVerse: false,
+    work: { uz: 'Sahihul Buxoriy · 6464-hadis', en: 'Sahih al-Bukhari · Hadith 6464', ru: 'Сахих аль-Бухари · Хадис 6464' },
+    heading: { uz: 'Oz bo‘lsa ham davomli amal — eng suyuklisidir', en: 'Small Consistent Deeds Are Most Beloved to Allah', ru: 'Малые, но постоянные дела — самые любимые у Аллаха' },
+    original: 'أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ',
+    excerpt: {
+      uz: "Imom al-Buxoriy rivoyat qilgan mashhur hadisi sharif: «Alloh taologa eng suyukli amal — oz bo'lsa-da, muntazam davom etib turadiganidir». Bir kunda haddan ortiq toliqib keyin tashlab qo'ygandan ko'ra, har kuni oz-ozdan sobit qadam bo'lish afzaldir.",
+      en: 'Imam al-Bukhari recorded: “The deeds most beloved to Allah are those done consistently, even if they are small.” Steady daily devotion outlasts short bursts of burnout.',
+      ru: 'Имам аль-Бухари передал хадис: «Самые любимые дела перед Аллахом — те, которые совершаются постоянно, даже если они невелики». Постоянство важнее разового порыва.',
+    },
+    sharh: {
+      uz: "Har kuni 1 sahifa Qur'on o'qish, 33 marta tasbeh aytish yoki 1 ta yangi hikmat o'rganish bir yilda ulkan ma'naviy xazinaga aylanadi.",
+      en: 'One page of Quran, one quiet dhikr session, or one act of kindness every single day builds a life-changing spiritual treasury over a year.',
+      ru: 'Одна страница Корана, короткий ежедневный зикр или одно доброе дело в день за год превращаются в огромное духовное богатство.',
+    },
+  },
+  {
+    id: 'bux_08',
+    scholarId: 'buxoriy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Sahihul Buxoriy · 6018-hadis', en: 'Sahih al-Bukhari · Hadith 6018', ru: 'Сахих аль-Бухари · Хадис 6018' },
+    heading: { uz: 'Yaxshi gapir yoki sukut saqla, qo‘shni va mehmonga ikrom qil', en: 'Speak Good or Stay Silent, Honor Neighbor & Guest', ru: 'Говори благое или молчи, чти соседа и гостя' },
+    original: 'مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ',
+    excerpt: {
+      uz: "«Kim Allohga va oxirat kuniga iymon keltirgan bo'lsa, yaxshi so'z aytsin yoki jim tursin; qo'shnisini hurmat qilsin; mehmoniga ikrom ko'rsatsin!» — Imom al-Buxoriy bu hadisni go'zal axloqning uch ustuni sifatida keltirganlar.",
+      en: '“Whoever believes in Allah and the Last Day, let them speak good or remain silent; let them honor their neighbor; and let them honor their guest.” (Sahih al-Bukhari 6018).',
+      ru: '«Кто верует в Аллаха и Последний день, пусть говорит благое или молчит; пусть оказывает почёт соседу; пусть щедро принимает гостя» (Сахих аль-Бухари, 6018).',
+    },
+    sharh: {
+      uz: "O'zbekona mehmondo'stlik, mahalla-qo'shnichilik hurmati va o'ylab gapirish madaniyati aynan shu muborak hadisdan suv ichgan.",
+      en: 'Central Asian hospitality, warm neighborhood bonds, and thoughtful speech draw directly from this prophetic standard.',
+      ru: 'Традиции гостеприимства, добрососедства и сдержанности речи напрямую питаются этим благословенным хадисом.',
+    },
+  },
+  {
+    id: 'bux_09',
+    scholarId: 'buxoriy',
+    topic: 'nafs',
+    isVerse: false,
+    work: { uz: 'Sahihul Buxoriy · 6412-hadis', en: 'Sahih al-Bukhari · Hadith 6412', ru: 'Сахих аль-Бухари · Хадис 6412' },
+    heading: { uz: 'Qadriga yetilmaydigan ikki buyuk ne’mat', en: 'Two Great Blessings Most People Waste', ru: 'Две великие милости, которые люди часто упускают' },
+    original: 'نِعْمَتَانِ مَغْبُونٌ فِيهِمَا كَثِيرٌ مِنَ النَّاسِ: الصِّحَّةُ وَالْفَرَاغُ',
+    excerpt: {
+      uz: "«Ikki ne'mat borki, ko'pchilik insonlar ularning qadriga yetmay aldanib qoladilar: ular — sog'lik-salomatlik va bo'sh vaqtdir» (Sahihul Buxoriy, 6412).",
+      en: '“There are two blessings which many people lose track of and waste: good health and free time.” (Sahih al-Bukhari 6412).',
+      ru: '«Есть две милости, в отношении которых многие люди оказываются в убытке: это здоровье и свободное время» (Сахих аль-Бухари, 6412).',
+    },
+    sharh: {
+      uz: "Kasal bo'lmasdan turib sog'likning, band bo'lmasdan turib bo'sh vaqtning qadriga yetish — uni behuda o'yin-kulgiga emas, ilm, ibodat, oila va foydali hunarga sarflashdir.",
+      en: 'Treasure health before illness arrives and spare hours before life crowds them—invest them in faith, learning, family, and meaningful work.',
+      ru: 'Цени здоровье до болезни и свободный час до занятости — вкладывай их в веру, знания, семью и полезный труд.',
+    },
+  },
+
+  // --- Imom al-Moturidiy (+3 verified from Kitob at-Tavhid & Ta'vilot) ---
+  {
+    id: 'mot_07',
+    scholarId: 'moturidiy',
+    topic: 'tawhid',
+    isVerse: false,
+    work: { uz: 'Kitob at-Tavhid · Dalili tamonu‘', en: 'Kitab al-Tawhid · Proof of Cosmic Harmony', ru: 'Китаб ат-Таухид · Довод о гармонии мироздания' },
+    heading: { uz: 'Koinotdagi mukammal tartib — Tavhidning yorqin dalilidir', en: 'Universal Order Points Clearly to One Creator', ru: 'Совершенный порядок вселенной — ясный довод Таухида' },
+    excerpt: {
+      uz: "Imom al-Moturidiy «Kitob at-Tavhid»da isbotlaydilar: «Agar koinotda bittadan ortiq iloh bo'lganida, ularning irodalari to'qnashib, osmonlar va yerdagi bu mukammal tartib-intizom bir lahzada buzilib ketgan bo'lardi. Demak, olamning Yaratuvchisi va Boshqaruvchisi Yagona Allohdir».",
+      en: 'In Kitab al-Tawhid, Imam al-Maturidi argues: “Had there been more than one deity, competing wills would have shattered the flawless harmony of the cosmos. The unified laws of heaven and earth testify to the Oneness of Allah.”',
+      ru: 'В «Китаб ат-Таухид» имам аль-Матуриди доказывает: «Если бы у мироздания было более одного божества, противоречие воль мгновенно разрушило бы безупречный порядок небес и земли. Единство законов космоса свидетельствует о Единственности Аллаха».',
+    },
+    sharh: {
+      uz: "Kechayu kunduz almashinuvi, fasllar tartibi va tabiatdagi nozik muvozanat ustida fikr yuritish inson qalbidagi iymonni yanada chuqurlashtiradi.",
+      en: 'Reflecting on the precision of day and night, changing seasons, and natural laws turns everyday wonder into deeper conviction.',
+      ru: 'Размышление над сменой дня и ночи, гармонией природы и точностью законов вселенной укрепляет живую убеждённость сердца.',
+    },
+  },
+  {
+    id: 'mot_08',
+    scholarId: 'moturidiy',
+    topic: 'qalb',
+    isVerse: false,
+    work: { uz: "Ta'vilot Ahlis-Sunna · Shukr haqiqati", en: "Ta'wilat Ahl al-Sunnah · Essence of Gratitude", ru: 'Тавилат Ахль ас-Сунна · Суть благодарности' },
+    heading: { uz: 'Haqiqiy shukr — ne’matni to‘g‘ri o‘rinda ishlatishdir', en: 'True Gratitude Is Using Blessings Rightly', ru: 'Истинная благодарность — верное применение благ' },
+    excerpt: {
+      uz: "Imom al-Moturidiy shukrning uch darajasini bayon qilganlar: ne'mat Allohdan ekanini qalbda tan olish, til bilan hamd aytish va eng muhimi — berilgan sog'lik, ilm va mol ne'matlarini Alloh rozi bo'ladigan xayrli yo'lda ishlatishdir.",
+      en: 'Imam al-Maturidi explained three dimensions of gratitude (shukr): recognizing the Giver in the heart, praising Him with the tongue, and—most crucially—using health, knowledge, and wealth for good.',
+      ru: 'Имам аль-Матуриди раскрыл три ступени благодарности: признавать сердцем, что благо от Аллаха, восхвалять Его языком и главное — направлять здоровье, знания и достаток на благие дела.',
+    },
+    sharh: {
+      uz: "Shukr faqat «Alhamdulillah» deyish bilan cheklanmaydi; ko'z, qo'l, aql va boylikni yaxshilikka xizmat qildirish — amaliy shukrdir va u ne'matni yanada ziyoda qiladi.",
+      en: 'Gratitude shines brightest in action: putting our eyes, hands, intellect, and resources to work for goodness multiplies every blessing.',
+      ru: 'Благодарность сильнее всего проявляется в делах: когда наш разум, руки и достаток служат добру, милости приумножаются.',
+    },
+  },
+  {
+    id: 'mot_09',
+    scholarId: 'moturidiy',
+    topic: 'ilm',
+    isVerse: false,
+    work: { uz: 'Kitob at-Tavhid · Taqlid va Tafakkur', en: 'Kitab al-Tawhid · Reflection Over Blind Imitation', ru: 'Китаб ат-Таухид · Осмысленная вера' },
+    heading: { uz: 'Tafakkur va dalil bilan mustahkamlangan iymon', en: 'Faith Strengthened by Reflection & Understanding', ru: 'Вера, укреплённая размышлением и знанием' },
+    excerpt: {
+      uz: "Imom al-Moturidiy har bir musulmonni o'z e'tiqodini tushunib, aql va dalil bilan mustahkamlashga undaganlar: ko'r-ko'rona taqliddan ko'ra, Qur'on ma'nolarini anglab, olam hikmatini mushohada etish qalbni shubhalardan himoya qiladi.",
+      en: 'Imam al-Maturidi encouraged believers to anchor their faith in understanding rather than passive imitation—reflecting on Quranic guidance and the signs in creation shields the heart from doubt.',
+      ru: 'Имам аль-Матуриди призывал верующих укреплять убеждения осмысленным пониманием, а не слепым подражанием: постижение смыслов Корана защищает сердце от сомнений.',
+    },
+    sharh: {
+      uz: "O'qish, savol berish, ishonchli olimlardan o'rganish va tafakkur qilish — Moturidiy merosining eng go'zal ilmiy an'anasidir.",
+      en: 'Reading thoughtfully, asking honest questions, and learning from authentic scholars carries forward Samarkand’s proud intellectual heritage.',
+      ru: 'Вдумчивое чтение, искренний поиск истины и обучение у достоверных учёных продолжают великую самаркандскую традицию.',
+    },
+  },
+
+  // --- Burhoniddin al-Marg'inoniy (+3 verified from Al-Hidoya) ---
+  {
+    id: 'mar_07',
+    scholarId: 'marginoniy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Al-Hidoya · Zararni daf qilish qoidasi', en: 'Al-Hidayah · Preventing Harm', ru: 'Аль-Хидая · Запрет причинения вреда' },
+    heading: { uz: 'Zarar berish ham, zararga zarar bilan javob berish ham yo‘q', en: 'Neither Cause Harm Nor Reciprocate Harm', ru: 'Нельзя причинять вред ни первому, ни в ответ' },
+    original: 'لَا ضَرَرَ وَلَا ضِرَارَ',
+    excerpt: {
+      uz: "«Al-Hidoya»ning barcha muomala va qo'shnichilik boblarida amal qiluvchi ulug' qoida: inson o'z mulkidan foydalanganda ham qo'shnisiga, jamoat yo'liga, suvga va tabiatga zarar yetkazishi joiz emas.",
+      en: 'A guiding principle across Al-Hidayah’s chapters on property and neighbors: even when using your own property, you may not cause harm to neighbors, public roads, shared water, or the environment.',
+      ru: 'Важнейшее правило «Аль-Хидаи» в главах о соседстве и праве: даже пользуясь собственным имуществом, человек не имеет права вредить соседям, дорогам, воде и природе.',
+    },
+    sharh: {
+      uz: "Yo'lni to'sib mashina qo'ymaslik, kechasi shovqin solmaslik, chiqindi tashlamaslik va atrofdagilar tinchligini asrash — Hanafiy fiqhining kundalik madaniyatidir.",
+      en: 'Parking considerately, keeping noise respectful at night, not littering, and protecting shared spaces are everyday expressions of Hanafi civic ethics.',
+      ru: 'Уважительная парковка, тишина ночью, чистота на улицах и бережное отношение к общему пространству — живое проявление ханафитской культуры.',
+    },
+  },
+  {
+    id: 'mar_08',
+    scholarId: 'marginoniy',
+    topic: 'odob',
+    isVerse: false,
+    work: { uz: 'Al-Hidoya · Nikoh va Nafaqa bobi', en: 'Al-Hidayah · Family Rights & Kindness', ru: 'Аль-Хидая · Глава о семье и правах супругов' },
+    heading: { uz: 'Oilada o‘zaro hurmat va ayol haq-huquqlarini himoya qilish', en: 'Protecting Family Harmony & Women’s Rights', ru: 'Гармония семьи и защита прав женщины' },
+    excerpt: {
+      uz: "Burhoniddin al-Marg'inoniy «Al-Hidoya»da ayolning roziligisiz nikoh bog'lanmasligini, uning mahr, halol nafaqa, alohida turar joy va go'zal muomala haqqini aniq huquqiy kafolatlar bilan mustahkamlab qo'yganlar.",
+      en: 'In Al-Hidayah, al-Marghinani safeguarded women’s explicit consent in marriage alongside their full legal rights to mahr, dignified maintenance, shelter, and kind treatment.',
+      ru: 'В «Аль-Хидае» аль-Маргинани чётко закрепил обязательность согласия женщины на брак, её права на махр, достойное обеспечение, жильё и доброе отношение.',
+    },
+    sharh: {
+      uz: "Hanafiy fiqhi oilani zo'ravonlik emas, balki mehr-muhabbat, mas'uliyat va o'zaro hurmat poydevoriga quradi. Oilasiga eng yaxshi muomala qiluvchi kishi — insonlarning eng yaxshisidir.",
+      en: 'Hanafi jurisprudence builds the home on mercy, dignity, and mutual responsibility—echoing the Prophetic teaching that the best of you are those best to their families.',
+      ru: 'Ханафитское право строит семью на милосердии, достоинстве и взаимной ответственности: лучший из людей тот, кто лучше всех относится к своей семье.',
+    },
+  },
+  {
+    id: 'mar_09',
+    scholarId: 'marginoniy',
+    topic: 'mehnat',
+    isVerse: false,
+    work: { uz: 'Al-Hidoya · Qarz va Va’daga vafo bobi', en: 'Al-Hidayah · Honoring Debts & Extending Mercy', ru: 'Аль-Хидая · Верность долгам и милосердие' },
+    heading: { uz: 'Qarzni vaqtida ado etish va qiynalganga muhlat berish', en: 'Repaying Debts Promptly & Showing Mercy to the Struggling', ru: 'Возвращать долги вовремя и давать отсрочку нуждающемуся' },
+    excerpt: {
+      uz: "«Al-Hidoya»da qarz munosabatlarida ikki tomonlama adolat belgilangan: imkoni bor qarzdor qarzini kechiktirishi zulmdir; haqiqatda qiyin ahvolga tushib qolgan insonga muhlat berish yoki qarzidan kechish esa ulkan savob va saxovatdir.",
+      en: 'Al-Hidayah teaches two-sided justice in lending: deliberately delaying repayment when able is injustice, while granting respite—or forgiving part of a debt—for someone truly in hardship earns immense reward.',
+      ru: '«Аль-Хидая» утверждает обоюдную справедливость в долгах: затягивать возврат при наличии средств — несправедливость, а дать отсрочку попавшему в беду — великое благодеяние.',
+    },
+    sharh: {
+      uz: "Qarz olganda yozib qo'yish va va'da qilingan kunda chiroyli qaytarish insonlar o'rtasidagi ishonch va do'stlikni asrab qoladi.",
+      en: 'Recording loans clearly and repaying on the promised date preserves friendships, dignity, and community trust.',
+      ru: 'Чёткая запись долга и своевременный возврат оберегают дружбу, честь и взаимное доверие людей.',
     },
   },
 ];
