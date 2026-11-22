@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.63" date="2026-11-22">
+      <description>
+        <p>Redesigned the shareable Scholars and Wisdom PNG Quote Card with modern Nurul Islam Day and Night emerald-and-gold palettes, elevated card framing, subtle Rub el Hizb watermarks, and the Nurul Islam app icon footer.</p>
+      </description>
+    </release>
     <release version="1.8.62" date="2026-11-22">
       <description>
         <p>Added Muhammad Sharif Gulkhani (Zarbulmasal parables and proverbs) and enriched the Scholars and Wisdom library to 9 Movarounnahr masters and 83 verified, source-cited works.</p>

@@ -1,14 +1,14 @@
 {
-  "versionCode": 81,
-  "versionName": "1.8.62",
+  "versionCode": 82,
+  "versionName": "1.8.63",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 81,
+  "minSupportedVersionCode": 82,
   "notes": {
-    "uz_lat": "'Allomalar va Hikmatlar' bo'limi sezilarli boyitildi! Muhammad Sharif Gulxaniy ('Zarbulmasal' — Toshbaqa va Chayon, Maymun va Najjor, Tuya va Bo'taloq hamda mashhur maqollar) qo'shildi, barcha 9 alloma ijodidan jami 83 ta ishonchli va manbali hikmatlar jamlandi.",
-    "uz_cyr": "«Алломалар ва Ҳикматлар» бўлими сезиларли бойитилди! Муҳаммад Шариф Гулханий («Зарбулмасал» — Тошбақа ва Чаён, Маймун ва Нажжор, Туя ва Бўталоқ ҳамда машҳур мақоллар) қўшилди, барча 9 аллома ижодидан жами 83 та ишончли ва манбали ҳикматлар жамланди.",
-    "en": "Expanded 'Scholars & Wisdom' to 9 Movarounnahr masters and 83 source-cited works: added Muhammad Sharif Gulkhani (Zarbulmasal parables & proverbs) and enriched Yasawi, Naqshband, Navoi, Sufi Allahyar, Ghijduwani, Bukhari, Maturidi & Marghinani.",
-    "ru": "Раздел «Учёные и Мудрости» расширен до 9 великих мастеров и 83 проверенных хикматов: добавлен Мухаммад Шариф Гульхани («Зарбулмасал» — знаменитые притчи и пословицы) и пополнены труды всех остальных учёных."
+    "uz_lat": "Hikmat PNG ulashish kartasi butunlay yangi, zamonaviy va Nurul Islam dizayniga mukammal mos ko'rinishga keltirildi: Kunduzgi/Tungi mavzuga mos zumrad va oltin palitra, nafis islomiy naqshlar, ilova logotipi hamda muvozanatli tipografiya.",
+    "uz_cyr": "Ҳикмат PNG улашиш картаси бутунлай янги, замонавий ва Nurul Islam дизайнига мукаммал мос кўринишга келтирилди: Кундузги/Тунги мавзуга мос зумрад ва олтин палитра, нафис исломий нақшлар, илова логотипи ҳамда мувозанатли типография.",
+    "en": "Redesigned the shareable Wisdom PNG Quote Card with a modern Nurul Islam visual identity: Day & Night emerald-and-gold palettes, elevated card framing, subtle geometric star watermarks, the Nurul Islam app crest, and balanced typography.",
+    "ru": "Полностью обновлён дизайн открытки-цитаты (PNG) в разделе «Учёные и Мудрости» в современном стиле Nurul Islam: дневная и ночная изумрудно-золотая палитра, изящные исламские узоры, фирменный логотип и сбалансированная типографика."
   }
 }
