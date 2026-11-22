@@ -1,13 +1,14 @@
 {
-  "versionCode": 75,
-  "versionName": "1.8.56",
+  "versionCode": 77,
+  "versionName": "1.8.58",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
+  "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 75,
+  "minSupportedVersionCode": 77,
   "notes": {
-    "uz_lat": "'Muallimi Soniy va Tajvid' bo'limi Ahmad Hodiy Maqsudiy uslubida yangilandi: 10 ta bosqichma-bosqich dars va interaktiv ovozli Mashq Taxtasi (avto-o'qish bilan), sekinlashtirilgan talaffuz (0.7x), o'qilish yordamchisini yashirish/ko'rsatish, arab shriftini kattalashtirish (A+), 5 ta maxraj hududi hamda rangli tajvid ko'rsatkichlari qo'shildi.",
-    "uz_cyr": "«Муаллими Соний ва Тажвид» бўлими Аҳмад Ҳодий Мақсудий услубида янгиланди: 10 та босқичма-босқич дарс ва интерактив овозли Машқ Тахтаси (авто-ўқиш билан), секинлаштирилган талаффуз (0.7x), ўқилиш ёрдамчисини яшириш/кўрсатиш, араб шрифтини катталаштириш (A+), 5 та махраж ҳудуди ҳамда рангли тажвид кўрсаткичлари қўшилди.",
-    "en": "Upgraded Muallimi Sani & Tajweed with 10 progressive lessons (Ahmad Hodiy Maqsudiy method), an interactive audio Qaida Practice Board with Auto-Recite, slow 0.7x speed toggle, reading-hint hide/show toggle, Arabic font zoom (A+), 5 Makhraj articulation zones, and color-coded Tajweed examples.",
-    "ru": "Раздел «Муаллими Сани и Таджвид» обновлён по методике Ахмада Хади Максуди: 10 пошаговых уроков с интерактивной доской упражнений и авто-чтением, режим медленного произношения (0.7x), скрытие подсказок, увеличение шрифта (A+), 5 зон махраджа и цветной таджвид."
+    "uz_lat": "Linux Desktop (RPM) ilovasi uchun mobil ilovadagi kabi avtomatik va majburiy yangilash tizimi qo'shildi, shuningdek ilova ishga tushishi 60% ga tezlashtirildi, bo'limlar fonda oldindan yuklanadi hamda Qur'on va Hifz audio qiroati to'xtalishsiz uzluksiz ishlaydi.",
+    "uz_cyr": "Linux Desktop (RPM) иловаси учун мобил иловадаги каби автоматик ва мажбурий янгилаш тизими қўшилди, шунингдек илова ишга тушиши 60% га тезлаштирилди, бўлимлар фонда олдиндан юкланади ҳамда Қуръон ва Ҳифз аудио қироати тўхталишсиз узлуксиз ишлайди.",
+    "en": "Added native in-app & forced self-updater with auto-relaunch for the Linux Desktop RPM app (matching Android), plus 60% smaller cold-start bundle, zero-spinner background tab prefetching, and gapless next-ayah audio pre-buffering.",
+    "ru": "Добавлено встроенное принудительное автообновление RPM с автоперезапуском для Linux Desktop (как на Android), а также ускорен запуск на 60%, добавлена фоновая предзагрузка разделов и бесшовная буферизация аятов."
   }
 }

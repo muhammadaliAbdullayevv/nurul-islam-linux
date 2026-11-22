@@ -1478,7 +1478,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   <button
                     type="button"
                     onClick={onStartUpdate}
-                    disabled={updateStatus === 'downloading'}
+                    disabled={updateStatus === 'downloading' || updateStatus === 'installing'}
                     className={`w-full py-2 rounded-xl text-xs font-bold transition disabled:opacity-50 ${
                       isDay
                         ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
@@ -1487,6 +1487,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   >
                     {updateStatus === 'downloading'
                       ? `${t.updates.downloading} ${updateProgress}%`
+                      : updateStatus === 'installing'
+                      ? t.updates.installing
                       : t.updates.updateNowBtn}
                   </button>
                 </div>

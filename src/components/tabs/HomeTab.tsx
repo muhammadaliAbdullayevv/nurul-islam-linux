@@ -49,6 +49,7 @@ import { Coordinates, PrayerTimes, TranslationId } from '../../types';
 import { getNextPrayer, getHijriDate, getCityCurrentDate, getLocalizedCityLabel } from '../../utils/prayerTimes';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage, formatGregorianDate } from '../../contexts/LanguageContext';
+import { prefetchCityModal, prefetchTab } from '../../utils/tabLoaders';
 
 interface HomeTabProps {
   prayerTimes: PrayerTimes;
@@ -731,6 +732,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       <div className="space-y-5 pb-6">
         {/* Widescreen Desktop Prayer Hero Dashboard */}
         <div
+          onMouseEnter={() => prefetchTab('prayer')}
           onClick={() => onNavigateTab('prayer')}
           role="button"
           tabIndex={0}
@@ -747,6 +749,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </span>
               <button
                 type="button"
+                onMouseEnter={prefetchCityModal}
+                onFocus={prefetchCityModal}
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenCitySelector();
@@ -835,6 +839,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               <button
                 key={feat.id}
                 type="button"
+                onMouseEnter={() => prefetchTab(feat.id)}
+                onFocus={() => prefetchTab(feat.id)}
                 onClick={() => onNavigateTab(feat.id)}
                 className={`relative min-h-[104px] flex flex-col items-center justify-center p-3 rounded-2xl border transition group cursor-pointer ${
                   isHighlighted
@@ -893,6 +899,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     <div className={`flex-1 min-h-0 flex flex-col ${isDay ? 'text-slate-900' : 'text-slate-100'}`}>
       {/* FULL-BLEED PRAYER TIMES HERO BANNER */}
       <div
+        onTouchStart={() => prefetchTab('prayer')}
+        onMouseEnter={() => prefetchTab('prayer')}
         onClick={() => onNavigateTab('prayer')}
         role="button"
         tabIndex={0}
@@ -914,6 +922,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             {isFriday && (
               <button
                 type="button"
+                onTouchStart={() => prefetchTab('juma')}
+                onMouseEnter={() => prefetchTab('juma')}
                 onClick={(e) => {
                   e.stopPropagation();
                   onNavigateTab('juma');
@@ -927,6 +937,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
           <button
             type="button"
+            onTouchStart={prefetchCityModal}
+            onMouseEnter={prefetchCityModal}
             onClick={(e) => {
               e.stopPropagation();
               onOpenCitySelector();
@@ -1274,7 +1286,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       key={feat.id}
                       data-feat-id={feat.id}
                       onContextMenu={(e) => e.preventDefault()}
+                      onMouseEnter={() => prefetchTab(feat.id)}
                       onTouchStart={(e) => {
+                        prefetchTab(feat.id);
                         const t0 = e.touches[0];
                         if (t0) handleTilePointerDown(feat.id, t0.clientX, t0.clientY);
                       }}

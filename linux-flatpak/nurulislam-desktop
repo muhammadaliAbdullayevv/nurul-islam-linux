@@ -2,6 +2,7 @@
 """
 Nurul Islam — Native Linux Desktop Widescreen Edition (GTK3 + WebKit2GTK 4.1)
 App ID: dev.mabdullayev.nurulislam.App
+Includes native in-app / forced RPM self-updater (PolicyKit + DNF/RPM + auto-relaunch).
 """
 import http.server
 import json
@@ -9,8 +10,12 @@ import mimetypes
 import os
 import shutil
 import socketserver
+import subprocess
 import sys
+import tempfile
 import threading
+import time
+import urllib.parse
 import urllib.request
 
 import gi
@@ -23,11 +28,14 @@ from gi.repository import Gio, GLib, Gtk, WebKit2  # noqa: E402
 APP_ID = "dev.mabdullayev.nurulislam.App"
 APP_TITLE = "Nurul Islam"
 PREFERRED_PORT = 47871
+FALLBACK_VERSION_CODE = 77
+FALLBACK_VERSION_NAME = "1.8.58"
+ALLOWED_UPDATE_HOST = "nurulislam.mabdullayev.dev"
+DEFAULT_RPM_URL = "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm"
 
 WWW_CANDIDATES = [
     "/usr/share/nurulislam/www",
     "/app/share/nurulislam/www",
-    "/home/muhammadaliabdullayev/Documents/Islamicapp/dist",
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "share", "nurulislam", "www")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "dist")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "www")),
@@ -42,6 +50,36 @@ def resolve_www_dir() -> str:
 
 
 WWW_DIR = resolve_www_dir()
+IS_FLATPAK = os.path.exists("/.flatpak-info")
+
+
+def detect_installed_version() -> dict:
+    """Read exact installed version from bundled WWW_DIR/version.json so RPM updates
+    always know their true installed versionCode & versionName."""
+    manifest_path = os.path.join(WWW_DIR, "version.json")
+    try:
+        if os.path.isfile(manifest_path):
+            with open(manifest_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            vc = int(data.get("versionCode", FALLBACK_VERSION_CODE))
+            vn = str(data.get("versionName", FALLBACK_VERSION_NAME))
+            if vc > 0 and vn:
+                return {"versionCode": vc, "versionName": vn}
+    except Exception:
+        pass
+    return {"versionCode": FALLBACK_VERSION_CODE, "versionName": FALLBACK_VERSION_NAME}
+
+
+def is_rpm_self_update_supported() -> bool:
+    if IS_FLATPAK:
+        return False
+    has_pkexec = shutil.which("pkexec") is not None
+    has_pkg_mgr = shutil.which("dnf") is not None or shutil.which("rpm") is not None
+    return has_pkexec and has_pkg_mgr
+
+
+INSTALLED_VERSION = detect_installed_version()
+RPM_SELF_UPDATE_SUPPORTED = is_rpm_self_update_supported()
 
 SELF_UNREGISTER_SW_JS = b"""
 self.addEventListener('install', () => {
@@ -63,12 +101,223 @@ self.addEventListener('activate', (event) => {
 """
 
 
+class DesktopRpmUpdater:
+    """Thread-safe RPM self-updater: downloads .rpm with live progress, verifies RPM magic
+    header, prompts PolicyKit (pkexec) to install via dnf/rpm, and relaunches the app."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._state = {
+            "status": "idle",
+            "pct": 0,
+            "error": "",
+        }
+        self._running = False
+        self._relaunch_cb = None
+
+    def set_relaunch_callback(self, cb):
+        self._relaunch_cb = cb
+
+    def get_state(self) -> dict:
+        with self._lock:
+            return dict(self._state)
+
+    def _set_state(self, status: str, pct: int, error: str = ""):
+        with self._lock:
+            self._state["status"] = status
+            self._state["pct"] = max(0, min(100, int(pct)))
+            self._state["error"] = error
+
+    @staticmethod
+    def _validate_rpm_url(url: str) -> str:
+        candidate = (url or DEFAULT_RPM_URL).strip()
+        parsed = urllib.parse.urlparse(candidate)
+        if (
+            parsed.scheme != "https"
+            or parsed.netloc.lower() != ALLOWED_UPDATE_HOST
+            or not parsed.path.lower().endswith(".rpm")
+        ):
+            raise ValueError("Untrusted RPM update URL")
+        return candidate
+
+    def start(self, rpm_url: str) -> tuple[bool, str]:
+        if not RPM_SELF_UPDATE_SUPPORTED:
+            return False, "RPM self-updater is unavailable in this environment"
+        try:
+            validated_url = self._validate_rpm_url(rpm_url)
+        except ValueError as exc:
+            return False, str(exc)
+
+        with self._lock:
+            if self._running:
+                return True, "already_running"
+            self._running = True
+            self._state = {"status": "downloading", "pct": 1, "error": ""}
+
+        t = threading.Thread(target=self._run_worker, args=(validated_url,), daemon=True)
+        t.start()
+        return True, "started"
+
+    def _run_worker(self, rpm_url: str):
+        tmp_dir = tempfile.mkdtemp(prefix="nurulislam-rpm-update-")
+        rpm_path = os.path.join(tmp_dir, "nurul-islam-update.rpm")
+        try:
+            # 1. Stream RPM package with live download percentage (0% -> 95%)
+            sep = "&" if "?" in rpm_url else "?"
+            req = urllib.request.Request(
+                f"{rpm_url}{sep}t={int(time.time())}",
+                headers={"User-Agent": f"NurulIslamDesktop/{INSTALLED_VERSION['versionName']}"},
+            )
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                total_header = resp.headers.get("Content-Length")
+                total_bytes = int(total_header) if total_header and total_header.isdigit() else 0
+                downloaded = 0
+                with open(rpm_path, "wb") as out:
+                    while True:
+                        chunk = resp.read(65536)
+                        if not chunk:
+                            break
+                        out.write(chunk)
+                        downloaded += len(chunk)
+                        if total_bytes > 0:
+                            pct = min(95, max(2, int((downloaded * 95) / total_bytes)))
+                        else:
+                            pct = min(90, 10 + int(downloaded / 32768))
+                        self._set_state("downloading", pct)
+
+            # 2. Validate RPM magic header (\xed\xab\xee\xdb) and sane file size
+            if not os.path.isfile(rpm_path) or os.path.getsize(rpm_path) < 50_000:
+                raise RuntimeError("Downloaded RPM package is incomplete")
+            with open(rpm_path, "rb") as fh:
+                magic = fh.read(4)
+            if magic != b"\xed\xab\xee\xdb":
+                raise RuntimeError("Downloaded file is not a valid RPM package")
+
+            # Make temp dir/file world-readable so root/dnf subprocess can read it safely
+            os.chmod(tmp_dir, 0o755)
+            os.chmod(rpm_path, 0o644)
+
+            # 3. Install via PolicyKit graphical prompt (dnf local offline upgrade, fallback rpm)
+            self._set_state("installing", 98)
+
+            dnf_bin = shutil.which("dnf")
+            rpm_bin = shutil.which("rpm")
+            if dnf_bin:
+                cmd = [
+                    "pkexec",
+                    dnf_bin,
+                    "install",
+                    "-y",
+                    "--nogpgcheck",
+                    "--disablerepo=*",
+                    rpm_path,
+                ]
+            elif rpm_bin:
+                cmd = [
+                    "pkexec",
+                    rpm_bin,
+                    "-Uvh",
+                    "--replacepkgs",
+                    "--nosignature",
+                    rpm_path,
+                ]
+            else:
+                raise RuntimeError("Neither dnf nor rpm is installed")
+
+            proc = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=300,
+            )
+
+            # If dnf failed for a non-auth reason (not exit 126/127), try direct rpm upgrade
+            if proc.returncode not in (0, 126, 127) and dnf_bin and rpm_bin:
+                proc = subprocess.run(
+                    [
+                        "pkexec",
+                        rpm_bin,
+                        "-Uvh",
+                        "--replacepkgs",
+                        "--nosignature",
+                        rpm_path,
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    timeout=180,
+                )
+
+            if proc.returncode in (126, 127):
+                # User cancelled PolicyKit password dialog or auth failed
+                self._set_state("needs_permission", 0, "Authentication cancelled")
+                return
+
+            if proc.returncode != 0:
+                err_tail = (proc.stderr or proc.stdout or "").strip().splitlines()
+                msg = err_tail[-1] if err_tail else f"Package installer exited with code {proc.returncode}"
+                self._set_state("error", 0, msg[:240])
+                return
+
+            # 4. Success! Signal 100% restarting and trigger clean relaunch of updated binary
+            self._set_state("restarting", 100)
+            time.sleep(0.45)
+            if self._relaunch_cb is not None:
+                GLib.idle_add(self._relaunch_cb)
+        except Exception as exc:
+            self._set_state("error", 0, str(exc)[:240])
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            with self._lock:
+                self._running = False
+
+
+UPDATER = DesktopRpmUpdater()
+
+
 class SPAStaticHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WWW_DIR, **kwargs)
 
     def log_message(self, format, *args):
         pass
+
+    def _send_json(self, code: int, payload: dict):
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _is_local_origin(self) -> bool:
+        origin = self.headers.get("Origin", "")
+        referer = self.headers.get("Referer", "")
+        if origin and not origin.startswith("http://127.0.0.1:"):
+            return False
+        if referer and not referer.startswith("http://127.0.0.1:"):
+            return False
+        return True
+
+    def do_POST(self):
+        clean_path = self.path.split("?", 1)[0].split("#", 1)[0]
+        if clean_path == "/__desktop_update/start":
+            if not self._is_local_origin():
+                self._send_json(403, {"ok": False, "error": "Forbidden origin"})
+                return
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            raw = self.rfile.read(min(length, 8192)) if length > 0 else b"{}"
+            try:
+                body = json.loads(raw.decode("utf-8", errors="ignore") or "{}")
+            except Exception:
+                body = {}
+            rpm_url = str(body.get("rpmUrl") or DEFAULT_RPM_URL)
+            ok, msg = UPDATER.start(rpm_url)
+            self._send_json(200 if ok else 400, {"ok": ok, "message": msg, **UPDATER.get_state()})
+            return
+        self._send_json(404, {"ok": False, "error": "Not found"})
 
     def do_GET(self):
         clean_path = self.path.split("?", 1)[0].split("#", 1)[0]
@@ -83,7 +332,24 @@ class SPAStaticHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(SELF_UNREGISTER_SW_JS)
             return
 
-        # 2. Built-in local GeoIP helper endpoint (uses ipinfo.io and ip-api.com which respond in <300ms in Uzbekistan)
+        # 2. Desktop RPM updater info & live status polling endpoints (127.0.0.1 only)
+        if clean_path == "/__desktop_update/info":
+            self._send_json(
+                200,
+                {
+                    "supported": RPM_SELF_UPDATE_SUPPORTED,
+                    "isFlatpak": IS_FLATPAK,
+                    "versionCode": INSTALLED_VERSION["versionCode"],
+                    "versionName": INSTALLED_VERSION["versionName"],
+                },
+            )
+            return
+
+        if clean_path == "/__desktop_update/status":
+            self._send_json(200, UPDATER.get_state())
+            return
+
+        # 3. Built-in local GeoIP helper endpoint (uses ipinfo.io and ip-api.com which respond in <300ms in Uzbekistan)
         if clean_path == "/__desktop_geoip":
             coords = None
             for url in (
@@ -92,7 +358,7 @@ class SPAStaticHandler(http.server.SimpleHTTPRequestHandler):
             ):
                 try:
                     req = urllib.request.Request(
-                        url, headers={"User-Agent": "NurulIslamDesktop/1.8.56"}
+                        url, headers={"User-Agent": f"NurulIslamDesktop/{INSTALLED_VERSION['versionName']}"}
                     )
                     with urllib.request.urlopen(req, timeout=2.5) as resp:
                         data = json.loads(resp.read().decode("utf-8", errors="ignore"))
@@ -113,13 +379,7 @@ class SPAStaticHandler(http.server.SimpleHTTPRequestHandler):
                             break
                 except Exception:
                     continue
-            body = json.dumps(coords or {"ok": False}).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self._send_json(200, coords or {"ok": False})
             return
 
         full_fs_path = self.translate_path(clean_path)
@@ -138,14 +398,14 @@ class ReusableTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
 
 
-def start_local_server() -> int:
+def start_local_server() -> tuple[ReusableTCPServer, int]:
     for port in (PREFERRED_PORT, 47872, 47873, 0):
         try:
             httpd = ReusableTCPServer(("127.0.0.1", port), SPAStaticHandler)
             actual_port = httpd.server_address[1]
             t = threading.Thread(target=httpd.serve_forever, daemon=True)
             t.start()
-            return actual_port
+            return httpd, actual_port
         except OSError:
             continue
     raise RuntimeError("Could not bind local static server")
@@ -165,13 +425,43 @@ def purge_stale_serviceworker_cache(data_root: str, cache_root: str) -> None:
 
 
 class NurulIslamDesktopApp(Gtk.Application):
-    def __init__(self, port: int):
+    def __init__(self, httpd: ReusableTCPServer, port: int):
         super().__init__(
             application_id=APP_ID,
             flags=Gio.ApplicationFlags.FLAGS_NONE,
         )
+        self.httpd = httpd
         self.port = port
         self.window = None
+        self.data_root = os.path.join(GLib.get_user_data_dir(), "nurulislam-webkit")
+        self.cache_root = os.path.join(GLib.get_user_cache_dir(), "nurulislam-webkit")
+        UPDATER.set_relaunch_callback(self.relaunch_updated_app)
+
+    def relaunch_updated_app(self):
+        """Shut down local server, purge HTTP cache, spawn freshly installed binary after
+        releasing single-instance D-Bus name, and quit the old process cleanly."""
+        purge_stale_serviceworker_cache(self.data_root, self.cache_root)
+        try:
+            self.httpd.server_close()
+        except Exception:
+            pass
+
+        relaunch_bin = (
+            "/usr/bin/nurulislam-desktop"
+            if os.path.isfile("/usr/bin/nurulislam-desktop")
+            else os.path.abspath(sys.argv[0])
+        )
+        try:
+            subprocess.Popen(
+                ["/bin/sh", "-c", f'sleep 0.9 && exec "{relaunch_bin}"'],
+                start_new_session=True,
+                close_fds=True,
+            )
+        except Exception:
+            pass
+
+        self.quit()
+        return False
 
     def do_activate(self):
         if self.window is not None:
@@ -187,26 +477,45 @@ class NurulIslamDesktopApp(Gtk.Application):
         self.window.set_position(Gtk.WindowPosition.CENTER)
         self.window.set_icon_name(APP_ID)
 
-        data_root = os.path.join(GLib.get_user_data_dir(), "nurulislam-webkit")
-        cache_root = os.path.join(GLib.get_user_cache_dir(), "nurulislam-webkit")
-        os.makedirs(data_root, exist_ok=True)
-        os.makedirs(cache_root, exist_ok=True)
-        purge_stale_serviceworker_cache(data_root, cache_root)
+        os.makedirs(self.data_root, exist_ok=True)
+        os.makedirs(self.cache_root, exist_ok=True)
+        purge_stale_serviceworker_cache(self.data_root, self.cache_root)
 
         data_manager = WebKit2.WebsiteDataManager(
-            base_data_directory=data_root,
-            base_cache_directory=cache_root,
+            base_data_directory=self.data_root,
+            base_cache_directory=self.cache_root,
         )
         web_context = WebKit2.WebContext.new_with_website_data_manager(data_manager)
         web_context.set_cache_model(WebKit2.CacheModel.DOCUMENT_VIEWER)
 
         cookie_mgr = data_manager.get_cookie_manager()
         cookie_mgr.set_persistent_storage(
-            os.path.join(data_root, "cookies.sqlite"),
+            os.path.join(self.data_root, "cookies.sqlite"),
             WebKit2.CookiePersistentStorage.SQLITE,
         )
 
-        webview = WebKit2.WebView.new_with_context(web_context)
+        # Inject native desktop version & RPM self-updater bridge synchronously BEFORE app JS runs
+        ucm = WebKit2.UserContentManager()
+        bridge_script = (
+            "window.__NQ_LINUX_DESKTOP__ = true;"
+            f"window.__NQ_DESKTOP_RPM_UPDATER__ = {'true' if RPM_SELF_UPDATE_SUPPORTED else 'false'};"
+            f"window.__NQ_DESKTOP_VERSION__ = {json.dumps(INSTALLED_VERSION)};"
+        )
+        ucm.add_script(
+            WebKit2.UserScript.new(
+                bridge_script,
+                WebKit2.UserContentInjectedFrames.TOP_FRAME,
+                WebKit2.UserScriptInjectionTime.START,
+                None,
+                None,
+            )
+        )
+
+        try:
+            webview = WebKit2.WebView(web_context=web_context, user_content_manager=ucm)
+        except Exception:
+            webview = WebKit2.WebView.new_with_context(web_context)
+
         settings = webview.get_settings()
         settings.set_enable_javascript(True)
         settings.set_enable_html5_local_storage(True)
@@ -275,8 +584,8 @@ def main():
     mimetypes.add_type("application/javascript", ".js")
     mimetypes.add_type("application/manifest+json", ".webmanifest")
     mimetypes.add_type("image/webp", ".webp")
-    port = start_local_server()
-    app = NurulIslamDesktopApp(port)
+    httpd, port = start_local_server()
+    app = NurulIslamDesktopApp(httpd, port)
     sys.exit(app.run(sys.argv))
 
 

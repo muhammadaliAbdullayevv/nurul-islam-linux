@@ -1,5 +1,5 @@
 import { AppLanguage } from '../types';
-import { TOTAL_KNOWLEDGE_QUESTIONS } from '../data/knowledgeQuiz';
+import { TOTAL_KNOWLEDGE_QUESTIONS } from '../data/knowledgeQuizMeta';
 
 const HANDLE_STORAGE_KEY = 'nq_user_handle';
 const ACTIVITY_STORAGE_KEY = 'nq_user_activity_v1';

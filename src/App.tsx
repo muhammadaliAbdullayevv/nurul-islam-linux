@@ -5,7 +5,6 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { LanguageProvider, LANGUAGE_OPTIONS, useLanguage } from './contexts/LanguageContext';
 import { HomeTab } from './components/tabs/HomeTab';
 import { useDayKey } from './components/LivePrayerClock';
-import { QuranMiniPlayer } from './components/QuranMiniPlayer';
 import {
   hasNativeQuranAudioBridge,
   getNativeAudioState,
@@ -17,14 +16,14 @@ import {
   NativeQuranAudioState,
 } from './utils/nativeQuranAudio';
 import type { HubSection } from './components/tabs/AzkarTab';
-import { CitySelectorModal } from './components/CitySelectorModal';
-import { OnboardingModal } from './components/OnboardingModal';
 import { AppLanguage, AsrMethod, Bookmark, CalcMethod, Coordinates, TranslationId } from './types';
 import {
-  CITIES,
+  DEFAULT_CITY,
   calculatePrayerTimes,
   cleanModernUzPlaceName,
   findNearestCity,
+  isLocationKnownInCatalog,
+  loadFullLocationCatalog,
   resolveRegionFromCoords,
 } from './utils/prayerTimes';
 import {
@@ -38,32 +37,37 @@ import {
   UpdateDownloadStatus,
   canRequestNativeInstallPermission,
   checkForAppUpdate,
+  isDesktopRpmUpdaterSupported,
   startInAppUpdate,
   getReleaseNoteText
 } from './utils/appUpdater';
 import { HOME_PAGE2_LEARNED_EVENT, sendAnonymousHeartbeat } from './utils/telemetry';
 import { addQuranListenSeconds, resetUserActivity } from './utils/userActivity';
+import { modalLoaders, scheduleIdleTabPrefetch, tabLoaders } from './utils/tabLoaders';
 
-const QuranTab = lazy(() => import('./components/tabs/QuranTab').then((m) => ({ default: m.QuranTab })));
-const PrayerTab = lazy(() => import('./components/tabs/PrayerTab').then((m) => ({ default: m.PrayerTab })));
-const QiblaTab = lazy(() => import('./components/tabs/QiblaTab').then((m) => ({ default: m.QiblaTab })));
-const TasbihTab = lazy(() => import('./components/tabs/TasbihTab').then((m) => ({ default: m.TasbihTab })));
-const AzkarTab = lazy(() => import('./components/tabs/AzkarTab').then((m) => ({ default: m.AzkarTab })));
-const NamesTab = lazy(() => import('./components/tabs/NamesTab').then((m) => ({ default: m.NamesTab })));
-const ZakatTab = lazy(() => import('./components/tabs/ZakatTab').then((m) => ({ default: m.ZakatTab })));
-const QazoTab = lazy(() => import('./components/tabs/QazoTab').then((m) => ({ default: m.QazoTab })));
-const RamadanTab = lazy(() => import('./components/tabs/RamadanTab').then((m) => ({ default: m.RamadanTab })));
-const PrayerGuideTab = lazy(() => import('./components/tabs/PrayerGuideTab').then((m) => ({ default: m.PrayerGuideTab })));
-const MasjidsTab = lazy(() => import('./components/tabs/MasjidsTab').then((m) => ({ default: m.MasjidsTab })));
-const MasjidEhsonTab = lazy(() => import('./components/tabs/MasjidEhsonTab').then((m) => ({ default: m.MasjidEhsonTab })));
-const JumaTab = lazy(() => import('./components/tabs/JumaTab').then((m) => ({ default: m.JumaTab })));
-const QuizTab = lazy(() => import('./components/tabs/QuizTab').then((m) => ({ default: m.QuizTab })));
-const HifzTab = lazy(() => import('./components/tabs/HifzTab').then((m) => ({ default: m.HifzTab })));
-const LifeGuideTab = lazy(() => import('./components/tabs/LifeGuideTab').then((m) => ({ default: m.LifeGuideTab })));
-const FiqhTab = lazy(() => import('./components/tabs/FiqhTab').then((m) => ({ default: m.FiqhTab })));
-const TajweedTab = lazy(() => import('./components/tabs/TajweedTab').then((m) => ({ default: m.TajweedTab })));
-const SeerahTab = lazy(() => import('./components/tabs/SeerahTab').then((m) => ({ default: m.SeerahTab })));
-const ProfileTab = lazy(() => import('./components/tabs/ProfileTab').then((m) => ({ default: m.ProfileTab })));
+const QuranTab = lazy(tabLoaders.quran);
+const PrayerTab = lazy(tabLoaders.prayer);
+const QiblaTab = lazy(tabLoaders.qibla);
+const TasbihTab = lazy(tabLoaders.tasbih);
+const AzkarTab = lazy(tabLoaders.azkar);
+const NamesTab = lazy(tabLoaders.names);
+const ZakatTab = lazy(tabLoaders.zakat);
+const QazoTab = lazy(tabLoaders.qazo);
+const RamadanTab = lazy(tabLoaders.ramadan);
+const PrayerGuideTab = lazy(tabLoaders.guide);
+const MasjidsTab = lazy(tabLoaders.masjids);
+const MasjidEhsonTab = lazy(tabLoaders.ehson);
+const JumaTab = lazy(tabLoaders.juma);
+const QuizTab = lazy(tabLoaders.quiz);
+const HifzTab = lazy(tabLoaders.hifz);
+const LifeGuideTab = lazy(tabLoaders.life);
+const FiqhTab = lazy(tabLoaders.fiqh);
+const TajweedTab = lazy(tabLoaders.tajweed);
+const SeerahTab = lazy(tabLoaders.seerah);
+const ProfileTab = lazy(tabLoaders.profile);
+const CitySelectorModal = lazy(modalLoaders.citySelector);
+const OnboardingModal = lazy(modalLoaders.onboarding);
+const QuranMiniPlayer = lazy(modalLoaders.miniPlayer);
 
 export default function App() {
   return (
@@ -196,10 +200,14 @@ function AppContent() {
     if (!rel) return;
     setUpdateProgress(0);
     setUpdateStatus('downloading');
-    startInAppUpdate(rel.apkUrl, (pct, status) => {
-      setUpdateProgress(pct);
-      setUpdateStatus(status);
-    });
+    startInAppUpdate(
+      rel.apkUrl,
+      (pct, status) => {
+        setUpdateProgress(pct);
+        setUpdateStatus(status);
+      },
+      rel.rpmUrl
+    );
   }, [updateRelease]);
 
   // Check for updates immediately on app launch, on resume from background, on reconnect, and every 60s while open
@@ -210,6 +218,7 @@ function AppContent() {
 
     const handleResumeCheck = () => {
       if (
+        !isDesktopRpmUpdaterSupported() &&
         updateStatusRef.current === 'needs_permission' &&
         updateReleaseRef.current &&
         canRequestNativeInstallPermission()
@@ -366,8 +375,31 @@ function AppContent() {
     } catch {
       // ignore parse errors
     }
-    return CITIES[0]; // Default: Tashkent
+    return DEFAULT_CITY; // Default: Tashkent
   });
+  const [, setCityCatalogVersion] = useState(0);
+
+  // Zero-spinner background prefetch of top tabs once Home settles (respects Data Saver)
+  useEffect(() => {
+    if (showOnboarding) return;
+    return scheduleIdleTabPrefetch();
+  }, [showOnboarding]);
+
+  // If saved location is a non-capital Uzbekistan district, hydrate full district labels lazily on idle
+  useEffect(() => {
+    if (
+      currentCity.countryName === 'Uzbekistan' &&
+      !isLocationKnownInCatalog(currentCity.cityName)
+    ) {
+      let alive = true;
+      void loadFullLocationCatalog().then(() => {
+        if (alive) setCityCatalogVersion((v) => v + 1);
+      });
+      return () => {
+        alive = false;
+      };
+    }
+  }, [currentCity.cityName, currentCity.countryName]);
 
   const [calcMethod, setCalcMethod] = useState<CalcMethod>(() => {
     return (localStorage.getItem('nq_calcmethod') as CalcMethod) || 'Uzbekistan';
@@ -670,7 +702,7 @@ function AppContent() {
   }, []);
 
   const handleResetPreferences = () => {
-    setCurrentCity(CITIES[0]);
+    setCurrentCity(DEFAULT_CITY);
     setCalcMethod('Uzbekistan');
     setSelectedTranslation('uz_mansur');
     setLanguage('uz_lat');
@@ -803,11 +835,13 @@ function AppContent() {
                 </div>
               )}
               {showMiniPlayer && (
-                <QuranMiniPlayer
-                  audioState={nativeAudioState}
-                  showBottomSafePadding={isSecondaryFooterTab}
-                  onOpenSurah={handleOpenSurah}
-                />
+                <Suspense fallback={null}>
+                  <QuranMiniPlayer
+                    audioState={nativeAudioState}
+                    showBottomSafePadding={isSecondaryFooterTab}
+                    onOpenSurah={handleOpenSurah}
+                  />
+                </Suspense>
               )}
             </>
           ) : undefined
@@ -993,35 +1027,43 @@ function AppContent() {
         )}
       </AndroidShell>
 
-      {/* First-Run Onboarding Intro */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onFinish={() => {
-          try {
-            localStorage.setItem('nq_onboarding_done', '1');
-            localStorage.removeItem('nq_onboarding_in_progress');
-            localStorage.setItem('nq_city', JSON.stringify(currentCity));
-          } catch {
-            // Ignore storage error
-          }
-          setShowOnboarding(false);
-        }}
-        currentCity={currentCity}
-        onSelectCity={handleSelectCity}
-        onDetectGPS={handleDetectGPS}
-        onSelectLanguage={handleSelectLanguage}
-        alertPrefs={alertPrefs}
-        onChangeAlertPrefs={setAlertPrefs}
-      />
+      {/* First-Run Onboarding Intro (lazy-loaded only for first-run users) */}
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <OnboardingModal
+            isOpen={showOnboarding}
+            onFinish={() => {
+              try {
+                localStorage.setItem('nq_onboarding_done', '1');
+                localStorage.removeItem('nq_onboarding_in_progress');
+                localStorage.setItem('nq_city', JSON.stringify(currentCity));
+              } catch {
+                // Ignore storage error
+              }
+              setShowOnboarding(false);
+            }}
+            currentCity={currentCity}
+            onSelectCity={handleSelectCity}
+            onDetectGPS={handleDetectGPS}
+            onSelectLanguage={handleSelectLanguage}
+            alertPrefs={alertPrefs}
+            onChangeAlertPrefs={setAlertPrefs}
+          />
+        </Suspense>
+      )}
 
-      {/* City Selector Modal */}
-      <CitySelectorModal
-        isOpen={isCityModalOpen}
-        onClose={() => setIsCityModalOpen(false)}
-        currentCity={currentCity}
-        onSelectCity={handleSelectCity}
-        onDetectGPS={handleDetectGPS}
-      />
+      {/* City Selector Modal (lazy-loaded on demand / hover prefetch) */}
+      {isCityModalOpen && (
+        <Suspense fallback={null}>
+          <CitySelectorModal
+            isOpen={isCityModalOpen}
+            onClose={() => setIsCityModalOpen(false)}
+            currentCity={currentCity}
+            onSelectCity={handleSelectCity}
+            onDetectGPS={handleDetectGPS}
+          />
+        </Suspense>
+      )}
 
       {/* In-App Self-Update Modal */}
       {isUpdateModalOpen && updateRelease && (
@@ -1111,13 +1153,29 @@ function AppContent() {
 
             {updateStatus === 'needs_permission' && (
               <p className="text-xs text-amber-600 dark:text-amber-300 font-medium">
-                {t.updates.needsPerm}
+                {isDesktopRpmUpdaterSupported()
+                  ? language === 'ru'
+                    ? 'Для установки обновления введите пароль администратора в системном окне.'
+                    : language === 'en'
+                    ? 'Administrator password is required in the system prompt to install the RPM update.'
+                    : language === 'uz_cyr'
+                    ? 'Янгилашни ўрнатиш учун тизим ойнасида администратор паролини киритинг.'
+                    : "Yangilashni o'rnatish uchun tizim oynasida administrator parolini kiriting."
+                  : t.updates.needsPerm}
               </p>
             )}
 
             {updateStatus === 'installing' && (
               <p className={`text-xs font-semibold ${isDay ? 'text-[#0c4703]' : 'text-emerald-300'}`}>
-                {t.updates.installing}
+                {isDesktopRpmUpdaterSupported()
+                  ? language === 'ru'
+                    ? 'Установка обновления RPM... Введите пароль администратора; после установки приложение перезапустится автоматически.'
+                    : language === 'en'
+                    ? 'Installing RPM update... Enter your password in the system prompt; the app will restart automatically.'
+                    : language === 'uz_cyr'
+                    ? 'RPM янгиланиш ўрнатилмоқда... Тизим ойнасида паролни киритинг, илова автоматик қайта очилади.'
+                    : "RPM yangilanish o'rnatilmoqda... Tizim oynasida parolni kiriting, ilova avtomatik qayta ochiladi."
+                  : t.updates.installing}
               </p>
             )}
 
@@ -1130,7 +1188,7 @@ function AppContent() {
                 <button
                   type="button"
                   onClick={handleDismissUpdateModal}
-                  disabled={updateStatus === 'downloading'}
+                  disabled={updateStatus === 'downloading' || updateStatus === 'installing'}
                   className={`flex-1 py-2.5 rounded-xl border text-xs font-semibold transition disabled:opacity-40 ${
                     isDay
                       ? 'bg-[#ecf1f5] border-[#dde3ea] text-slate-700'
@@ -1144,14 +1202,18 @@ function AppContent() {
               <button
                 type="button"
                 onClick={handleStartUpdate}
-                disabled={updateStatus === 'downloading'}
+                disabled={updateStatus === 'downloading' || updateStatus === 'installing'}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50 ${
                   isDay
                     ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
                     : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
                 }`}
               >
-                {updateStatus === 'downloading' ? `${updateProgress}%` : t.updates.updateNowBtn}
+                {updateStatus === 'downloading'
+                  ? `${updateProgress}%`
+                  : updateStatus === 'installing'
+                  ? t.updates.installing
+                  : t.updates.updateNowBtn}
               </button>
             </div>
           </div>

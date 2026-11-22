@@ -1,8 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Globe2, Loader2, MapPin, Search, X } from 'lucide-react';
 import { AppLanguage, Coordinates } from '../types';
-import { CITIES, getLocalizedCityLabel, normalizeLocationSearch } from '../utils/prayerTimes';
-import { LOCATION_REGIONS, LocationEntry, LocationRegionId, REGION_MAP } from '../data/uzbekistanDistricts';
+import {
+  WORLD_LOCATIONS,
+  getLocalizedCityLabel,
+  normalizeLocationSearch,
+  registerLocationEntries,
+} from '../utils/prayerTimes';
+import {
+  LOCATION_REGIONS,
+  LocationEntry,
+  LocationRegionId,
+  REGION_MAP,
+  UZBEKISTAN_LOCATIONS,
+} from '../data/uzbekistanDistricts';
+
+registerLocationEntries(UZBEKISTAN_LOCATIONS);
+const ALL_CITIES: LocationEntry[] = [...UZBEKISTAN_LOCATIONS, ...WORLD_LOCATIONS];
 import {
   getCachedUzbekistanVillages,
   loadUzbekistanVillages,
@@ -129,7 +143,7 @@ export const LocationBrowser: React.FC<LocationBrowserProps> = ({
 
   // Offline cities & districts filter
   const filteredDistricts = useMemo(() => {
-    return CITIES.filter((c) => {
+    return ALL_CITIES.filter((c) => {
       if (!normalizedQuery && activeRegion !== 'all' && c.region !== activeRegion) {
         return false;
       }

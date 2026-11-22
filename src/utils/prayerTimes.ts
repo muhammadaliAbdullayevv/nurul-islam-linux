@@ -1,17 +1,12 @@
 import { AppLanguage, AsrMethod, CalcMethod, Coordinates, PrayerTimes } from '../types';
 import {
+  CORE_UZBEKISTAN_CAPITALS,
+  DEFAULT_TASHKENT_CITY,
   LocationEntry,
   LocationRegionId,
   REGION_MAP,
-  UZBEKISTAN_LOCATIONS,
-} from '../data/uzbekistanDistricts';
+} from '../data/uzbekistanRegions';
 import { cyrillicToLatinUz, latinToCyrillicUz } from './uzbekScript';
-import {
-  findNearestOfflineVillage,
-  getUzbekistanTimezone,
-  inferUzbekistanRegionFromText,
-  UZ_ISO_TO_REGION,
-} from './uzbekistanVillages';
 
 const WORLD_CITIES_RAW: Array<{
   cityName: string;
@@ -38,16 +33,47 @@ const WORLD_CITIES_RAW: Array<{
   { cityName: 'Kuala Lumpur', countryName: 'Malaysia', latitude: 3.1390, longitude: 101.6869, timezone: 'Asia/Kuala_Lumpur', labels: { uz_lat: 'Kuala-Lumpur', uz_cyr: 'Куала-Лумпур', en: 'Kuala Lumpur', ru: 'Куала-Лумпур' } },
 ];
 
-const WORLD_LOCATIONS: LocationEntry[] = WORLD_CITIES_RAW.map((c) => ({
+export const WORLD_LOCATIONS: LocationEntry[] = WORLD_CITIES_RAW.map((c) => ({
   ...c,
   region: 'world',
 }));
 
-export const CITIES: LocationEntry[] = [...UZBEKISTAN_LOCATIONS, ...WORLD_LOCATIONS];
+export const DEFAULT_CITY: LocationEntry = DEFAULT_TASHKENT_CITY;
+
+// Seeded synchronously with Uzbekistan's 14 regional centers + 15 world cities;
+// the full 215+ Uzbekistan district catalog merges in lazily on demand so
+// uzbekistanDistricts.ts (46 KB) stays completely out of the cold-start index.js bundle.
+let activeCityCatalog: LocationEntry[] = [...CORE_UZBEKISTAN_CAPITALS, ...WORLD_LOCATIONS];
+let fullCatalogLoaded = false;
+let fullCatalogPromise: Promise<LocationEntry[]> | null = null;
 
 const LOCATION_BY_CITY_NAME: Record<string, LocationEntry> = Object.fromEntries(
-  CITIES.map((entry) => [entry.cityName, entry])
+  activeCityCatalog.map((entry) => [entry.cityName, entry])
 );
+
+export function registerLocationEntries(entries: LocationEntry[]): void {
+  for (let i = 0; i < entries.length; i++) {
+    LOCATION_BY_CITY_NAME[entries[i].cityName] = entries[i];
+  }
+  activeCityCatalog = [...entries, ...WORLD_LOCATIONS];
+  fullCatalogLoaded = true;
+}
+
+export function isLocationKnownInCatalog(cityName: string): boolean {
+  return Boolean(LOCATION_BY_CITY_NAME[cityName]);
+}
+
+export async function loadFullLocationCatalog(): Promise<LocationEntry[]> {
+  if (fullCatalogLoaded) return activeCityCatalog;
+  if (fullCatalogPromise) return fullCatalogPromise;
+  fullCatalogPromise = import('../data/uzbekistanDistricts')
+    .then((mod) => {
+      registerLocationEntries(mod.UZBEKISTAN_LOCATIONS);
+      return activeCityCatalog;
+    })
+    .catch(() => activeCityCatalog);
+  return fullCatalogPromise;
+}
 
 const COUNTRY_LOCALE_NAMES: Record<string, Record<AppLanguage, string>> = {
   Uzbekistan: { uz_lat: "O'zbekiston", uz_cyr: 'Ўзбекистон', en: 'Uzbekistan', ru: 'Узбекистан' },
@@ -657,10 +683,10 @@ function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 export function findNearestCity(latitude: number, longitude: number): LocationEntry {
-  let best = CITIES[0];
+  let best = activeCityCatalog[0] || DEFAULT_CITY;
   let bestDist = Infinity;
 
-  for (const city of CITIES) {
+  for (const city of activeCityCatalog) {
     const dist = haversineDistanceKm(latitude, longitude, city.latitude, city.longitude);
     if (dist < bestDist) {
       bestDist = dist;
@@ -681,6 +707,17 @@ export async function resolveRegionFromCoords(
   region?: LocationRegionId;
   subtitle?: string;
 }> {
+  const [, villageMod] = await Promise.all([
+    loadFullLocationCatalog(),
+    import('./uzbekistanVillages'),
+  ]);
+  const {
+    findNearestOfflineVillage,
+    getUzbekistanTimezone,
+    inferUzbekistanRegionFromText,
+    UZ_ISO_TO_REGION,
+  } = villageMod;
+
   const nearestCity = findNearestCity(latitude, longitude);
   const nearestCityDistKm = haversineDistanceKm(
     latitude,

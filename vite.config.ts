@@ -103,6 +103,11 @@ export default defineConfig(() => {
                 test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
                 priority: 15,
               },
+              {
+                name: 'vendor-capacitor',
+                test: /[\\/]node_modules[\\/]@capacitor[\\/]/,
+                priority: 12,
+              },
             ],
           },
         },

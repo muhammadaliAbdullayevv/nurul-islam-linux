@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isConstrainedNetwork } from '../../utils/tabLoaders';
 import {
   ArrowLeft,
   BookOpen,
@@ -217,6 +218,8 @@ export const HifzTab: React.FC = () => {
 
   // Audio playback state
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadedMetaRef = useRef<{ url: string; verseKey: string } | null>(null);
   const [playingVerseNum, setPlayingVerseNum] = useState<number | null>(null);
   const [currentRepeatStep, setCurrentRepeatStep] = useState<number>(1);
   const [isAutoSequence, setIsAutoSequence] = useState<boolean>(false);
@@ -237,6 +240,68 @@ export const HifzTab: React.FC = () => {
     activeLessonRef.current = activeLesson;
   }, [activeLesson]);
 
+  const clearPreloadedAudio = useCallback(() => {
+    if (preloadAudioRef.current) {
+      preloadAudioRef.current.onerror = null;
+      preloadAudioRef.current.pause();
+      preloadAudioRef.current.removeAttribute('src');
+      preloadAudioRef.current.load();
+    }
+    preloadedMetaRef.current = null;
+  }, []);
+
+  const prebufferVerse = useCallback((verse: HifzVerseItem | undefined | null) => {
+    if (!verse || !verse.surahNumber || !verse.ayahNumber) return;
+    const reciterId = loadSelectedReciterId();
+    const verseKey = `${reciterId}:${verse.surahNumber}:${verse.ayahNumber}`;
+    if (preloadedMetaRef.current?.verseKey === verseKey) return;
+
+    const candidates = getReciterAyahAudioCandidates(
+      reciterId,
+      verse.surahNumber,
+      verse.ayahNumber
+    );
+    if (candidates.length === 0) return;
+
+    if (!preloadAudioRef.current) {
+      const el = new Audio();
+      el.preload = 'auto';
+      preloadAudioRef.current = el;
+    }
+    const pre = preloadAudioRef.current;
+    let idx = 0;
+
+    const loadCandidate = (candIdx: number) => {
+      if (candIdx >= candidates.length) {
+        preloadedMetaRef.current = null;
+        return;
+      }
+      const url = candidates[candIdx];
+      preloadedMetaRef.current = { url, verseKey };
+      pre.onerror = () => {
+        loadCandidate(candIdx + 1);
+      };
+      pre.src = url;
+      pre.preload = 'auto';
+      pre.load();
+    };
+
+    loadCandidate(idx);
+  }, []);
+
+  // Pre-buffer first playable verse when opening a lesson so Play starts with zero lag
+  useEffect(() => {
+    if (!activeLesson) {
+      clearPreloadedAudio();
+      return;
+    }
+    if (isConstrainedNetwork()) return;
+    const firstPlayable = activeLesson.verses.find((v) => v.surahNumber && v.ayahNumber);
+    if (firstPlayable) {
+      prebufferVerse(firstPlayable);
+    }
+  }, [activeLesson, clearPreloadedAudio, prebufferVerse]);
+
   const stopAudio = () => {
     if (audioRef.current) {
       audioRef.current.onended = null;
@@ -244,6 +309,7 @@ export const HifzTab: React.FC = () => {
       audioRef.current.pause();
       audioRef.current = null;
     }
+    clearPreloadedAudio();
     autoSequenceRef.current = false;
     setIsAutoSequence(false);
     setPlayingVerseNum(null);
@@ -272,35 +338,43 @@ export const HifzTab: React.FC = () => {
   const playVerseWithRepeat = (verse: HifzVerseItem, step = 1, sequenceMode = false) => {
     if (!verse.surahNumber || !verse.ayahNumber) return;
 
-    if (audioRef.current) {
-      audioRef.current.onended = null;
-      audioRef.current.onerror = null;
-      audioRef.current.pause();
-    }
-
     const reciterId = loadSelectedReciterId();
+    const verseKey = `${reciterId}:${verse.surahNumber}:${verse.ayahNumber}`;
     const candidates = getReciterAyahAudioCandidates(
       reciterId,
       verse.surahNumber,
       verse.ayahNumber
     );
-    let candidateIdx = 0;
 
-    const tryPlay = () => {
-      if (candidateIdx >= candidates.length) {
-        stopAudio();
-        return;
+    // Pre-buffer the next playable verse in the lesson right away for zero-gap transitions
+    const lesson = activeLessonRef.current;
+    if (lesson) {
+      const playableVerses = lesson.verses.filter((v) => v.surahNumber && v.ayahNumber);
+      const curIdx = playableVerses.findIndex((v) => v.num === verse.num);
+      if (curIdx >= 0 && curIdx + 1 < playableVerses.length) {
+        prebufferVerse(playableVerses[curIdx + 1]);
       }
-      const audio = new Audio(candidates[candidateIdx]);
-      audioRef.current = audio;
-      setPlayingVerseNum(verse.num);
-      setCurrentRepeatStep(step);
+    }
 
+    autoSequenceRef.current = sequenceMode;
+    setIsAutoSequence(sequenceMode);
+
+    const attachEndHandler = (audio: HTMLAudioElement, currentStep: number) => {
       audio.onended = () => {
         const target = repeatTargetRef.current;
-        if (target === 0 || step < target) {
-          // Repeat same verse again
-          playVerseWithRepeat(verse, step + 1, autoSequenceRef.current);
+        if (target === 0 || currentStep < target) {
+          // Instant 0ms loop: replay the already-buffered audio element in place!
+          const nextStep = currentStep + 1;
+          setCurrentRepeatStep(nextStep);
+          attachEndHandler(audio, nextStep);
+          try {
+            audio.currentTime = 0;
+            audio.play().catch(() => {
+              playVerseWithRepeat(verse, nextStep, autoSequenceRef.current);
+            });
+          } catch {
+            playVerseWithRepeat(verse, nextStep, autoSequenceRef.current);
+          }
           return;
         }
         // Finished repeating this verse; check if we should advance to the next verse
@@ -316,6 +390,70 @@ export const HifzTab: React.FC = () => {
         }
         stopAudio();
       };
+    };
+
+    // Promote pre-buffered <audio> element when ready for instant 0ms transition
+    const preloaded = preloadAudioRef.current;
+    const preMeta = preloadedMetaRef.current;
+    if (
+      preloaded &&
+      preMeta &&
+      preMeta.verseKey === verseKey &&
+      candidates.includes(preMeta.url) &&
+      preloaded.readyState >= 2
+    ) {
+      const prevAudio = audioRef.current;
+      if (prevAudio) {
+        prevAudio.onended = null;
+        prevAudio.onerror = null;
+        prevAudio.pause();
+      }
+      preloadAudioRef.current = prevAudio || new Audio();
+      preloadAudioRef.current.preload = 'auto';
+      preloadedMetaRef.current = null;
+
+      preloaded.onerror = null;
+      preloaded.currentTime = 0;
+      audioRef.current = preloaded;
+      setPlayingVerseNum(verse.num);
+      setCurrentRepeatStep(step);
+      attachEndHandler(preloaded, step);
+
+      // Immediately pre-buffer the verse AFTER this one using the recycled audio element
+      if (lesson) {
+        const playableVerses = lesson.verses.filter((v) => v.surahNumber && v.ayahNumber);
+        const curIdx = playableVerses.findIndex((v) => v.num === verse.num);
+        if (curIdx >= 0 && curIdx + 1 < playableVerses.length) {
+          prebufferVerse(playableVerses[curIdx + 1]);
+        }
+      }
+
+      preloaded.play().catch(() => {
+        // Fallback if WebView gesture policy rejected the swapped element
+        playVerseWithRepeat(verse, step, sequenceMode);
+      });
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current.pause();
+    }
+
+    let candidateIdx = 0;
+
+    const tryPlay = () => {
+      if (candidateIdx >= candidates.length) {
+        stopAudio();
+        return;
+      }
+      const audio = new Audio(candidates[candidateIdx]);
+      audio.preload = 'auto';
+      audioRef.current = audio;
+      setPlayingVerseNum(verse.num);
+      setCurrentRepeatStep(step);
+      attachEndHandler(audio, step);
 
       audio.onerror = () => {
         candidateIdx += 1;
@@ -328,8 +466,6 @@ export const HifzTab: React.FC = () => {
       });
     };
 
-    autoSequenceRef.current = sequenceMode;
-    setIsAutoSequence(sequenceMode);
     tryPlay();
   };
 

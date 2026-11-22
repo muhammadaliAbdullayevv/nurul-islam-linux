@@ -1,120 +1,12 @@
-import { AppLanguage, Coordinates } from '../types';
+import { LocationEntry, LocationRegionId } from './uzbekistanRegions';
 
-export type LocationRegionId =
-  | 'uz_tashkent_city'
-  | 'uz_tashkent_region'
-  | 'uz_andijan'
-  | 'uz_fergana'
-  | 'uz_namangan'
-  | 'uz_sirdaryo'
-  | 'uz_jizzakh'
-  | 'uz_samarkand'
-  | 'uz_kashkadarya'
-  | 'uz_surkhandarya'
-  | 'uz_bukhara'
-  | 'uz_navoi'
-  | 'uz_khorezm'
-  | 'uz_karakalpakstan'
-  | 'world';
-
-export interface RegionDefinition {
-  id: LocationRegionId;
-  shortLabel: Record<AppLanguage, string>;
-  fullLabel: Record<AppLanguage, string>;
-}
-
-export const LOCATION_REGIONS: RegionDefinition[] = [
-  {
-    id: 'uz_tashkent_city',
-    shortLabel: { uz_lat: 'Toshkent sh.', uz_cyr: 'Тошкент ш.', en: 'Tashkent', ru: 'Ташкент' },
-    fullLabel: { uz_lat: 'Toshkent shahri', uz_cyr: 'Тошкент шаҳри', en: 'Tashkent City', ru: 'г. Ташкент' },
-  },
-  {
-    id: 'uz_tashkent_region',
-    shortLabel: { uz_lat: 'Toshkent vil.', uz_cyr: 'Тошкент вил.', en: 'Tashkent Reg.', ru: 'Ташкент. обл.' },
-    fullLabel: { uz_lat: 'Toshkent viloyati', uz_cyr: 'Тошкент вилояти', en: 'Tashkent Region', ru: 'Ташкентская область' },
-  },
-  {
-    id: 'uz_andijan',
-    shortLabel: { uz_lat: 'Andijon', uz_cyr: 'Андижон', en: 'Andijan', ru: 'Андижан' },
-    fullLabel: { uz_lat: 'Andijon viloyati', uz_cyr: 'Андижон вилояти', en: 'Andijan Region', ru: 'Андижанская область' },
-  },
-  {
-    id: 'uz_fergana',
-    shortLabel: { uz_lat: "Farg'ona", uz_cyr: 'Фарғона', en: 'Fergana', ru: 'Фергана' },
-    fullLabel: { uz_lat: "Farg'ona viloyati", uz_cyr: 'Фарғона вилояти', en: 'Fergana Region', ru: 'Ферганская область' },
-  },
-  {
-    id: 'uz_namangan',
-    shortLabel: { uz_lat: 'Namangan', uz_cyr: 'Наманган', en: 'Namangan', ru: 'Наманган' },
-    fullLabel: { uz_lat: 'Namangan viloyati', uz_cyr: 'Наманган вилояти', en: 'Namangan Region', ru: 'Наманганская область' },
-  },
-  {
-    id: 'uz_samarkand',
-    shortLabel: { uz_lat: 'Samarqand', uz_cyr: 'Самарқанд', en: 'Samarkand', ru: 'Самарканд' },
-    fullLabel: { uz_lat: 'Samarqand viloyati', uz_cyr: 'Самарқанд вилояти', en: 'Samarkand Region', ru: 'Самаркандская область' },
-  },
-  {
-    id: 'uz_bukhara',
-    shortLabel: { uz_lat: 'Buxoro', uz_cyr: 'Бухоро', en: 'Bukhara', ru: 'Бухара' },
-    fullLabel: { uz_lat: 'Buxoro viloyati', uz_cyr: 'Бухоро вилояти', en: 'Bukhara Region', ru: 'Бухарская область' },
-  },
-  {
-    id: 'uz_jizzakh',
-    shortLabel: { uz_lat: 'Jizzax', uz_cyr: 'Жиззах', en: 'Jizzakh', ru: 'Джизак' },
-    fullLabel: { uz_lat: 'Jizzax viloyati', uz_cyr: 'Жиззах вилояти', en: 'Jizzakh Region', ru: 'Джизакская область' },
-  },
-  {
-    id: 'uz_sirdaryo',
-    shortLabel: { uz_lat: 'Sirdaryo', uz_cyr: 'Сирдарё', en: 'Syrdarya', ru: 'Сырдарья' },
-    fullLabel: { uz_lat: 'Sirdaryo viloyati', uz_cyr: 'Сирдарё вилояти', en: 'Syrdarya Region', ru: 'Сырдарьинская область' },
-  },
-  {
-    id: 'uz_kashkadarya',
-    shortLabel: { uz_lat: 'Qashqadaryo', uz_cyr: 'Қашқадарё', en: 'Kashkadarya', ru: 'Кашкадарья' },
-    fullLabel: { uz_lat: 'Qashqadaryo viloyati', uz_cyr: 'Қашқадарё вилояти', en: 'Kashkadarya Region', ru: 'Кашкадарьинская область' },
-  },
-  {
-    id: 'uz_surkhandarya',
-    shortLabel: { uz_lat: 'Surxondaryo', uz_cyr: 'Сурхондарё', en: 'Surkhandarya', ru: 'Сурхандарья' },
-    fullLabel: { uz_lat: 'Surxondaryo viloyati', uz_cyr: 'Сурхондарё вилояти', en: 'Surkhandarya Region', ru: 'Сурхандарьинская область' },
-  },
-  {
-    id: 'uz_navoi',
-    shortLabel: { uz_lat: 'Navoiy', uz_cyr: 'Навоий', en: 'Navoi', ru: 'Навои' },
-    fullLabel: { uz_lat: 'Navoiy viloyati', uz_cyr: 'Навоий вилояти', en: 'Navoi Region', ru: 'Навоийская область' },
-  },
-  {
-    id: 'uz_khorezm',
-    shortLabel: { uz_lat: 'Xorazm', uz_cyr: 'Хоразм', en: 'Khorezm', ru: 'Хорезм' },
-    fullLabel: { uz_lat: 'Xorazm viloyati', uz_cyr: 'Хоразм вилояти', en: 'Khorezm Region', ru: 'Хорезмская область' },
-  },
-  {
-    id: 'uz_karakalpakstan',
-    shortLabel: { uz_lat: "Qoraqalpog'iston", uz_cyr: 'Қорақалпоғистон', en: 'Karakalpakstan', ru: 'Каракалпакстан' },
-    fullLabel: {
-      uz_lat: "Qoraqalpog'iston Resp.",
-      uz_cyr: 'Қорақалпоғистон Респ.',
-      en: 'Republic of Karakalpakstan',
-      ru: 'Республика Каракалпакстан',
-    },
-  },
-  {
-    id: 'world',
-    shortLabel: { uz_lat: 'Jahon', uz_cyr: 'Жаҳон', en: 'World', ru: 'Мир' },
-    fullLabel: { uz_lat: 'Jahon shaharlari', uz_cyr: 'Жаҳон шаҳарлари', en: 'World Cities', ru: 'Города мира' },
-  },
-];
-
-export const REGION_MAP: Record<LocationRegionId, RegionDefinition> = Object.fromEntries(
-  LOCATION_REGIONS.map((r) => [r.id, r])
-) as Record<LocationRegionId, RegionDefinition>;
-
-export interface LocationEntry extends Coordinates {
-  region: LocationRegionId;
-  labels: Record<AppLanguage, string>;
-  aliases?: string;
-}
+export {
+  LOCATION_REGIONS,
+  REGION_MAP,
+  type LocationEntry,
+  type LocationRegionId,
+  type RegionDefinition,
+} from './uzbekistanRegions';
 
 type RawUzRow = [
   id: string,

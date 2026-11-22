@@ -55,6 +55,7 @@ import {
 } from '../../data/juz';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { isConstrainedNetwork } from '../../utils/tabLoaders';
 import { addQuranListenSeconds } from '../../utils/userActivity';
 import { cyrillicToLatinUz, latinToCyrillicUz } from '../../utils/uzbekScript';
 import {
@@ -601,6 +602,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadedAyahMetaRef = useRef<{
+    surahNumber: number;
+    ayahNumber: number;
+    reciterId: QuranReciterId;
+    url: string;
+  } | null>(null);
   const versesScrollRef = useRef<HTMLDivElement | null>(null);
   const ayahSentinelRef = useRef<HTMLDivElement | null>(null);
   const directoryListRef = useRef<HTMLDivElement | null>(null);
@@ -687,6 +694,66 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     }
   }, []);
 
+  const clearPrebufferedAyah = useCallback(() => {
+    if (preloadAudioRef.current) {
+      preloadAudioRef.current.onerror = null;
+      preloadAudioRef.current.pause();
+      preloadAudioRef.current.removeAttribute('src');
+      preloadAudioRef.current.load();
+    }
+    preloadedAyahMetaRef.current = null;
+  }, []);
+
+  const prebufferAyah = useCallback(
+    (surah: SurahDetail | null, ayahNum: number, reciterId: QuranReciterId) => {
+      if (!surah || hasNativeQuranAudioBridge() || isConstrainedNetwork()) return;
+      const targetObj = surah.ayahs.find((a) => a.numberInSurah === ayahNum);
+      if (!targetObj) return;
+      const prevMeta = preloadedAyahMetaRef.current;
+      if (
+        prevMeta &&
+        prevMeta.surahNumber === surah.number &&
+        prevMeta.ayahNumber === ayahNum &&
+        prevMeta.reciterId === reciterId
+      ) {
+        return;
+      }
+
+      const candidates = getAyahAudioCandidates(surah.number, targetObj, reciterId);
+      if (candidates.length === 0) return;
+
+      if (!preloadAudioRef.current) {
+        const el = new Audio();
+        el.preload = 'auto';
+        preloadAudioRef.current = el;
+      }
+      const pre = preloadAudioRef.current;
+
+      const tryPreload = (candIdx: number) => {
+        if (candIdx >= candidates.length) {
+          preloadedAyahMetaRef.current = null;
+          return;
+        }
+        const url = candidates[candIdx];
+        preloadedAyahMetaRef.current = {
+          surahNumber: surah.number,
+          ayahNumber: ayahNum,
+          reciterId,
+          url,
+        };
+        pre.onerror = () => {
+          tryPreload(candIdx + 1);
+        };
+        pre.src = url;
+        pre.preload = 'auto';
+        pre.load();
+      };
+
+      tryPreload(0);
+    },
+    []
+  );
+
   const stopAudio = useCallback(() => {
     playbackTokenRef.current += 1;
     stopRaf();
@@ -699,6 +766,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
     }
+    clearPrebufferedAyah();
     setIsAudioPlaying(false);
     setCurrentPlayingAyah(null);
     setActiveWordPos(null);
@@ -706,7 +774,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     activeWordRef.current = null;
     setAudioCurrentTime(0);
     setAudioDuration(getSurahTotalDurationSec(activeSurahRef.current));
-  }, [stopRaf]);
+  }, [clearPrebufferedAyah, stopRaf]);
 
   useEffect(() => {
     return () => {
@@ -1165,57 +1233,47 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       setActiveWordPos(null);
       syncProgressAndWord(ayahNumberInSurah, offsetWithinAyahSec, 0);
 
+      // Check if Ayah N is already pre-buffered in preloadAudioRef for instant 0ms gapless playback!
+      const preEl = preloadAudioRef.current;
+      const preMeta = preloadedAyahMetaRef.current;
+      const canPromotePrebuffered = Boolean(
+        offsetWithinAyahSec <= 0 &&
+          preEl &&
+          preMeta &&
+          preMeta.surahNumber === surah.number &&
+          preMeta.ayahNumber === ayahNumberInSurah &&
+          preMeta.reciterId === reciterId &&
+          urls.includes(preMeta.url) &&
+          preEl.readyState >= 2
+      );
+
       // Reuse a single persistent <audio> element so Android WebView preserves playback unlock across ayahs
       if (!audioRef.current) {
         const created = new Audio();
         created.preload = 'auto';
         audioRef.current = created;
       }
-      const audio = audioRef.current;
-      audio.onended = null;
-      audio.onloadedmetadata = null;
-      audio.onerror = null;
 
-      // Preload next ayah silently for smooth continuous playback
-      const nextAyahObj = surah.ayahs.find((a) => a.numberInSurah === ayahNumberInSurah + 1);
-      if (nextAyahObj) {
-        const nextUrl = getAyahAudioCandidates(surah.number, nextAyahObj, reciterId)[0];
-        if (nextUrl) {
-          if (!preloadAudioRef.current) {
-            preloadAudioRef.current = new Audio();
-            preloadAudioRef.current.preload = 'auto';
-          }
-          preloadAudioRef.current.src = nextUrl;
-          preloadAudioRef.current.load();
-        }
-      }
-
-      const tryCandidate = (candIdx: number) => {
-        if (token !== playbackTokenRef.current || candIdx >= urls.length) {
-          if (token === playbackTokenRef.current) stopAudio();
-          return;
-        }
-
+      const attachPlaybackHandlers = (
+        el: HTMLAudioElement,
+        onFail: () => void
+      ) => {
         let appliedSeek = false;
-        audio.onloadedmetadata = () => {
+        el.onloadedmetadata = () => {
           if (token !== playbackTokenRef.current) return;
-          if (!appliedSeek && offsetWithinAyahSec > 0 && audio.duration && Number.isFinite(audio.duration)) {
+          if (!appliedSeek && offsetWithinAyahSec > 0 && el.duration && Number.isFinite(el.duration)) {
             appliedSeek = true;
-            audio.currentTime = Math.min(offsetWithinAyahSec, Math.max(0, audio.duration - 0.15));
+            el.currentTime = Math.min(offsetWithinAyahSec, Math.max(0, el.duration - 0.15));
           }
-          syncProgressAndWord(ayahNumberInSurah, audio.currentTime, audio.duration);
+          syncProgressAndWord(ayahNumberInSurah, el.currentTime, el.duration);
         };
 
-        audio.onerror = () => {
+        el.onerror = () => {
           if (token !== playbackTokenRef.current) return;
-          if (candIdx + 1 < urls.length) {
-            tryCandidate(candIdx + 1);
-          } else {
-            stopAudio();
-          }
+          onFail();
         };
 
-        audio.onended = () => {
+        el.onended = () => {
           if (token !== playbackTokenRef.current) return;
           const latestSurah = activeSurahRef.current;
           if (latestSurah) {
@@ -1229,10 +1287,80 @@ export const QuranTab: React.FC<QuranTabProps> = ({
           }
           stopAudio();
         };
+      };
 
-        audio.src = urls[candIdx];
-        audio.load();
-        audio
+      const startStandardFlow = () => {
+        const audio = audioRef.current!;
+        audio.onended = null;
+        audio.onloadedmetadata = null;
+        audio.onerror = null;
+
+        // Pre-buffer Ayah N+1 silently in background while Ayah N plays
+        prebufferAyah(surah, ayahNumberInSurah + 1, reciterId);
+
+        const tryCandidate = (candIdx: number) => {
+          if (token !== playbackTokenRef.current || candIdx >= urls.length) {
+            if (token === playbackTokenRef.current) stopAudio();
+            return;
+          }
+
+          attachPlaybackHandlers(audio, () => {
+            if (candIdx + 1 < urls.length) {
+              tryCandidate(candIdx + 1);
+            } else {
+              stopAudio();
+            }
+          });
+
+          audio.src = urls[candIdx];
+          audio.load();
+          audio
+            .play()
+            .then(() => {
+              if (token !== playbackTokenRef.current) return;
+              setIsAudioPlaying(true);
+            })
+            .catch((err: unknown) => {
+              if (token !== playbackTokenRef.current) return;
+              const errName = (err as { name?: string })?.name;
+              if (errName === 'AbortError') return;
+              if (candIdx + 1 < urls.length) {
+                tryCandidate(candIdx + 1);
+              } else {
+                setIsAudioPlaying(false);
+              }
+            });
+        };
+
+        tryCandidate(0);
+      };
+
+      if (canPromotePrebuffered && preEl) {
+        const prevActive = audioRef.current;
+        if (prevActive) {
+          prevActive.onended = null;
+          prevActive.onloadedmetadata = null;
+          prevActive.onerror = null;
+          prevActive.pause();
+        }
+        // Swap roles: pre-buffered element becomes active; old active becomes the N+1 preloader
+        audioRef.current = preEl;
+        preloadAudioRef.current = prevActive || new Audio();
+        preloadAudioRef.current.preload = 'auto';
+        preloadedAyahMetaRef.current = null;
+
+        preEl.onerror = null;
+        preEl.currentTime = 0;
+        attachPlaybackHandlers(preEl, () => {
+          // If promoted element fails mid-stream, retry standard flow on fallback element
+          if (token === playbackTokenRef.current) startStandardFlow();
+        });
+
+        // Immediately start pre-buffering Ayah N+1 on the recycled element
+        prebufferAyah(surah, ayahNumberInSurah + 1, reciterId);
+
+        syncProgressAndWord(ayahNumberInSurah, 0, preEl.duration || 0);
+        preEl
           .play()
           .then(() => {
             if (token !== playbackTokenRef.current) return;
@@ -1242,17 +1370,20 @@ export const QuranTab: React.FC<QuranTabProps> = ({
             if (token !== playbackTokenRef.current) return;
             const errName = (err as { name?: string })?.name;
             if (errName === 'AbortError') return;
-            if (candIdx + 1 < urls.length) {
-              tryCandidate(candIdx + 1);
-            } else {
-              setIsAudioPlaying(false);
+            // Fallback cleanly to the originally unlocked audio element if gesture policy rejected swap
+            if (prevActive) {
+              audioRef.current = prevActive;
+              preloadAudioRef.current = preEl;
+              preEl.pause();
             }
+            startStandardFlow();
           });
-      };
+        return;
+      }
 
-      tryCandidate(0);
+      startStandardFlow();
     },
-    [language, stopAudio, syncProgressAndWord]
+    [language, prebufferAyah, stopAudio, syncProgressAndWord]
   );
 
   useEffect(() => {
@@ -1498,6 +1629,9 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         if (pendingAutoPlayRef.current) {
           pendingAutoPlayRef.current = false;
           startPlayingFromAyah(targetAyah, 0, reciterForLoad);
+        } else {
+          // Silently pre-buffer the first visible ayah so tapping Play starts with 0ms lag
+          prebufferAyah(activeSurahRef.current, targetAyah, reciterForLoad);
         }
 
         // Enrich with live audio stream & word timings for active Qori in background if still missing

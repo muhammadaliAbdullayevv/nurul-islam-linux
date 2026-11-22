@@ -1,6 +1,6 @@
 Name:           nurul-islam
-Version:        1.8.56
-Release:        5%{?dist}
+Version:        1.8.58
+Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
 URL:            https://nurulislam.mabdullayev.dev
@@ -12,6 +12,7 @@ Requires:       python3-gobject
 Requires:       gtk3
 Requires:       webkit2gtk4.1
 Requires:       hicolor-icon-theme
+Requires:       polkit
 
 %description
 Nurul Islam is a comprehensive, ad-free, offline-capable Islamic companion
@@ -48,5 +49,9 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.58-1
+- Add native in-app & forced RPM self-updater (PolicyKit + DNF/RPM + auto-relaunch) matching mobile OTA flow
+* Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.57-1
+- Release 1.8.57 with 60% smaller cold-start bundle, zero-spinner background tab prefetching, and gapless next-ayah audio pre-buffering
 * Sat Nov 21 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.56-1
 - Release 1.8.56 with Muallimi Sani 10-lesson trainer, Hanafi Fiqh Q&A, and Seerah & 25 Prophets

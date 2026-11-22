@@ -2,6 +2,7 @@ import { AppLanguage } from '../types';
 
 export const UPDATE_SITE_URL = 'https://nurulislam.mabdullayev.dev';
 export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.nurulquran.app';
+export const DEFAULT_LINUX_RPM_URL = `${UPDATE_SITE_URL}/linux/nurul-islam-latest.rpm`;
 export const UPDATE_MANIFEST_URL = `${UPDATE_SITE_URL}/version.json`;
 export const API_BASE_URLS = [UPDATE_SITE_URL];
 
@@ -14,6 +15,7 @@ export interface RemoteAppRelease {
   versionCode: number;
   versionName: string;
   apkUrl: string;
+  rpmUrl?: string;
   forceUpdate?: boolean;
   minSupportedVersionCode?: number;
   notes?: Partial<Record<AppLanguage, string>> | string;
@@ -37,13 +39,32 @@ interface UpdaterJsBridge {
   downloadAndInstall: (apkUrl: string) => void;
 }
 
+interface DesktopWindowBridge extends Window {
+  NqUpdaterBridge?: UpdaterJsBridge;
+  __NQ_LINUX_DESKTOP__?: boolean;
+  __NQ_DESKTOP_RPM_UPDATER__?: boolean;
+  __NQ_DESKTOP_VERSION__?: Partial<LocalAppVersion>;
+}
+
 function getUpdaterBridge(): UpdaterJsBridge | null {
-  const win = window as Window & { NqUpdaterBridge?: UpdaterJsBridge };
+  const win = window as DesktopWindowBridge;
   return win.NqUpdaterBridge || null;
 }
 
+export function isDesktopRpmUpdaterSupported(): boolean {
+  if (typeof window === 'undefined') return false;
+  const win = window as DesktopWindowBridge;
+  if (win.__NQ_DESKTOP_RPM_UPDATER__ === true) return true;
+  if (win.__NQ_DESKTOP_RPM_UPDATER__ === false) return false;
+  // Fallback detection if opened via ?desktop=1 on localhost wrapper
+  return (
+    new URLSearchParams(window.location.search).get('desktop') === '1' &&
+    window.location.hostname === '127.0.0.1'
+  );
+}
+
 export function isNativeUpdaterSupported(): boolean {
-  return Boolean(getUpdaterBridge());
+  return Boolean(getUpdaterBridge()) || isDesktopRpmUpdaterSupported();
 }
 
 export function canRequestNativeInstallPermission(): boolean {
@@ -68,7 +89,13 @@ export function getLocalAppVersion(): LocalAppVersion {
       // Fallback below
     }
   }
-  return { versionCode: 75, versionName: '1.8.56' };
+  if (typeof window !== 'undefined') {
+    const dv = (window as DesktopWindowBridge).__NQ_DESKTOP_VERSION__;
+    if (dv && typeof dv.versionCode === 'number' && typeof dv.versionName === 'string') {
+      return { versionCode: dv.versionCode, versionName: dv.versionName };
+    }
+  }
+  return { versionCode: 77, versionName: '1.8.58' };
 }
 
 export function getReleaseNoteText(release: RemoteAppRelease, language: AppLanguage): string {
@@ -123,6 +150,10 @@ export async function checkForAppUpdate(): Promise<{
         versionCode: data.versionCode,
         versionName: data.versionName,
         apkUrl: data.apkUrl,
+        rpmUrl:
+          typeof data.rpmUrl === 'string' && data.rpmUrl.startsWith('https://')
+            ? data.rpmUrl
+            : DEFAULT_LINUX_RPM_URL,
         forceUpdate: effectiveForce,
         minSupportedVersionCode: minSupported,
         notes: data.notes,
@@ -143,10 +174,75 @@ export async function checkForAppUpdate(): Promise<{
   throw lastError instanceof Error ? lastError : new Error('Update check failed');
 }
 
-export function startInAppUpdate(
-  apkUrl: string,
+let desktopPollTimer: number | null = null;
+
+function startDesktopRpmUpdate(
+  rpmUrl: string,
   onProgress: (pct: number, status: UpdateDownloadStatus) => void
 ): void {
+  if (desktopPollTimer !== null) {
+    window.clearInterval(desktopPollTimer);
+    desktopPollTimer = null;
+  }
+
+  const targetUrl = rpmUrl || DEFAULT_LINUX_RPM_URL;
+  onProgress(1, 'downloading');
+
+  void fetch('/__desktop_update/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rpmUrl: targetUrl }),
+  })
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      desktopPollTimer = window.setInterval(async () => {
+        try {
+          const stRes = await fetch('/__desktop_update/status', { cache: 'no-store' });
+          if (!stRes.ok) return;
+          const st = (await stRes.json()) as { status?: string; pct?: number };
+          const pct = Math.max(0, Math.min(100, Number(st.pct) || 0));
+          const raw = st.status || 'downloading';
+          if (raw === 'downloading') {
+            onProgress(pct, 'downloading');
+          } else if (raw === 'installing' || raw === 'restarting') {
+            onProgress(raw === 'restarting' ? 100 : Math.max(96, pct), 'installing');
+            if (raw === 'restarting' && desktopPollTimer !== null) {
+              window.clearInterval(desktopPollTimer);
+              desktopPollTimer = null;
+            }
+          } else if (raw === 'needs_permission') {
+            if (desktopPollTimer !== null) {
+              window.clearInterval(desktopPollTimer);
+              desktopPollTimer = null;
+            }
+            onProgress(0, 'needs_permission');
+          } else if (raw === 'error') {
+            if (desktopPollTimer !== null) {
+              window.clearInterval(desktopPollTimer);
+              desktopPollTimer = null;
+            }
+            onProgress(0, 'error');
+          }
+        } catch {
+          // Local server closes briefly while relaunching updated binary
+        }
+      }, 260);
+    })
+    .catch(() => {
+      onProgress(0, 'error');
+    });
+}
+
+export function startInAppUpdate(
+  apkUrl: string,
+  onProgress: (pct: number, status: UpdateDownloadStatus) => void,
+  rpmUrl?: string
+): void {
+  if (isDesktopRpmUpdaterSupported()) {
+    startDesktopRpmUpdate(rpmUrl || DEFAULT_LINUX_RPM_URL, onProgress);
+    return;
+  }
+
   const bridge = getUpdaterBridge();
   if (!bridge) {
     window.open(apkUrl, '_blank', 'noopener,noreferrer');

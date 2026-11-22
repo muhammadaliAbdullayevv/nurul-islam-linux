@@ -35,6 +35,7 @@ import { OfflineIndicator } from './OfflineIndicator';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage, LANGUAGE_OPTIONS } from '../contexts/LanguageContext';
 import { AppLanguage } from '../types';
+import { prefetchTab } from '../utils/tabLoaders';
 
 interface AndroidShellProps {
   children: React.ReactNode;
@@ -273,6 +274,8 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
                 <button
                   key={item.id}
                   type="button"
+                  onMouseEnter={() => prefetchTab(item.id)}
+                  onFocus={() => prefetchTab(item.id)}
                   onClick={() => onTabChange(item.id)}
                   className={`relative w-full h-full min-h-[34px] flex items-center gap-2 px-2 py-1 rounded-xl border text-left transition group ${
                     isActive
@@ -759,6 +762,8 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               return (
                 <button
                   key={item.id}
+                  onTouchStart={() => prefetchTab(item.id)}
+                  onMouseEnter={() => prefetchTab(item.id)}
                   onClick={() => onTabChange(item.id)}
                   className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1.5 rounded-2xl border transition-all duration-200 active:scale-95 ${
                     isActive
