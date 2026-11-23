@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.70
+Version:        1.8.71
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.71-1
+- Bundle 168 100% offline Arabic MP3 clips (including Mishary Al-Afasy recitation for Al-Fatihah & Al-Ikhlas) fixing Muallimi Sani & Tajweed audio on all platforms, and redesign the Islamic Library into an authentic physical bound book experience with standing hardcover covers, stacked parchment pages, serif typography, drop caps, and swipe page-turning
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.70-1
 - Add 24/7 Live Quran Radio (16 verified streams with auto-failover, favorites & persistent background mini-player) and Classical Islamic Library (13 public-domain Hanafi & Central Asian classics with offline chapter e-reader, Sepia paper mode, progress tracking & PNG quote cards)
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.69-1

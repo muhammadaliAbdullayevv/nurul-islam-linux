@@ -11,7 +11,6 @@ import {
   List,
   Search,
   Share2,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { AppLanguage } from '../../types';
@@ -34,7 +33,7 @@ import {
 const LIBRARY_PROGRESS_KEY = 'nq_library_progress_v1';
 const LIBRARY_FAVS_KEY = 'nq_library_favs_v1';
 const LIBRARY_FONT_KEY = 'nq_library_font_v1';
-const LIBRARY_PAPER_KEY = 'nq_library_paper_v1';
+const LIBRARY_PAPER_KEY = 'nq_library_paper_v2';
 
 interface LibraryProgressState {
   readChapterIds: string[];
@@ -90,7 +89,9 @@ function saveLibraryFavs(ids: string[]): void {
   }
 }
 
-type PaperTone = 'default' | 'sepia';
+type PaperTone = 'sepia' | 'ivory';
+
+const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
 const LIBRARY_UI: Record<
   AppLanguage,
@@ -108,18 +109,19 @@ const LIBRARY_UI: Record<
     chaptersUnit: (n: number) => string;
     backToShelf: string;
     contentsTitle: string;
-    chapterWord: (n: number, total: number) => string;
+    chapterRoman: (roman: string) => string;
     takeawayTitle: string;
     markRead: string;
     markedRead: string;
-    prevChapter: string;
-    nextChapter: string;
+    prevPage: string;
+    nextPage: string;
     sepiaLabel: string;
-    defaultPaperLabel: string;
+    ivoryLabel: string;
     copiedToast: string;
     sharedToast: string;
     emptyFavs: string;
     publicDomainNote: string;
+    swipeHint: string;
   }
 > = {
   uz_lat: {
@@ -136,18 +138,19 @@ const LIBRARY_UI: Record<
     chaptersUnit: (n) => `${n} bob`,
     backToShelf: 'Kutubxona',
     contentsTitle: 'Mundarija',
-    chapterWord: (n, total) => `${n}-bob / ${total}`,
+    chapterRoman: (roman) => `${roman} BOB`,
     takeawayTitle: 'Amaliy xulosa',
-    markRead: 'O‘qildi deb belgilash',
+    markRead: 'O‘qildi',
     markedRead: 'O‘qilgan',
-    prevChapter: 'Oldingi',
-    nextChapter: 'Keyingi bob',
+    prevPage: 'Oldingi',
+    nextPage: 'Keyingi',
     sepiaLabel: 'Qog‘oz',
-    defaultPaperLabel: 'Oddiy',
+    ivoryLabel: 'Oq',
     copiedToast: 'Nusxa olindi',
     sharedToast: 'Ulashish kartasi tayyor',
     emptyFavs: 'Sevimli kitoblaringiz hozircha yo‘q — yurakcha belgisini bosib saqlang.',
-    publicDomainNote: 'Barcha kitoblar ochiq klassik islom merosi asosida oflayn o‘qish uchun tayyorlangan',
+    publicDomainNote: 'Barcha kitoblar ochiq klassik islom merosi asosida 100% oflayn o‘qish uchun tayyorlangan',
+    swipeHint: 'Sahifani varaqlash uchun chapga yoki o‘ngga suring',
   },
   uz_cyr: {
     heroTitle: 'Классик Ислом Кутубхонаси',
@@ -163,24 +166,25 @@ const LIBRARY_UI: Record<
     chaptersUnit: (n) => `${n} боб`,
     backToShelf: 'Кутубхона',
     contentsTitle: 'Мундарижа',
-    chapterWord: (n, total) => `${n}-боб / ${total}`,
+    chapterRoman: (roman) => `${roman} БОБ`,
     takeawayTitle: 'Амалий хулоса',
-    markRead: 'Ўқилди деб белгилаш',
+    markRead: 'Ўқилди',
     markedRead: 'Ўқилган',
-    prevChapter: 'Олдинги',
-    nextChapter: 'Кейинги боб',
+    prevPage: 'Олдинги',
+    nextPage: 'Кейинги',
     sepiaLabel: 'Қоғоз',
-    defaultPaperLabel: 'Оддий',
+    ivoryLabel: 'Оқ',
     copiedToast: 'Нусха олинди',
     sharedToast: 'Улашиш картаси тайёр',
     emptyFavs: 'Севимли китобларингиз ҳозирча йўқ — юракча белгисини босиб сақланг.',
-    publicDomainNote: 'Барча китоблар очиқ классик ислом мероси асосида офлайн ўқиш учун тайёрланган',
+    publicDomainNote: 'Барча китоблар очиқ классик ислом мероси асосида 100% офлайн ўқиш учун тайёрланган',
+    swipeHint: 'Саҳифани варақлаш учун чапга ёки ўнгга суринг',
   },
   ru: {
     heroTitle: 'Классическая Исламская Библиотека',
     heroSubtitle: (b, r, t) => `${b} классических книг · прочитано ${r}/${t} глав`,
     continueReading: 'Продолжить чтение',
-    resumeBtn: 'Продолжить',
+    resumeBtn: 'Читать',
     searchPlaceholder: 'Поиск книги, автора или темы...',
     catAll: 'Все',
     catFiqh: 'Фикх и Акыда',
@@ -190,18 +194,19 @@ const LIBRARY_UI: Record<
     chaptersUnit: (n) => `${n} гл.`,
     backToShelf: 'Библиотека',
     contentsTitle: 'Оглавление',
-    chapterWord: (n, total) => `Глава ${n} из ${total}`,
+    chapterRoman: (roman) => `ГЛАВА ${roman}`,
     takeawayTitle: 'Практический вывод',
-    markRead: 'Отметить прочитанной',
-    markedRead: 'Прочитано',
-    prevChapter: 'Назад',
-    nextChapter: 'Следующая',
+    markRead: 'Прочитано',
+    markedRead: 'Прочитано ✓',
+    prevPage: 'Назад',
+    nextPage: 'Далее',
     sepiaLabel: 'Бумага',
-    defaultPaperLabel: 'Обычный',
+    ivoryLabel: 'Белый',
     copiedToast: 'Скопировано',
     sharedToast: 'Карточка готова',
     emptyFavs: 'Избранных книг пока нет — нажмите на сердечко, чтобы добавить.',
     publicDomainNote: 'Все книги подготовлены на основе классического наследия и доступны полностью офлайн',
+    swipeHint: 'Смахните влево или вправо, чтобы перелистнуть страницу',
   },
   en: {
     heroTitle: 'Classical Islamic Library',
@@ -216,26 +221,27 @@ const LIBRARY_UI: Record<
     catFavs: 'Favorites',
     chaptersUnit: (n) => `${n} ch.`,
     backToShelf: 'Library',
-    contentsTitle: 'Chapters',
-    chapterWord: (n, total) => `Chapter ${n} of ${total}`,
+    contentsTitle: 'Contents',
+    chapterRoman: (roman) => `CHAPTER ${roman}`,
     takeawayTitle: 'Practical Reflection',
-    markRead: 'Mark as Read',
-    markedRead: 'Completed',
-    prevChapter: 'Previous',
-    nextChapter: 'Next Chapter',
+    markRead: 'Mark Read',
+    markedRead: 'Read ✓',
+    prevPage: 'Prev',
+    nextPage: 'Next',
     sepiaLabel: 'Paper',
-    defaultPaperLabel: 'Standard',
+    ivoryLabel: 'White',
     copiedToast: 'Copied to clipboard',
     sharedToast: 'Quote card ready',
     emptyFavs: 'No favorite books yet — tap the heart icon on any book to save it.',
-    publicDomainNote: 'Curated public-domain classical works built for calm 100% offline reading',
+    publicDomainNote: 'Curated public-domain classical works crafted for calm 100% offline reading',
+    swipeHint: 'Swipe left or right to turn pages',
   },
 };
 
 function getCoverGradient(theme: ClassicalBook['coverTheme']): string {
   switch (theme) {
     case 'walnut':
-      return 'from-[#5a3316] via-[#7c4720] to-[#3f220d]';
+      return 'from-[#5a3316] via-[#7c4720] to-[#3c1f0b]';
     case 'navy':
       return 'from-[#0c2340] via-[#153b66] to-[#08172b]';
     case 'burgundy':
@@ -254,6 +260,9 @@ export const LibraryTab: React.FC = () => {
   const ui = LIBRARY_UI[language] || LIBRARY_UI.uz_lat;
 
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const swipeStartXRef = useRef<number | null>(null);
+  const swipeStartYRef = useRef<number | null>(null);
+
   const [progress, setProgress] = useState<LibraryProgressState>(loadLibraryProgress);
   const [favorites, setFavorites] = useState<string[]>(loadLibraryFavs);
   const [category, setCategory] = useState<BookCategory>('all');
@@ -271,11 +280,12 @@ export const LibraryTab: React.FC = () => {
     }
     return 1;
   });
+  // Default to authentic warm cream book paper so opening any book immediately feels like a real printed volume
   const [paperTone, setPaperTone] = useState<PaperTone>(() => {
     try {
-      return localStorage.getItem(LIBRARY_PAPER_KEY) === 'sepia' ? 'sepia' : 'default';
+      return localStorage.getItem(LIBRARY_PAPER_KEY) === 'ivory' ? 'ivory' : 'sepia';
     } catch {
-      return 'default';
+      return 'sepia';
     }
   });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -288,7 +298,7 @@ export const LibraryTab: React.FC = () => {
     []
   );
 
-  // Android hardware / gesture back button cleanly exits TOC -> Reader -> Bookshelf
+  // Android hardware / gesture back button cleanly exits TOC -> Book Page -> Bookshelf
   useEffect(() => {
     if (!activeBookId) return;
     const onBack = (e: Event) => {
@@ -303,7 +313,7 @@ export const LibraryTab: React.FC = () => {
     return () => window.removeEventListener('nq:android-back', onBack);
   }, [activeBookId, isTocOpen]);
 
-  // Scroll reader container to top on chapter change
+  // Scroll reader container cleanly to top on page turn
   useEffect(() => {
     const scroller = rootRef.current?.closest('.overflow-y-auto') as HTMLElement | null;
     if (scroller) scroller.scrollTop = 0;
@@ -389,7 +399,7 @@ export const LibraryTab: React.FC = () => {
 
   const togglePaperTone = () => {
     setPaperTone((prev) => {
-      const next: PaperTone = prev === 'sepia' ? 'default' : 'sepia';
+      const next: PaperTone = prev === 'sepia' ? 'ivory' : 'sepia';
       try {
         localStorage.setItem(LIBRARY_PAPER_KEY, next);
       } catch {
@@ -423,7 +433,7 @@ export const LibraryTab: React.FC = () => {
     : 'bg-slate-900/90 border-emerald-900/60';
   const subText = isDay ? 'text-slate-500' : 'text-slate-400';
 
-  /* ==================== BOOK CHAPTER E-READER VIEW ==================== */
+  /* ==================== PHYSICAL OPEN-BOOK PAGE VIEW ==================== */
   if (activeBook) {
     const chapter = activeBook.chapters[chapterIndex] || activeBook.chapters[0];
     const bookTitle = resolveBookText(activeBook.title, language);
@@ -435,13 +445,14 @@ export const LibraryTab: React.FC = () => {
     const isFav = favorites.includes(activeBook.id);
     const isSepia = isDay && paperTone === 'sepia';
     const isArabicQuote = Boolean(chapter.sourceQuote && /[\u0600-\u06FF]/.test(chapter.sourceQuote));
+    const roman = ROMAN_NUMERALS[chapter.number - 1] || String(chapter.number);
 
     const bodySizeCls =
       fontScale === 0
-        ? 'text-[14px] leading-[1.78]'
+        ? 'text-[14.5px] leading-[1.88]'
         : fontScale === 2
-        ? 'text-[17px] leading-[1.85]'
-        : 'text-[15.5px] leading-[1.82]';
+        ? 'text-[17.5px] leading-[1.95]'
+        : 'text-[16px] leading-[1.92]';
 
     const handleCopyChapter = () => {
       const lines = [
@@ -491,13 +502,70 @@ export const LibraryTab: React.FC = () => {
       }
     };
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+      swipeStartXRef.current = e.changedTouches[0]?.clientX ?? null;
+      swipeStartYRef.current = e.changedTouches[0]?.clientY ?? null;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+      if (swipeStartXRef.current === null || swipeStartYRef.current === null) return;
+      const dx = (e.changedTouches[0]?.clientX ?? 0) - swipeStartXRef.current;
+      const dy = (e.changedTouches[0]?.clientY ?? 0) - swipeStartYRef.current;
+      swipeStartXRef.current = null;
+      swipeStartYRef.current = null;
+      if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        if (dx < 0 && chapterIndex < activeBook.chapters.length - 1) {
+          goToChapter(chapterIndex + 1);
+        } else if (dx > 0 && chapterIndex > 0) {
+          goToChapter(chapterIndex - 1);
+        }
+      }
+    };
+
+    // Paper & ink tokens for authentic printed-book feel
+    const sheetBg = isSepia
+      ? 'bg-[#fbf6ea] border-[#d9c79e] text-[#2a1f12]'
+      : isDay
+      ? 'bg-[#fffefb] border-[#dcd6c8] text-[#1e1b18]'
+      : 'bg-[#0e1714] border-[#253b31] text-[#e7decb]';
+    const stackBg1 = isSepia
+      ? 'bg-[#f1e5cb] border-[#d2bc8f]'
+      : isDay
+      ? 'bg-[#f4f1ea] border-[#d5cfc0]'
+      : 'bg-[#09100e] border-[#1c2e26]';
+    const stackBg2 = isSepia
+      ? 'bg-[#e8d8b7] border-[#c8ae7c]'
+      : isDay
+      ? 'bg-[#eae6dc] border-[#ccc5b5]'
+      : 'bg-[#060c0a] border-[#15241e]';
+    const ornamentColor = isSepia
+      ? 'text-[#8c6428]'
+      : isDay
+      ? 'text-[#146510]'
+      : 'text-[#d8b468]';
+    const ruleColor = isSepia
+      ? 'border-[#ceb582]/70'
+      : isDay
+      ? 'border-[#158509]/25'
+      : 'border-[#d8b468]/30';
+    const mutedInk = isSepia
+      ? 'text-[#775e38]'
+      : isDay
+      ? 'text-slate-500'
+      : 'text-[#a89f8c]';
+    const dropCapColor = isSepia
+      ? 'first-letter:text-[#6e4512]'
+      : isDay
+      ? 'first-letter:text-[#0c4703]'
+      : 'first-letter:text-[#e8c675]';
+
     return (
       <div
         ref={rootRef}
         className={`space-y-3 pb-8 animate-in fade-in ${isDay ? 'text-slate-900' : 'text-slate-100'}`}
       >
-        {/* Clean Reader Top Bar */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Whisper-Quiet Top Reading Toolbar (No bulky banner!) */}
+        <div className="flex items-center justify-between gap-1.5">
           <button
             type="button"
             onClick={() => setActiveBookId(null)}
@@ -516,7 +584,7 @@ export const LibraryTab: React.FC = () => {
               type="button"
               onClick={() => cycleFontScale(-1)}
               disabled={fontScale === 0}
-              className={`px-2 py-1.5 rounded-xl border text-[11px] font-bold disabled:opacity-40 transition ${
+              className={`px-2 py-1.5 rounded-xl border text-[11px] font-bold disabled:opacity-35 transition ${
                 isDay ? 'bg-white border-[#dde3ea] text-slate-700' : 'bg-slate-900 border-emerald-900/60 text-slate-200'
               }`}
               aria-label="Decrease font size"
@@ -527,7 +595,7 @@ export const LibraryTab: React.FC = () => {
               type="button"
               onClick={() => cycleFontScale(1)}
               disabled={fontScale === 2}
-              className={`px-2 py-1.5 rounded-xl border text-[11px] font-bold disabled:opacity-40 transition ${
+              className={`px-2 py-1.5 rounded-xl border text-[11px] font-bold disabled:opacity-35 transition ${
                 isDay ? 'bg-white border-[#dde3ea] text-slate-700' : 'bg-slate-900 border-emerald-900/60 text-slate-200'
               }`}
               aria-label="Increase font size"
@@ -538,13 +606,13 @@ export const LibraryTab: React.FC = () => {
               <button
                 type="button"
                 onClick={togglePaperTone}
-                className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition ${
+                className={`px-2 py-1.5 rounded-xl border text-[11px] font-bold transition ${
                   isSepia
                     ? 'bg-[#f6eedb] border-[#d8c499] text-[#5c3d15]'
                     : 'bg-white border-[#dde3ea] text-slate-700'
                 }`}
               >
-                {isSepia ? ui.sepiaLabel : ui.defaultPaperLabel}
+                {isSepia ? ui.sepiaLabel : ui.ivoryLabel}
               </button>
             )}
             <button
@@ -559,6 +627,19 @@ export const LibraryTab: React.FC = () => {
               title={ui.contentsTitle}
             >
               <List className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              disabled={sharingCard}
+              onClick={() => void handleShareQuoteCard()}
+              className={`p-1.5 rounded-xl border transition disabled:opacity-50 ${
+                isDay
+                  ? 'bg-white border-[#dde3ea] text-[#0c4703] hover:bg-[#eef9ea]'
+                  : 'bg-slate-900 border-emerald-900/60 text-amber-300'
+              }`}
+              aria-label="Share quote card"
+            >
+              <Share2 className={`w-4 h-4 ${sharingCard ? 'animate-pulse' : ''}`} />
             </button>
             <button
               type="button"
@@ -577,33 +658,9 @@ export const LibraryTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Book Identity Ribbon */}
-        <div
-          className={`nq-keep-dark rounded-3xl p-4 text-white border shadow-md bg-gradient-to-br ${getCoverGradient(
-            activeBook.coverTheme
-          )} border-white/15`}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 space-y-1">
-              <span className="inline-block px-2 py-0.5 rounded-full bg-black/25 border border-white/15 text-[10px] font-bold text-[#fde68a]">
-                {ui.chapterWord(chapter.number, activeBook.chapters.length)}
-              </span>
-              <h1 className="font-display text-lg font-extrabold leading-snug text-white">
-                {bookTitle}
-              </h1>
-              <p className="text-xs text-white/80">
-                {bookAuthor} · {activeBook.era}
-              </p>
-            </div>
-            <span className="font-arabic text-base text-[#fde68a]/90 text-right shrink-0">
-              {activeBook.arabicTitle}
-            </span>
-          </div>
-        </div>
-
         {toastMsg && (
           <div
-            className={`px-3 py-2 rounded-2xl text-xs font-bold text-center border animate-in fade-in ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold text-center border animate-in fade-in ${
               isDay
                 ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
                 : 'bg-emerald-950 border-emerald-700 text-amber-300'
@@ -613,155 +670,175 @@ export const LibraryTab: React.FC = () => {
           </div>
         )}
 
-        {/* Main Reading Paper Card */}
-        <article
-          className={`rounded-3xl border p-4 sm:p-6 space-y-4 transition-colors ${
-            isSepia
-              ? 'bg-[#faf4e6] border-[#e4d5b7] text-[#2c2113] shadow-sm'
-              : isDay
-              ? 'bg-white border-[#dde3ea] text-slate-900 shadow-xs'
-              : 'bg-slate-900/95 border-emerald-900/60 text-slate-100'
-          }`}
+        {/* PHYSICAL BOUND BOOK SHEET WITH STACKED PAGES, SPINE CREASE & ILLUMINATED FRAME */}
+        <div
+          className="relative pr-2 pb-2"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
-          <div className="flex items-start justify-between gap-2 pb-3 border-b border-current/10">
-            <h2 className="font-display text-lg sm:text-xl font-bold leading-snug">
-              {chapter.number}. {chapterTitle}
-            </h2>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={handleCopyChapter}
-                className={`p-2 rounded-xl transition ${
-                  isSepia
-                    ? 'bg-[#efe4cc] text-[#5c3d15] hover:bg-[#e5d4b3]'
-                    : isDay
-                    ? 'bg-[#f1f5f9] text-slate-600 hover:text-[#0c4703]'
-                    : 'bg-slate-800 text-slate-300 hover:text-white'
-                }`}
-                aria-label="Copy chapter"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                disabled={sharingCard}
-                onClick={() => void handleShareQuoteCard()}
-                className={`p-2 rounded-xl transition disabled:opacity-50 ${
-                  isSepia
-                    ? 'bg-[#efe4cc] text-[#5c3d15] hover:bg-[#e5d4b3]'
-                    : isDay
-                    ? 'bg-[#eef9ea] text-[#0c4703] hover:bg-[#dff4d8]'
-                    : 'bg-emerald-950 text-amber-300 hover:text-amber-200'
-                }`}
-                aria-label="Share quote card"
-              >
-                <Share2 className={`w-3.5 h-3.5 ${sharingCard ? 'animate-pulse' : ''}`} />
-              </button>
-            </div>
-          </div>
-
-          {/* Authentic Classical Source Quote */}
-          {chapter.sourceQuote && (
-            <div
-              className={`rounded-2xl border p-4 space-y-2 ${
-                isSepia
-                  ? 'bg-[#f3e8d0] border-[#dcc69c]'
-                  : isDay
-                  ? 'bg-[#f4fbf1] border-[#cde8c3]'
-                  : 'bg-emerald-950/55 border-emerald-800/60'
-              }`}
-            >
-              <p
-                dir={isArabicQuote ? 'rtl' : 'ltr'}
-                className={
-                  isArabicQuote
-                    ? `font-arabic text-xl sm:text-2xl leading-[2.05] text-right ${
-                        isSepia ? 'text-[#2b1e0e]' : isDay ? 'text-[#0c4703]' : 'text-amber-200'
-                      }`
-                    : `font-display italic text-sm sm:text-base leading-relaxed whitespace-pre-line ${
-                        isSepia ? 'text-[#422c11]' : isDay ? 'text-[#0c4703]' : 'text-amber-200'
-                      }`
-                }
-              >
-                {chapter.sourceQuote}
-              </p>
-              {chapter.sourceLabel && (
-                <p
-                  className={`text-[11px] font-semibold ${
-                    isSepia ? 'text-[#73562d]' : isDay ? 'text-[#158509]' : 'text-emerald-300/90'
-                  }`}
-                >
-                  — {resolveBookText(chapter.sourceLabel, language)}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Reading Paragraphs */}
-          <div className={`space-y-3.5 ${bodySizeCls}`}>
-            {paragraphs.map((para, idx) => (
-              <p key={idx} className={isSepia ? 'text-[#2c2113]' : isDay ? 'text-slate-700' : 'text-slate-200'}>
-                {para}
-              </p>
-            ))}
-          </div>
-
-          {/* Practical Reflection Box */}
+          {/* Underlying Stacked Book Pages (3D physical edge depth) */}
           <div
-            className={`rounded-2xl border p-3.5 space-y-1 ${
-              isSepia
-                ? 'bg-[#efe4cc]/80 border-[#d6be91]'
-                : isDay
-                ? 'bg-amber-50/85 border-amber-200/90'
-                : 'bg-amber-950/30 border-amber-600/40'
-            }`}
-          >
-            <div
-              className={`flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider ${
-                isSepia ? 'text-[#6e4917]' : isDay ? 'text-amber-800' : 'text-amber-300'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 shrink-0" />
-              <span>{ui.takeawayTitle}</span>
-            </div>
-            <p
-              className={`text-[13px] leading-relaxed font-medium ${
-                isSepia ? 'text-[#3b2912]' : isDay ? 'text-amber-950' : 'text-amber-100'
-              }`}
-            >
-              {takeaway}
-            </p>
-          </div>
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 translate-x-2 translate-y-2 rounded-l-[3px] rounded-r-[14px] border ${stackBg2}`}
+          />
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 translate-x-1 translate-y-1 rounded-l-[3px] rounded-r-[14px] border ${stackBg1}`}
+          />
 
-          {/* Mark Chapter Completed */}
+          {/* Active Printed Book Leaf */}
+          <article
+            className={`relative rounded-l-[3px] rounded-r-[14px] border overflow-hidden shadow-[0_10px_28px_rgba(32,20,6,0.14)] transition-colors ${sheetBg}`}
+          >
+            {/* Realistic Left Book-Binding Spine Gutter Shadow */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-7"
+              style={{
+                background: isDay
+                  ? 'linear-gradient(90deg, rgba(66,40,12,0.18) 0%, rgba(66,40,12,0.06) 11px, rgba(66,40,12,0) 28px)'
+                  : 'linear-gradient(90deg, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.16) 12px, rgba(0,0,0,0) 28px)',
+              }}
+            />
+
+            {/* Subtle Fine Classical Book Border Frame */}
+            <div className="p-3 sm:p-4 pl-5 sm:pl-6">
+              <div
+                className={`border ${ruleColor} rounded-l-[2px] rounded-r-[10px] px-4 sm:px-7 py-5 sm:py-7 min-h-[62dvh] flex flex-col justify-between`}
+              >
+                <div>
+                  {/* Running Book Header (Classic printed top folio) */}
+                  <header className={`pb-3 mb-5 border-b ${ruleColor} text-center space-y-0.5`}>
+                    <p
+                      className={`font-display text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-semibold truncate ${mutedInk}`}
+                    >
+                      {bookTitle}
+                    </p>
+                    <p className={`text-[10px] italic font-display truncate ${mutedInk} opacity-85`}>
+                      {bookAuthor} · {activeBook.era}
+                    </p>
+                  </header>
+
+                  {/* Ornamental Chapter Opening */}
+                  <div className="text-center space-y-1.5 mb-5">
+                    <div
+                      className={`font-display text-[11px] font-bold tracking-[0.24em] uppercase ${ornamentColor}`}
+                    >
+                      — {ui.chapterRoman(roman)} —
+                    </div>
+                    <h1 className="font-display text-[21px] sm:text-[24px] font-bold leading-snug tracking-tight">
+                      {chapterTitle}
+                    </h1>
+                    <div className={`flex items-center justify-center gap-2.5 pt-1 ${ornamentColor} opacity-75`}>
+                      <span className={`w-10 border-t ${ruleColor}`} />
+                      <span className="text-xs leading-none">❖</span>
+                      <span className={`w-10 border-t ${ruleColor}`} />
+                    </div>
+                  </div>
+
+                  {/* Classical Arabic / Verse Epigraph (Printed inline between rules — no chat bubble!) */}
+                  {chapter.sourceQuote && (
+                    <blockquote className={`my-5 py-3.5 px-2 border-y ${ruleColor} text-center space-y-2`}>
+                      <p
+                        dir={isArabicQuote ? 'rtl' : 'ltr'}
+                        className={
+                          isArabicQuote
+                            ? `font-arabic text-[22px] sm:text-[25px] leading-[2.05] ${
+                                isSepia ? 'text-[#3c2408]' : isDay ? 'text-[#0c4703]' : 'text-[#f2d388]'
+                              }`
+                            : `font-display italic text-[15px] sm:text-[16.5px] leading-relaxed whitespace-pre-line ${
+                                isSepia ? 'text-[#4c300f]' : isDay ? 'text-[#0c4703]' : 'text-[#f2d388]'
+                              }`
+                        }
+                      >
+                        {chapter.sourceQuote}
+                      </p>
+                      {chapter.sourceLabel && (
+                        <footer className={`font-display text-[11px] italic ${mutedInk}`}>
+                          — {resolveBookText(chapter.sourceLabel, language)}
+                        </footer>
+                      )}
+                    </blockquote>
+                  )}
+
+                  {/* Authentic Justified Serif Book Prose with Illuminated Drop Cap */}
+                  <div className={`font-display space-y-4 text-justify ${bodySizeCls}`}>
+                    {paragraphs.map((para, idx) => (
+                      <p
+                        key={idx}
+                        className={
+                          idx === 0
+                            ? `first-letter:float-left first-letter:font-display first-letter:text-[46px] first-letter:font-bold first-letter:leading-[0.84] first-letter:mr-2.5 first-letter:mt-1 ${dropCapColor}`
+                            : 'indent-6'
+                        }
+                      >
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+
+                  {/* Classic Book Footnote / Marginalia Reflection */}
+                  <aside className="mt-7 pt-4">
+                    <div className={`w-20 border-t ${ruleColor} mb-3`} />
+                    <div className="flex items-start justify-between gap-2">
+                      <p className={`font-display italic text-[13.5px] leading-relaxed ${mutedInk}`}>
+                        <span className={`not-italic font-bold mr-1.5 ${ornamentColor}`}>
+                          ❖ {ui.takeawayTitle}:
+                        </span>
+                        {takeaway}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleCopyChapter}
+                        className={`p-1.5 rounded-lg shrink-0 transition opacity-70 hover:opacity-100 ${mutedInk}`}
+                        aria-label="Copy passage"
+                        title="Copy"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </aside>
+                </div>
+
+                {/* Printed Page Folio Number Footer */}
+                <footer className={`mt-8 pt-3 border-t ${ruleColor} flex items-center justify-between text-[11px] font-display ${mutedInk}`}>
+                  <span className="font-arabic text-xs opacity-80">{activeBook.arabicTitle}</span>
+                  <span className="font-bold tracking-widest tabular-nums">
+                    — {chapter.number} / {activeBook.chapters.length} —
+                  </span>
+                </footer>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        {/* Clean Page-Turn Footer Controls */}
+        <div className="grid grid-cols-3 gap-2 pt-0.5">
+          <button
+            type="button"
+            disabled={chapterIndex <= 0}
+            onClick={() => goToChapter(chapterIndex - 1)}
+            className={`py-2.5 px-2 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1 transition active:scale-[0.98] disabled:opacity-35 ${cardCls}`}
+          >
+            <ChevronLeft className="w-4 h-4 shrink-0" />
+            <span className="truncate">{ui.prevPage}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => toggleChapterRead(chapter.id)}
-            className={`w-full py-2.5 px-4 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition active:scale-[0.99] ${
+            className={`py-2.5 px-2 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1 transition active:scale-[0.98] ${
               isRead
                 ? isDay
                   ? 'bg-[#158509] border-[#158509] text-white nq-keep-dark'
                   : 'bg-amber-400 border-amber-400 text-slate-950'
                 : isDay
-                ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703] hover:bg-[#e1f5da]'
-                : 'bg-emerald-950 border-emerald-800 text-emerald-300 hover:bg-emerald-900'
+                ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+                : 'bg-emerald-950 border-emerald-800 text-emerald-300'
             }`}
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{isRead ? ui.markedRead : ui.markRead}</span>
-          </button>
-        </article>
-
-        {/* Previous / Next Chapter Navigation */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            disabled={chapterIndex <= 0}
-            onClick={() => goToChapter(chapterIndex - 1)}
-            className={`py-3 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-[0.99] disabled:opacity-40 ${cardCls}`}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>{ui.prevChapter}</span>
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{isRead ? ui.markedRead : ui.markRead}</span>
           </button>
 
           <button
@@ -771,16 +848,18 @@ export const LibraryTab: React.FC = () => {
               if (!isRead) toggleChapterRead(chapter.id);
               goToChapter(chapterIndex + 1);
             }}
-            className={`py-3 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-[0.99] disabled:opacity-40 ${
+            className={`py-2.5 px-2 rounded-2xl text-xs font-bold flex items-center justify-center gap-1 transition active:scale-[0.98] disabled:opacity-35 ${
               isDay
                 ? 'bg-[#158509] hover:bg-[#0c5007] text-white nq-keep-dark'
                 : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
             }`}
           >
-            <span>{ui.nextChapter}</span>
-            <ChevronRight className="w-4 h-4" />
+            <span className="truncate">{ui.nextPage}</span>
+            <ChevronRight className="w-4 h-4 shrink-0" />
           </button>
         </div>
+
+        <p className={`text-center text-[10.5px] ${subText}`}>{ui.swipeHint}</p>
 
         {/* Table of Contents (Mundarija) Sheet */}
         {isTocOpen && (
@@ -863,7 +942,7 @@ export const LibraryTab: React.FC = () => {
     );
   }
 
-  /* ==================== BOOKSHELF HOME VIEW ==================== */
+  /* ==================== CLASSICAL STANDING BOOKSHELF HOME VIEW ==================== */
   const lastBook = getBookById(progress.lastBookId);
   const lastChapter = lastBook?.chapters[progress.lastChapterIndex] || lastBook?.chapters[0];
   const overallPct = Math.round(
@@ -974,13 +1053,13 @@ export const LibraryTab: React.FC = () => {
         })}
       </div>
 
-      {/* Classic Hardcover Books Grid */}
+      {/* Realistic 2-Column Hardcover Book Covers Grid */}
       {filteredBooks.length === 0 ? (
         <div className={`rounded-2xl border p-6 text-center text-xs ${cardCls} ${subText}`}>
           {ui.emptyFavs}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {filteredBooks.map((book) => {
             const readInBook = book.chapters.filter((ch) =>
               progress.readChapterIds.includes(ch.id)
@@ -1000,72 +1079,81 @@ export const LibraryTab: React.FC = () => {
                     openBook(book.id);
                   }
                 }}
-                className={`rounded-2xl border overflow-hidden cursor-pointer transition active:scale-[0.99] flex flex-col ${cardCls} ${
-                  isDay ? 'hover:border-[#158509]/60' : 'hover:border-amber-400/60'
-                }`}
+                className="group cursor-pointer flex flex-col gap-1.5 active:scale-[0.98] transition"
               >
-                {/* Classic Leather Spine Book Cover Header */}
+                {/* Upright Hardcover Book Volume with Spine Groove & Gold Embossed Frame */}
                 <div
-                  className={`nq-keep-dark relative px-3.5 py-3 text-white bg-gradient-to-br ${getCoverGradient(
+                  className={`nq-keep-dark relative aspect-[3/4] rounded-l-[4px] rounded-r-[14px] overflow-hidden shadow-md group-hover:shadow-lg transition bg-gradient-to-br ${getCoverGradient(
                     book.coverTheme
-                  )}`}
+                  )} border border-black/20`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="px-2 py-0.5 rounded-full bg-black/25 border border-white/15 text-[9.5px] font-bold text-[#fde68a] truncate">
-                      {resolveBookText(book.heritageBadge, language)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavoriteBook(book.id);
-                      }}
-                      className={`p-1 rounded-lg transition shrink-0 ${
-                        isFav ? 'text-rose-300 bg-black/25' : 'text-white/65 hover:text-white'
-                      }`}
-                      aria-label="Favorite book"
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
-                    </button>
-                  </div>
+                  {/* Hardcover Left Spine Groove */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 left-0 w-3.5 border-r border-white/15"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, rgba(0,0,0,0.42) 0%, rgba(255,255,255,0.12) 45%, rgba(0,0,0,0.28) 100%)',
+                    }}
+                  />
 
-                  <p className="font-arabic text-base text-[#fde68a]/90 mt-2 text-right">
-                    {book.arabicTitle}
-                  </p>
-                  <h3 className="font-display text-[15px] font-extrabold leading-snug text-white mt-0.5">
-                    {resolveBookText(book.title, language)}
-                  </h3>
-                  <p className="text-[11px] text-white/80 truncate mt-0.5">
-                    {resolveBookText(book.author, language)}
-                  </p>
+                  {/* Subtle Gilded Right Page Edge */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-y-1 right-0 w-[3px] bg-gradient-to-b from-[#f4e2b8] via-[#d9bd82] to-[#f4e2b8] opacity-70"
+                  />
+
+                  {/* Gold Embossed Inner Book Frame */}
+                  <div className="absolute inset-2.5 left-5 border border-[#fde68a]/40 rounded-r-[8px] rounded-l-[2px] p-2.5 flex flex-col justify-between">
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="text-[9px] font-bold tracking-wider uppercase text-[#fde68a]/85 truncate">
+                        {book.era}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavoriteBook(book.id);
+                        }}
+                        className={`p-0.5 rounded-md transition shrink-0 ${
+                          isFav ? 'text-rose-300' : 'text-white/55 hover:text-white'
+                        }`}
+                        aria-label="Favorite book"
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
+
+                    <div className="text-center space-y-1 my-auto py-1">
+                      <span className="block text-[10px] text-[#fde68a]/70">❖</span>
+                      <p className="font-arabic text-sm sm:text-base text-[#fde68a] leading-snug line-clamp-2">
+                        {book.arabicTitle}
+                      </p>
+                      <h3 className="font-display text-[13px] sm:text-sm font-bold leading-tight text-white line-clamp-3">
+                        {resolveBookText(book.title, language)}
+                      </h3>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-white/75 text-center line-clamp-1 font-display italic">
+                        {resolveBookText(book.author, language)}
+                      </p>
+                      <div className="w-full h-1 rounded-full bg-black/30 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-[#fde68a] transition-all duration-300"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Book Card Body */}
-                <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
-                  <p className={`text-[12px] leading-relaxed line-clamp-2 ${subText}`}>
-                    {resolveBookText(book.summary, language)}
-                  </p>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-semibold">
-                      <span className={subText}>{ui.chaptersUnit(book.chapters.length)}</span>
-                      <span className={`font-mono ${isDay ? 'text-[#158509]' : 'text-amber-300'}`}>
-                        {readInBook}/{book.chapters.length}
-                      </span>
-                    </div>
-                    <div
-                      className={`w-full h-1.5 rounded-full overflow-hidden ${
-                        isDay ? 'bg-slate-100' : 'bg-slate-800'
-                      }`}
-                    >
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          isDay ? 'bg-[#158509]' : 'bg-amber-400'
-                        }`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
+                {/* Compact Caption under Cover */}
+                <div className="flex items-center justify-between px-1 text-[10.5px]">
+                  <span className={`font-semibold ${subText}`}>{ui.chaptersUnit(book.chapters.length)}</span>
+                  <span className={`font-mono font-bold ${isDay ? 'text-[#158509]' : 'text-amber-300'}`}>
+                    {readInBook}/{book.chapters.length}
+                  </span>
                 </div>
               </div>
             );

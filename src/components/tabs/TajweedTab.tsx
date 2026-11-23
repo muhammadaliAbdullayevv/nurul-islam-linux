@@ -22,6 +22,7 @@ import {
   TAJWEED_RULES,
   TajweedColorTone,
 } from '../../data/tajweedData';
+import { getTajweedAudioUrl } from '../../data/tajweedAudioMap';
 
 type TajweedMode = 'lessons' | 'alphabet' | 'rules' | 'quiz';
 
@@ -61,6 +62,8 @@ export const TajweedTab: React.FC = () => {
   const [activeDrillIdx, setActiveDrillIdx] = useState<number | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
   const autoPlayTimerRef = useRef<number | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const speakTokenRef = useRef<number>(0);
 
   // 28 Alphabet & 5-Zone Makhraj State
   const [selectedZone, setSelectedZone] = useState<'all' | MakhrajZone>('all');
@@ -78,12 +81,19 @@ export const TajweedTab: React.FC = () => {
     [language]
   );
 
-  const stopAutoPlay = useCallback(() => {
-    if (autoPlayTimerRef.current !== null) {
-      window.clearTimeout(autoPlayTimerRef.current);
-      autoPlayTimerRef.current = null;
+  const stopAudioPlayback = useCallback(() => {
+    speakTokenRef.current += 1;
+    const el = audioElRef.current;
+    if (el) {
+      el.onended = null;
+      el.onerror = null;
+      try {
+        el.pause();
+        el.currentTime = 0;
+      } catch {
+        // ignore
+      }
     }
-    setIsAutoPlaying(false);
     try {
       window.speechSynthesis?.cancel();
     } catch {
@@ -91,22 +101,63 @@ export const TajweedTab: React.FC = () => {
     }
   }, []);
 
+  const stopAutoPlay = useCallback(() => {
+    if (autoPlayTimerRef.current !== null) {
+      window.clearTimeout(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    setIsAutoPlaying(false);
+    stopAudioPlayback();
+  }, [stopAudioPlayback]);
+
   useEffect(() => {
     return () => stopAutoPlay();
   }, [stopAutoPlay]);
 
   const speakArabic = useCallback(
     (arabicText: string, onEnd?: () => void) => {
+      stopAudioPlayback();
+      const myToken = speakTokenRef.current;
+      let finished = false;
+      const done = () => {
+        if (finished || speakTokenRef.current !== myToken) return;
+        finished = true;
+        onEnd?.();
+      };
+
+      // Primary path: 100% offline bundled Arabic MP3 clips (works reliably on Android APK, Linux Desktop, iOS & Web)
+      const audioUrl = getTajweedAudioUrl(arabicText);
+      if (audioUrl && typeof Audio !== 'undefined') {
+        try {
+          if (!audioElRef.current) {
+            audioElRef.current = new Audio();
+          }
+          const el = audioElRef.current;
+          el.preload = 'auto';
+          el.src = audioUrl;
+          const rate = slowAudio ? 0.76 : 1.0;
+          el.playbackRate = rate;
+          (el as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
+          el.onended = () => done();
+          el.onerror = () => done();
+          const playPromise = el.play();
+          if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.catch(() => done());
+          }
+          return;
+        } catch {
+          // fall through to Web Speech fallback below
+        }
+      }
+
+      // Secondary fallback (only if an unmapped phrase is ever triggered)
       try {
         if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
           const utter = new SpeechSynthesisUtterance(arabicText);
           utter.lang = 'ar-SA';
-          utter.rate = slowAudio ? 0.65 : 0.92;
-          if (onEnd) {
-            utter.onend = () => onEnd();
-            utter.onerror = () => onEnd();
-          }
+          utter.rate = slowAudio ? 0.68 : 0.94;
+          utter.onend = () => done();
+          utter.onerror = () => done();
           window.speechSynthesis.speak(utter);
           return;
         }
@@ -114,10 +165,10 @@ export const TajweedTab: React.FC = () => {
         // fallback timer below
       }
       if (onEnd) {
-        autoPlayTimerRef.current = window.setTimeout(onEnd, 1400);
+        autoPlayTimerRef.current = window.setTimeout(done, 1200);
       }
     },
-    [slowAudio]
+    [slowAudio, stopAudioPlayback]
   );
 
   const currentLesson = useMemo(

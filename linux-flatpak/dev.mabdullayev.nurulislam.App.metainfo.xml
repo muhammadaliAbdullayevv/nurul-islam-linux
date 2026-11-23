@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.71" date="2026-11-23">
+      <description>
+        <p>Bundled 168 offline Arabic MP3 pronunciation clips (including Mishary Al-Afasy recitation for Al-Fatihah and Al-Ikhlas) so every Listen button in the Muallimi Sani and Tajweed Trainer plays reliably on Android, Linux Desktop, and Web; redesigned the Islamic Library into an authentic physical bound book experience with hardcover shelf volumes, stacked parchment pages, spine shadow, classical serif typography, drop caps, and swipe page-turning.</p>
+      </description>
+    </release>
     <release version="1.8.70" date="2026-11-23">
       <description>
         <p>Added two major sections: 24/7 Live Quran Radio with 16 verified streaming channels, automatic failover, favorites, and a persistent background mini-player; and the Classical Islamic Library (Kutubxona) featuring 13 curated public-domain Hanafi and Movarounnahr classics with a distraction-free offline e-reader, Sepia paper mode, reading progress tracker, and PNG quote cards.</p>
