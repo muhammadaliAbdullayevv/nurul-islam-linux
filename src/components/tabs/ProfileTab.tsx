@@ -439,7 +439,17 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [fbResult, setFbResult] = useState<'idle' | 'ok' | 'err'>('idle');
 
   useEffect(() => {
-    return subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
+    const unsub = subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
+    const onOpenFeedback = () => {
+      setIsSettingsOpen(true);
+      setFbResult('idle');
+      setIsFeedbackOpen(true);
+    };
+    window.addEventListener('nq:open-feedback-modal', onOpenFeedback);
+    return () => {
+      unsub();
+      window.removeEventListener('nq:open-feedback-modal', onOpenFeedback);
+    };
   }, []);
 
   const fbCopy = useMemo(() => {

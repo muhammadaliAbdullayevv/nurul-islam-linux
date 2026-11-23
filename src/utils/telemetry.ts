@@ -2,6 +2,7 @@ import { AppLanguage } from '../types';
 import { getOrCreateDeviceId } from './deviceId';
 import { API_BASE_URLS, getLocalAppVersion } from './appUpdater';
 import { detectClientPlatform } from './remoteAppConfig';
+import { getUserHandle } from './userActivity';
 
 const LAST_PING_KEY = 'nq_telemetry_last_sig_v1';
 const PAGE2_LEARNED_KEY = 'nq_home_page2_learned_v1';
@@ -83,6 +84,7 @@ export async function sendAnonymousHeartbeat(params: {
 
   const payload = JSON.stringify({
     deviceId: getOrCreateDeviceId(),
+    handle: getUserHandle(),
     platform,
     versionCode: local.versionCode,
     versionName: local.versionName,

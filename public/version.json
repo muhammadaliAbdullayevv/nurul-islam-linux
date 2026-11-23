@@ -1,14 +1,14 @@
 {
-  "versionCode": 95,
-  "versionName": "1.8.76",
+  "versionCode": 96,
+  "versionName": "1.8.77",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": false,
-  "minSupportedVersionCode": 94,
+  "minSupportedVersionCode": 95,
   "notes": {
-    "uz_lat": "Sozlamalarda bevosita Taklif va xatolik yuborish oynasi, rasmiy Telegram qo‘llab-quvvatlash hamda Maxfiylik siyosati qo‘shildi! Shuningdek, Hijriy sana, Ramazon rejimi, Zakot nisobi va Qur’on Radio kanallari uchun tezkor masofaviy yangilanish qo‘llab-quvvatlovi joriy etildi.",
-    "uz_cyr": "Созламаларда бевосита Таклиф ва хатолик юбориш ойнаси, расмий Telegram қўллаб-қувватлаш ҳамда Махфийлик сиёсати қўшилди! Шунингдек, Ҳижрий сана, Рамазон режими, Закот нисоби ва Қуръон Радио каналлари учун тезкор масофавий бошқарув жорий этилди.",
-    "en": "Added in-app Feedback & Bug Reporting, official Telegram Support, and Privacy Policy links in Settings — plus live remote configuration support for Hijri moon-sighting adjustments, Ramadan mode, official Zakat Nisab notes, and Quran Radio stream reliability.",
-    "ru": "В настройках добавлены форма обратной связи и сообщений об ошибках, ссылка на поддержку в Telegram и Политика конфиденциальности, а также живая удалённая настройка даты Хиджры, режима Рамадана, нисаба Закята и каналов Радио Корана."
+    "uz_lat": "Tezkor jonli sinxronizatsiya (keshni tozalamasdan yangilik va bildirishnomalarni darhol ko‘rsatish), shaxsiy xabarlar, avtomatik xatoliklarni aniqlash hamda Google Play uchun aqlli baholash tizimi qo‘shildi.",
+    "uz_cyr": "Тезкор жонли синхронизация (кешни тозаламасдан янгилик ва билдиришномаларни дарҳол кўрсатиш), шахсий хабарлар, автоматик хатоликларни аниқлаш ҳамда Google Play учун ақлли баҳолаш тизими қўшилди.",
+    "en": "Added instant zero-cache Live Sync for announcements and remote settings, direct support messages, automatic stability diagnostics, and a smooth Play Store rating prompt.",
+    "ru": "Добавлена мгновенная синхронизация без очистки кэша для объявлений и настроек, личные сообщения от поддержки, автоматическая диагностика сбоев и удобная оценка приложения."
   }
 }

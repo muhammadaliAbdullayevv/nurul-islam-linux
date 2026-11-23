@@ -1,6 +1,7 @@
 import React from 'react';
 import { RefreshCw, Home, AlertTriangle } from 'lucide-react';
 import { AppLanguage } from '../types';
+import { reportClientError } from '../utils/remoteAppConfig';
 
 interface AppErrorBoundaryProps {
   children: React.ReactNode;
@@ -98,7 +99,13 @@ export class AppErrorBoundary extends React.Component<
     };
   }
 
-  componentDidCatch(error: unknown): void {
+  componentDidCatch(error: unknown, info?: React.ErrorInfo): void {
+    const errObj = error as Error | undefined;
+    reportClientError({
+      scope: `react:${this.props.scope || 'tab'}`,
+      message: String(errObj?.message || error || 'React render error'),
+      stack: [errObj?.stack || '', info?.componentStack || ''].filter(Boolean).join('\n'),
+    });
     // Automatically recover once if a stale hashed JS chunk was requested right after a deploy
     if (detectChunkError(error)) {
       try {

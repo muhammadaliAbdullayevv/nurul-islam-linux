@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { ArrowDownCircle, CloudDownload, X } from 'lucide-react';
+import { ArrowDownCircle, CloudDownload, ShieldAlert, Star, X } from 'lucide-react';
 import { AndroidShell } from './components/AndroidShell';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
@@ -50,6 +50,7 @@ import {
   isNativeAndroidBridgeAvailable,
   loadAlertPrefs,
   playPrayerChimePreview,
+  openExternalUrl,
   requestNativeNotificationPermission,
   saveAlertPrefs,
   syncNativeAlertsAndWidget
@@ -65,7 +66,18 @@ import {
   getReleaseNoteText
 } from './utils/appUpdater';
 import { HOME_PAGE2_LEARNED_EVENT, sendAnonymousHeartbeat } from './utils/telemetry';
-import { fetchRemoteAppConfig } from './utils/remoteAppConfig';
+import {
+  DeviceDirective,
+  REMOTE_FORCE_UPDATE_EVENT,
+  RemoteAppConfig,
+  getCachedDeviceDirective,
+  getCachedRemoteAppConfig,
+  markReviewPromptAction,
+  recordAppOpenAndShouldPromptReview,
+  subscribeDeviceDirective,
+  subscribeRemoteAppConfig,
+  syncAppLive,
+} from './utils/remoteAppConfig';
 import { addQuranListenSeconds, resetUserActivity } from './utils/userActivity';
 import { modalLoaders, scheduleIdleTabPrefetch, tabLoaders } from './utils/tabLoaders';
 
@@ -266,6 +278,9 @@ function AppContent() {
   const [updateStatus, setUpdateStatus] = useState<UpdateDownloadStatus>('idle');
   const [updateProgress, setUpdateProgress] = useState<number>(0);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [remoteConfig, setRemoteConfig] = useState<RemoteAppConfig>(() => getCachedRemoteAppConfig());
+  const [deviceDirective, setDeviceDirective] = useState<DeviceDirective>(() => getCachedDeviceDirective());
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
   const [nativeAudioState, setNativeAudioState] = useState<NativeQuranAudioState>(() =>
     hasNativeQuranAudioBridge() ? getNativeAudioState() : webQuranPlayer.getState()
   );
@@ -804,17 +819,61 @@ function AppContent() {
     return () => window.clearInterval(id);
   }, [nativeAudioState.active, nativeAudioState.isPlaying]);
 
-  // Anonymous telemetry heartbeat + Live Remote App Config sync (zero PII)
+  // Live Remote Config, Broadcasts & Per-Device Directives Sync (Instant on focus/visibility + 15s foreground poll)
   useEffect(() => {
-    void fetchRemoteAppConfig(true);
-    const onVis = () => {
-      if (document.visibilityState === 'visible') {
-        void fetchRemoteAppConfig(false);
-      }
+    const unsubCfg = subscribeRemoteAppConfig(setRemoteConfig);
+    const unsubDir = subscribeDeviceDirective(setDeviceDirective);
+    return () => {
+      unsubCfg();
+      unsubDir();
     };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
+
+  useEffect(() => {
+    const runSync = (force = false) => {
+      if (!force && document.visibilityState !== 'visible') return;
+      void syncAppLive({ language, city: currentCity.cityName, force });
+    };
+    runSync(true);
+
+    const onVis = () => {
+      if (document.visibilityState === 'visible') runSync(false);
+    };
+    const onFocus = () => runSync(false);
+    const onOnline = () => runSync(true);
+
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onOnline);
+    const pollId = window.setInterval(() => runSync(false), 15_000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onOnline);
+      window.clearInterval(pollId);
+    };
+  }, [language, currentCity.cityName]);
+
+  // Listen for remote Owner 'force_update' command
+  useEffect(() => {
+    const onRemoteForceUpdate = () => {
+      void handleCheckUpdate(false, true);
+    };
+    window.addEventListener(REMOTE_FORCE_UPDATE_EVENT, onRemoteForceUpdate);
+    return () => window.removeEventListener(REMOTE_FORCE_UPDATE_EVENT, onRemoteForceUpdate);
+  }, [handleCheckUpdate]);
+
+  // Smart Play Store 5-Star Rating Funnel (evaluated once per boot after minOpens)
+  const reviewEvaluatedRef = useRef(false);
+  useEffect(() => {
+    if (reviewEvaluatedRef.current || showOnboarding) return;
+    reviewEvaluatedRef.current = true;
+    if (recordAppOpenAndShouldPromptReview(getCachedRemoteAppConfig())) {
+      const tId = window.setTimeout(() => setShowReviewPrompt(true), 4500);
+      return () => window.clearTimeout(tId);
+    }
+  }, [showOnboarding]);
 
   useEffect(() => {
     const send = () => {
@@ -1512,6 +1571,151 @@ function AppContent() {
           onSelectCity={handleSelectCity}
           onDetectGPS={handleDetectGPS}
         />
+      )}
+
+      {/* Device Soft-Block / Access Suspension Overlay (Controlled Per-Device from Owner Panel) */}
+      {deviceDirective.blocked && (
+        <div className="fixed inset-0 z-[95] bg-slate-950/92 backdrop-blur-md flex items-center justify-center p-5">
+          <div
+            className={`w-full max-w-sm rounded-3xl border p-6 text-center space-y-4 shadow-2xl ${
+              isDay
+                ? 'bg-white border-rose-200 text-slate-900'
+                : 'bg-slate-900 border-rose-800/70 text-slate-100'
+            }`}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 mx-auto flex items-center justify-center">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5">
+              <h2 className="text-base font-extrabold">
+                {language === 'ru'
+                  ? 'Доступ временно ограничен'
+                  : language === 'en'
+                  ? 'Access Temporarily Restricted'
+                  : language === 'uz_cyr'
+                  ? 'Кириш вақтинча чекланган'
+                  : 'Kirish vaqtincha cheklangan'}
+              </h2>
+              <p className={`text-xs leading-relaxed ${isDay ? 'text-slate-600' : 'text-slate-300'}`}>
+                {deviceDirective.blockReason ||
+                  (language === 'ru'
+                    ? 'Для уточнения причины свяжитесь с поддержкой Nurul Islam.'
+                    : language === 'en'
+                    ? 'Please contact Nurul Islam support for more information.'
+                    : language === 'uz_cyr'
+                    ? 'Батафсил маълумот учун Nurul Islam қўллаб-қувватлаш хизматига мурожаат қилинг.'
+                    : 'Batafsil ma’lumot uchun Nurul Islam qo‘llab-quvvatlash xizmatiga murojaat qiling.')}
+              </p>
+            </div>
+            {remoteConfig.links.telegramUrl && (
+              <button
+                type="button"
+                onClick={() => openExternalUrl(remoteConfig.links.telegramUrl)}
+                className="w-full py-2.5 rounded-xl bg-[#158509] hover:bg-[#0c5007] text-white text-xs font-bold transition"
+              >
+                Telegram · Support
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Smart Play Store 5-Star Rating Funnel Modal */}
+      {showReviewPrompt && !isUpdateModalOpen && !showOnboarding && !deviceDirective.blocked && (
+        <div className="fixed inset-0 z-[72] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-4">
+          <div
+            className={`w-full max-w-sm rounded-3xl border p-5 space-y-4 shadow-2xl ${
+              isDay
+                ? 'bg-white border-[#dde3ea] text-slate-900'
+                : 'bg-slate-900 border-emerald-800/70 text-slate-100'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <Star className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold">
+                    {language === 'ru'
+                      ? 'Нравится ли вам Nurul Islam?'
+                      : language === 'en'
+                      ? 'Enjoying Nurul Islam?'
+                      : language === 'uz_cyr'
+                      ? 'Nurul Islam сизга фойдали бўляптими?'
+                      : 'Nurul Islam sizga foydali bo‘lyaptimi?'}
+                  </h3>
+                  <p className={`text-[11.5px] mt-0.5 ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {language === 'ru'
+                      ? 'Ваша оценка помогает другим мусульманам найти приложение.'
+                      : language === 'en'
+                      ? 'Your rating helps more Muslims discover this ad-free app.'
+                      : language === 'uz_cyr'
+                      ? 'Баҳонгиз бошқа мусулмонларга ҳам иловани топишда ёрдам беради.'
+                      : 'Bahongiz boshqa musulmonlarga ham ushbu reklamasiz ilovani topishda yordam beradi.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  markReviewPromptAction('later');
+                  setShowReviewPrompt(false);
+                }}
+                className="p-1 rounded-lg opacity-60 hover:opacity-100"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  markReviewPromptAction('rated');
+                  setShowReviewPrompt(false);
+                  openExternalUrl(remoteConfig.links.playStoreUrl);
+                }}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${
+                  isDay
+                    ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                }`}
+              >
+                ★{' '}
+                {language === 'ru'
+                  ? 'Да, очень нравится! Оценить'
+                  : language === 'en'
+                  ? 'Yes, love it! Rate 5 Stars'
+                  : language === 'uz_cyr'
+                  ? 'Ҳа, жуда ёқди! Баҳолаш'
+                  : 'Ha, juda yoqdi! 5 yulduz qo‘yish'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  markReviewPromptAction('feedback');
+                  setShowReviewPrompt(false);
+                  navigateToTab('profile');
+                  window.setTimeout(() => window.dispatchEvent(new Event('nq:open-feedback-modal')), 120);
+                }}
+                className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition ${
+                  isDay
+                    ? 'bg-[#f6faf5] border-[#dce9d9] text-[#0c4703]'
+                    : 'bg-slate-950 border-emerald-900/70 text-emerald-300'
+                }`}
+              >
+                {language === 'ru'
+                  ? 'Есть замечание — написать разработчику'
+                  : language === 'en'
+                  ? 'Could be better — Send feedback'
+                  : language === 'uz_cyr'
+                  ? 'Таклифим ёки шикоятим бор'
+                  : 'Yaxshilash mumkin — Taklif yuborish'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* In-App Self-Update Modal */}

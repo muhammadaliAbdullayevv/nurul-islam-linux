@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.77" date="2026-11-24">
+      <description>
+        <p>Added instant zero-cache Live Sync (15-second foreground sync + instant tab-focus updates with ETag 304), full Owner Device Management (live online presence, custom device labels/roles, tester maintenance bypass, direct personal messages with read receipts, per-device feature restrictions, remote reload/cache-clear/update commands, and soft-blocking), city/version broadcast targeting, smart Play Store rating funnel, automatic crash reporting, and Owner Telegram admin alerts.</p>
+      </description>
+    </release>
     <release version="1.8.76" date="2026-11-24">
       <description>
         <p>Added live Remote App Config support (Hijri moon-sighting offset, Ramadan mode, feature visibility toggles, official Zakat Nisab notes, Quran Radio remote stream control, and maintenance banners), in-app Feedback and Bug Reporting, dynamic Telegram Support and Privacy Policy links, accurate platform telemetry, and a redesigned Owner Control Center.</p>

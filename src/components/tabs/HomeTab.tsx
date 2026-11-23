@@ -31,8 +31,14 @@ import {
 import { openExternalUrl } from '../../utils/nativePrayerBridge';
 import { hasLearnedHomePage2, markHomePage2Opened } from '../../utils/telemetry';
 import {
+  DeviceDirective,
   RemoteAppConfig,
+  acknowledgeDirectMessage,
+  getCachedDeviceDirective,
+  getCachedLiveBroadcasts,
   getCachedRemoteAppConfig,
+  subscribeDeviceDirective,
+  subscribeLiveBroadcasts,
   subscribeRemoteAppConfig,
 } from '../../utils/remoteAppConfig';
 import {
@@ -228,12 +234,23 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [showSwipeOverlay, setShowSwipeOverlay] = useState<boolean>(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const peekTimersRef = useRef<number[]>([]);
-  const [broadcasts, setBroadcasts] = useState<LiveBroadcast[]>(() => loadCachedBroadcasts(language));
+  const [broadcasts, setBroadcasts] = useState<LiveBroadcast[]>(() => {
+    const live = getCachedLiveBroadcasts();
+    return live.length > 0 ? live : loadCachedBroadcasts(language);
+  });
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => getDismissedBroadcastIds());
   const [remoteConfig, setRemoteConfig] = useState<RemoteAppConfig>(() => getCachedRemoteAppConfig());
+  const [deviceDirective, setDeviceDirective] = useState<DeviceDirective>(() => getCachedDeviceDirective());
 
   useEffect(() => {
-    return subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
+    const unsubCfg = subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
+    const unsubDir = subscribeDeviceDirective((dir) => setDeviceDirective(dir));
+    const unsubBc = subscribeLiveBroadcasts((list) => setBroadcasts(list));
+    return () => {
+      unsubCfg();
+      unsubDir();
+      unsubBc();
+    };
   }, []);
 
   // Reorderable feature state (Long-press & move anywhere across Page 1 and Page 2)
@@ -500,7 +517,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   }, [fridayBadgeText, isFriday, language, t.features]);
 
   const orderedFeatures = useMemo(() => {
+    const devDisabled = new Set(deviceDirective.disabledFeatures || []);
     const isEnabled = (id: string) => {
+      if (devDisabled.has(id)) return false;
       if (id === 'ehson' && remoteConfig.features.ehson === false) return false;
       if (id === 'radio' && remoteConfig.features.radio === false) return false;
       if (id === 'library' && remoteConfig.features.library === false) return false;
@@ -520,7 +539,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       if (!featureOrder.includes(id)) out.push(f);
     }
     return out;
-  }, [allFeaturesMap, featureOrder, remoteConfig.features]);
+  }, [allFeaturesMap, featureOrder, remoteConfig.features, deviceDirective.disabledFeatures]);
 
   const featurePages = useMemo(() => {
     const pages: HomeFeatureDef[][] = [];
@@ -1009,8 +1028,44 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
         </div>
 
+        {/* Personal Direct Message from Owner (Widescreen) */}
+        {deviceDirective.directMessage && (
+          <div
+            className={`rounded-2xl border px-4 py-3 flex items-center justify-between gap-3 shadow-xs ${
+              deviceDirective.directMessage.tone === 'urgent'
+                ? isDay
+                  ? 'bg-rose-50 border-rose-300 text-rose-950'
+                  : 'bg-rose-950/75 border-rose-500/60 text-rose-100'
+                : deviceDirective.directMessage.tone === 'gold'
+                ? isDay
+                  ? 'bg-amber-50 border-amber-300 text-amber-950'
+                  : 'bg-amber-950/65 border-amber-500/60 text-amber-100'
+                : isDay
+                ? 'bg-[#eef9ea] border-[#7ecb6f] text-[#0c4703]'
+                : 'bg-emerald-950/85 border-emerald-600/70 text-emerald-100'
+            }`}
+          >
+            <div className="min-w-0">
+              <div className="text-xs font-extrabold">{deviceDirective.directMessage.title}</div>
+              {deviceDirective.directMessage.body && (
+                <p className="text-[11.5px] opacity-90 mt-0.5">{deviceDirective.directMessage.body}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => void acknowledgeDirectMessage(deviceDirective.directMessage!.id)}
+              className="p-1.5 rounded-lg opacity-70 hover:opacity-100 shrink-0"
+              aria-label="Dismiss direct message"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Remote Emergency Maintenance Notice (Widescreen) */}
-        {remoteConfig.maintenance.enabled && (remoteConfig.maintenance.title || remoteConfig.maintenance.message) && (
+        {remoteConfig.maintenance.enabled &&
+          !deviceDirective.bypassMaintenance &&
+          (remoteConfig.maintenance.title || remoteConfig.maintenance.message) && (
           <div
             className={`rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-xs ${
               isDay
@@ -1336,8 +1391,47 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         </div>
       </div>
 
+      {/* PERSONAL DIRECT MESSAGE FROM OWNER (Mobile) */}
+      {deviceDirective.directMessage && !isReorderMode && (
+        <div className="px-3.5 pt-2 shrink-0">
+          <div
+            className={`rounded-2xl border px-3 py-2.5 flex items-start justify-between gap-2 shadow-xs ${
+              deviceDirective.directMessage.tone === 'urgent'
+                ? isDay
+                  ? 'bg-rose-50 border-rose-300 text-rose-950'
+                  : 'bg-rose-950/75 border-rose-500/60 text-rose-100'
+                : deviceDirective.directMessage.tone === 'gold'
+                ? isDay
+                  ? 'bg-amber-50 border-amber-300 text-amber-950'
+                  : 'bg-amber-950/65 border-amber-500/60 text-amber-100'
+                : isDay
+                ? 'bg-[#eef9ea] border-[#7ecb6f] text-[#0c4703]'
+                : 'bg-emerald-950/85 border-emerald-600/70 text-emerald-100'
+            }`}
+          >
+            <div className="min-w-0">
+              <div className="text-xs font-extrabold">{deviceDirective.directMessage.title}</div>
+              {deviceDirective.directMessage.body && (
+                <p className="text-[11px] opacity-90 mt-0.5 leading-snug">{deviceDirective.directMessage.body}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => void acknowledgeDirectMessage(deviceDirective.directMessage!.id)}
+              className="p-1 rounded-lg opacity-70 hover:opacity-100 shrink-0"
+              aria-label="Dismiss direct message"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* REMOTE EMERGENCY MAINTENANCE NOTICE (Mobile) */}
-      {remoteConfig.maintenance.enabled && (remoteConfig.maintenance.title || remoteConfig.maintenance.message) && !isReorderMode && (
+      {remoteConfig.maintenance.enabled &&
+        !deviceDirective.bypassMaintenance &&
+        (remoteConfig.maintenance.title || remoteConfig.maintenance.message) &&
+        !isReorderMode && (
         <div className="px-3.5 pt-2 shrink-0">
           <div
             className={`rounded-2xl border px-3 py-2.5 shadow-xs ${
