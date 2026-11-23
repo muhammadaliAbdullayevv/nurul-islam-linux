@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.66
+Version:        1.8.67
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.67-1
+- Add custom Nurul Islam prayer notification chime sound with Chime/System/Silent selector and instant preview in Settings
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.66-1
 - Add persistent cross-tab Web/Linux Quran audio & mini-player with Media Session API, iOS Qibla compass permission, self-hosted offline fonts, JSON Backup & Restore, React ErrorBoundary, direct bookmark ayah jump, honest Web settings, and localStorage quota fix
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.65-1

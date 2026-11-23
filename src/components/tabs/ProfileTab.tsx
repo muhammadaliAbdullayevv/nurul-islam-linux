@@ -28,6 +28,7 @@ import {
   Trash2,
   Trophy,
   Upload,
+  Volume2,
   X,
 } from 'lucide-react';
 import { AppLanguage, Bookmark as BookmarkType, CalcMethod, Coordinates, TranslationId } from '../../types';
@@ -37,9 +38,11 @@ import { getCalcMethodOptions, getLocalizedCityLabel } from '../../utils/prayerT
 import {
   AlertPrayerKey,
   PrayerAlertPrefs,
+  PrayerAlertSoundMode,
   checkNativeNotificationPermission,
   isNativeAndroidBridgeAvailable,
   pinPrayerHomeWidget,
+  playPrayerChimePreview,
   requestNativeNotificationPermission,
   triggerTestPrayerAlert,
 } from '../../utils/nativePrayerBridge';
@@ -133,6 +136,10 @@ const PROFILE_UI: Record<
     exportSuccess: (n: number) => string;
     importSuccess: (n: number) => string;
     importInvalid: string;
+    soundLabel: string;
+    soundChime: string;
+    soundSystem: string;
+    soundSilent: string;
   }
 > = {
   uz_lat: {
@@ -177,6 +184,10 @@ const PROFILE_UI: Record<
     exportSuccess: (n) => `Zaxira fayli yuklab olindi (${n} ta yozuv)`,
     importSuccess: (n) => `${n} ta yozuv tiklandi! Ilova qayta yuklanmoqda...`,
     importInvalid: "Noto'g'ri fayl. Faqat Nurul Islam .json zaxira faylini tanlang.",
+    soundLabel: 'Bildirishnoma ovozi',
+    soundChime: 'Maxsus ovoz',
+    soundSystem: 'Tizim',
+    soundSilent: 'Ovozsiz',
   },
   uz_cyr: {
     progressTab: 'Натижалар & Даража',
@@ -220,6 +231,10 @@ const PROFILE_UI: Record<
     exportSuccess: (n) => `Захира файли юклаб олинди (${n} та ёзув)`,
     importSuccess: (n) => `${n} та ёзув тикланди! Илова қайта юкланмоқда...`,
     importInvalid: 'Нотўғри файл. Фақат Nurul Islam .json захира файлини танланг.',
+    soundLabel: 'Билдиришнома овози',
+    soundChime: 'Махсус овоз',
+    soundSystem: 'Тизим',
+    soundSilent: 'Овозсиз',
   },
   ru: {
     progressTab: 'Прогресс и Уровень',
@@ -263,6 +278,10 @@ const PROFILE_UI: Record<
     exportSuccess: (n) => `Резервная копия сохранена (${n} записей)`,
     importSuccess: (n) => `Восстановлено ${n} записей! Перезагрузка...`,
     importInvalid: 'Неверный файл. Выберите файл резервной копии Nurul Islam (.json).',
+    soundLabel: 'Звук уведомления',
+    soundChime: 'Особый звук',
+    soundSystem: 'Системный',
+    soundSilent: 'Без звука',
   },
   en: {
     progressTab: 'Progress & Ranks',
@@ -306,6 +325,10 @@ const PROFILE_UI: Record<
     exportSuccess: (n) => `Backup downloaded (${n} items)`,
     importSuccess: (n) => `Restored ${n} items! Reloading app...`,
     importInvalid: 'Invalid backup file. Please pick a Nurul Islam .json backup.',
+    soundLabel: 'Notification sound',
+    soundChime: 'Prayer Chime',
+    soundSystem: 'System',
+    soundSilent: 'Silent',
   },
 };
 
@@ -1354,11 +1377,57 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   </div>
                 </div>
 
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className={`text-xs ${isDay ? 'text-slate-600' : 'text-slate-300'}`}>
+                    {ui.soundLabel}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {(
+                      [
+                        { id: 'chime', label: ui.soundChime },
+                        { id: 'default', label: ui.soundSystem },
+                        { id: 'silent', label: ui.soundSilent },
+                      ] as Array<{ id: PrayerAlertSoundMode; label: string }>
+                    ).map((opt) => {
+                      const selected = (alertPrefs.soundMode || 'chime') === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            onChangeAlertPrefs({ ...alertPrefs, soundMode: opt.id });
+                            if (opt.id === 'chime') {
+                              playPrayerChimePreview();
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 transition ${
+                            selected
+                              ? isDay
+                                ? 'bg-[#158509] text-white border-[#0c4703]'
+                                : 'bg-amber-400 text-slate-950 border-amber-300'
+                              : isDay
+                              ? 'bg-[#ecf1f5] text-slate-700 border-[#dde3ea]'
+                              : 'bg-slate-950 text-slate-400 border-slate-800'
+                          }`}
+                        >
+                          {opt.id === 'chime' && <Volume2 className="w-3 h-3 shrink-0" />}
+                          <span>{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
                     const send = () => {
-                      triggerTestPrayerAlert(t.prayers.fajr, todayFajrTime, loc.city);
+                      triggerTestPrayerAlert(
+                        t.prayers.fajr,
+                        todayFajrTime,
+                        loc.city,
+                        alertPrefs.soundMode || 'chime'
+                      );
                       setTestSent(true);
                       window.setTimeout(() => setTestSent(false), 2400);
                     };

@@ -3,10 +3,12 @@ import { calculatePrayerTimes, getCityCurrentDate, getHijriDate, getLocalizedCit
 import { formatFullGregorianDate, TranslationStrings } from '../contexts/LanguageContext';
 
 export type AlertPrayerKey = 'imsak' | 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
+export type PrayerAlertSoundMode = 'chime' | 'default' | 'silent';
 
 export interface PrayerAlertPrefs {
   enabled: boolean;
   preReminderMins: 0 | 10 | 15;
+  soundMode: PrayerAlertSoundMode;
   prayers: Record<AlertPrayerKey, boolean>;
 }
 
@@ -15,6 +17,7 @@ const ALERT_PREFS_KEY = 'nq_prayer_alert_prefs';
 export const DEFAULT_ALERT_PREFS: PrayerAlertPrefs = {
   enabled: false,
   preReminderMins: 10,
+  soundMode: 'chime',
   prayers: {
     imsak: false,
     fajr: true,
@@ -30,9 +33,12 @@ export function loadAlertPrefs(): PrayerAlertPrefs {
     const raw = localStorage.getItem(ALERT_PREFS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PrayerAlertPrefs>;
+      const soundMode: PrayerAlertSoundMode =
+        parsed.soundMode === 'default' || parsed.soundMode === 'silent' ? parsed.soundMode : 'chime';
       return {
         enabled: Boolean(parsed.enabled),
         preReminderMins: parsed.preReminderMins === 15 || parsed.preReminderMins === 0 ? parsed.preReminderMins : 10,
+        soundMode,
         prayers: {
           imsak: Boolean(parsed.prayers?.imsak),
           fajr: parsed.prayers?.fajr !== false,
@@ -267,11 +273,36 @@ export function requestNativeNotificationPermission(onResult?: (granted: boolean
   }
 }
 
-export function triggerTestPrayerAlert(prayerName: string, timeStr: string, city: string): void {
+let previewChimeAudio: HTMLAudioElement | null = null;
+
+export function playPrayerChimePreview(): void {
+  if (typeof Audio === 'undefined') return;
+  try {
+    if (!previewChimeAudio) {
+      previewChimeAudio = new Audio('/sounds/prayer-chime.mp3');
+      previewChimeAudio.preload = 'auto';
+    }
+    previewChimeAudio.pause();
+    previewChimeAudio.currentTime = 0;
+    void previewChimeAudio.play().catch(() => undefined);
+  } catch {
+    // Ignore audio playback errors
+  }
+}
+
+export function triggerTestPrayerAlert(
+  prayerName: string,
+  timeStr: string,
+  city: string,
+  soundMode: PrayerAlertSoundMode = 'chime'
+): void {
   const bridge = getNativeBridge();
   if (bridge) {
     bridge.sendTestNotification(prayerName, timeStr, city);
     return;
+  }
+  if (soundMode === 'chime') {
+    playPrayerChimePreview();
   }
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     new Notification(`${prayerName} · ${timeStr}`, { body: city });

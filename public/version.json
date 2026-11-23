@@ -1,14 +1,14 @@
 {
-  "versionCode": 85,
-  "versionName": "1.8.66",
+  "versionCode": 86,
+  "versionName": "1.8.67",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 85,
+  "minSupportedVersionCode": 86,
   "notes": {
-    "uz_lat": "Katta sifat va barqarorlik yangilanishi: Web/Linux uchun uzluksiz fon Qur'on pleyeri va mini-pleyer, iOS Safari Qibla kompas ruxsati, 100% oflayn shriftlar, ma'lumotlarni zaxiralash/tiklash (.json), xatcho'pdan to'g'ridan-to'g'ri oyatga o'tish va tezkor barqarorlik tuzatishlari.",
-    "uz_cyr": "Катта сифат ва барқарорлик янгиланиши: Web/Linux учун узлуксиз фон Қуръон плейери ва мини-плейер, iOS Safari Қибла компас рухсати, 100% офлайн шрифтлар, маълумотларни захиралаш/тиклаш (.json), хатчўпдан тўғридан-тўғри оятга ўтиш ва тезкор барқарорлик тузатишлари.",
-    "en": "Major polish & resilience release: persistent cross-tab Web/Linux Quran audio with floating mini-player & Media Session controls, iOS Safari Qibla compass permission support, 100% offline self-hosted fonts, JSON Backup & Restore, direct ayah jump from bookmarks, ErrorBoundary protection, and storage reliability fixes.",
-    "ru": "Крупное обновление стабильности и удобства: фоновый плеер Корана и мини-плеер для Web/Linux с Media Session, доступ к компасу Киблы на iOS Safari, 100% офлайн-шрифты, резервное копирование (.json), прямой переход к аяту из закладок и повышение надёжности."
+    "uz_lat": "Namoz vaqtlari bildirishnomalari uchun maxsus sokin va yoqimli Nurul Islam ovozi (Chime) qo'shildi! Endi Sozlamalarda maxsus ovoz, tizim ovozi yoki ovozsiz rejimni tanlash va darhol tinglab ko'rish mumkin.",
+    "uz_cyr": "Намоз вақтлари билдиришномалари учун махсус сокин ва ёқимли Nurul Islam овози (Chime) қўшилди! Энди Созламаларда махсус овоз, тизим овози ёки овозсиз режимни танлаш ва дарҳол тинглаб кўриш мумкин.",
+    "en": "Added a custom calm Nurul Islam signature prayer notification chime! You can now choose between Prayer Chime, System sound, or Silent mode with instant preview in Settings.",
+    "ru": "Добавлен особый спокойный звук уведомлений о времени намаза Nurul Islam! В настройках можно выбрать особый звук, системный или беззвучный режим с мгновенным прослушиванием."
   }
 }
