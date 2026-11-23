@@ -40,37 +40,6 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-function drawRubElHizbWatermark(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  radius: number,
-  strokeStyle: string,
-  lineWidth = 1.6
-): void {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = lineWidth;
-
-  const side = radius * 1.414;
-  ctx.strokeRect(-side / 2, -side / 2, side, side);
-  ctx.save();
-  ctx.rotate(Math.PI / 4);
-  ctx.strokeRect(-side / 2, -side / 2, side, side);
-  ctx.restore();
-
-  ctx.beginPath();
-  ctx.arc(0, 0, radius * 0.56, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(0, 0, radius * 0.22, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
 let cachedAppIcon: HTMLImageElement | null = null;
 
 function loadAppIconImage(): Promise<HTMLImageElement | null> {
@@ -260,13 +229,6 @@ export async function generateNurulIslamShareCard(
   ctx.fillStyle = bloomBottom;
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle geometric Rub el Hizb sacred star watermarks in corners
-  const watermarkStroke = isDay
-    ? 'rgba(255, 255, 255, 0.08)'
-    : 'rgba(251, 191, 36, 0.09)';
-  drawRubElHizbWatermark(ctx, W - 78, 108, 155, watermarkStroke, 1.8);
-  drawRubElHizbWatermark(ctx, 84, H - 120, 140, watermarkStroke, 1.8);
-
   // Subtle outer glass inset hairline
   ctx.save();
   drawRoundedRect(ctx, 26, 26, W - 52, H - 52, 48);
@@ -278,7 +240,7 @@ export async function generateNurulIslamShareCard(
   ctx.restore();
 
   // ==================== 2. TOP EYEBROW BRAND PILL ====================
-  const eyebrowText = `✦  ${eyebrow.toUpperCase()}`;
+  const eyebrowText = eyebrow.trim().toUpperCase();
   ctx.font = `700 18px ${SANS}`;
   const eyebrowW = Math.min(W - 160, ctx.measureText(eyebrowText).width + 54);
   const eyebrowX = (W - eyebrowW) / 2;
@@ -344,15 +306,6 @@ export async function generateNurulIslamShareCard(
   }
   ctx.fillStyle = headerAura;
   ctx.fillRect(cardX, cardY, cardW, 250);
-
-  drawRubElHizbWatermark(
-    ctx,
-    cardX + cardW - 56,
-    cardY + 56,
-    92,
-    isDay ? 'rgba(21, 133, 9, 0.06)' : 'rgba(251, 191, 36, 0.07)',
-    1.5
-  );
 
   const topBar = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
   if (isDay) {
@@ -788,7 +741,7 @@ export async function generateNurulIslamShareCard(
       ctx.fillStyle = isDay ? '#158509' : '#6ee7b7';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(`✦  ${noteLabel.toUpperCase()}`, W / 2, curY + 18);
+      ctx.fillText(noteLabel.trim().toUpperCase(), W / 2, curY + 18);
       textTopY = curY + 46;
     }
 

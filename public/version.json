@@ -1,14 +1,14 @@
 {
-  "versionCode": 91,
-  "versionName": "1.8.72",
+  "versionCode": 92,
+  "versionName": "1.8.73",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 91,
+  "minSupportedVersionCode": 92,
   "notes": {
-    "uz_lat": "Islom Kutubxonasi to'liq haqiqiy kitob varaqlash tajribasiga o'tkazildi: har bir sahifa ekranga pastga surmasdan aniq sig'adi, sahifalar chapga/o'ngga surish orqali jonli varaqlanadi, ortiqcha Keyingi/Oldingi va O'qildi tugmalari olib tashlandi (o'qish jarayoni avtomatik saqlanadi).",
-    "uz_cyr": "Ислом Кутубхонаси тўлиқ ҳақиқий китоб варақлаш тажрибасига ўтказилди: ҳар бир саҳифа экранга пастга сурмасдан аниқ сиғади, саҳифалар чапга/ўнгга суриш орқали жонли варақланади, ортиқча Кейинги/Олдинги ва Ўқилди тугмалари олиб ташланди.",
-    "en": "Upgraded the Islamic Library into a true screen-fit swipe book reader: every page automatically paginates to fit your screen with zero vertical scrolling, pages turn smoothly by swiping left or right (with live page-underneath peel), and cluttering Next/Prev and Mark Read buttons were removed (reading progress saves automatically).",
-    "ru": "Исламская Библиотека обновлена до полноценного постраничного книжного ридера: каждая страница точно помещается на экран без вертикальной прокрутки, страницы плавно перелистываются свайпом влево/вправо, а кнопки Далее/Назад и Прочитано убраны (прогресс сохраняется автоматически)."
+    "uz_lat": "Oyat, hadis, duo, hikmat va kitob sahifalaridan tayyorlanadigan PNG ulashish kartalari yanada toza va nafis ko'rinishga keltirildi — fonda joylashgan barcha yulduzcha va uchqun (sparkle) belgilari olib tashlandi.",
+    "uz_cyr": "Оят, ҳадис, дуо, ҳикмат ва китоб саҳифаларидан тайёрланадиган PNG улашиш карталари янада тоза ва нафис кўринишга келтирилди — фондаги барча юлдузча белгилари олиб ташланди.",
+    "en": "Cleaned up generated PNG share cards for Quran Ayahs, Hadiths, Duas, Wisdom, and Library book passages by removing all background star watermarks and sparkle glyphs for a crisp, minimalist finish.",
+    "ru": "Очищен фон генерируемых PNG-карточек для аятов, хадисов, дуа, мудростей и книжных цитат: убраны фоновые звёздные водяные знаки и символы искр."
   }
 }

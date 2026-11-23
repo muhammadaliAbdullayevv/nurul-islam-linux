@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.72
+Version:        1.8.73
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.73-1
+- Remove background star watermarks and sparkle glyphs from generated PNG share cards across Quran Ayahs, Hadiths, Duas, Wisdom, and Library book passages
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.72-1
 - Upgrade Islamic Library into a full-screen zero-scroll auto-paginated swipe book reader: pages fit the exact viewport without scrolling, turn interactively by swiping left/right (touch, mouse drag, or arrow keys), and automatically track reading progress with Next/Prev/Mark Read buttons removed
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.71-1

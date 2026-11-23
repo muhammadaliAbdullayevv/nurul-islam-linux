@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.73" date="2026-11-23">
+      <description>
+        <p>Cleaned up generated PNG share cards for Quran Ayahs, Hadiths, Duas, Wisdom, and Library book passages by removing all background star watermarks and sparkle glyphs.</p>
+      </description>
+    </release>
     <release version="1.8.72" date="2026-11-23">
       <description>
         <p>Upgraded the Islamic Library into a full-screen zero-scroll swipe book reader: every page automatically paginates to fit the screen without vertical scrolling, turns smoothly by swiping left or right (touch, mouse drag, or keyboard arrows) with a live page-peel effect, and automatically saves reading progress with Next/Prev and Mark Read buttons removed.</p>
