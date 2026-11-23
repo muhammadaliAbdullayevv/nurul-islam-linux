@@ -7,6 +7,7 @@ import {
   REGION_MAP,
 } from '../data/uzbekistanRegions';
 import { cyrillicToLatinUz, latinToCyrillicUz } from './uzbekScript';
+import { getCachedRemoteAppConfig } from './remoteAppConfig';
 
 const WORLD_CITIES_RAW: Array<{
   cityName: string;
@@ -633,7 +634,9 @@ export function getHijriParts(
   date: Date = new Date(),
   respectAdjustment: boolean = true
 ): { day: number; month: number; year: number } {
-  const hijriOffsetDays = respectAdjustment ? loadPrayerAdjustments().hijriDays : 0;
+  const userHijriOffset = respectAdjustment ? loadPrayerAdjustments().hijriDays : 0;
+  const remoteHijriOffset = respectAdjustment ? getCachedRemoteAppConfig().hijriDayOffset : 0;
+  const hijriOffsetDays = userHijriOffset !== 0 ? userHijriOffset : remoteHijriOffset;
   const targetDate = hijriOffsetDays !== 0 ? new Date(date.getTime() + hijriOffsetDays * 86400000) : date;
 
   try {

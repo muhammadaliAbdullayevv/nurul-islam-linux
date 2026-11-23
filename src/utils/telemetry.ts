@@ -1,7 +1,7 @@
-import { Capacitor } from '@capacitor/core';
 import { AppLanguage } from '../types';
 import { getOrCreateDeviceId } from './deviceId';
 import { API_BASE_URLS, getLocalAppVersion } from './appUpdater';
+import { detectClientPlatform } from './remoteAppConfig';
 
 const LAST_PING_KEY = 'nq_telemetry_last_sig_v1';
 const PAGE2_LEARNED_KEY = 'nq_home_page2_learned_v1';
@@ -65,7 +65,7 @@ export async function sendAnonymousHeartbeat(params: {
   openedPage2?: boolean;
 }): Promise<void> {
   const local = getLocalAppVersion();
-  const platform = Capacitor.isNativePlatform() ? 'android' : 'web';
+  const platform = detectClientPlatform();
   const openedPage2 = params.openedPage2 ?? hasLearnedHomePage2();
   const sig = `${local.versionCode}|${params.language}|${params.city}|${params.theme}|p2:${openedPage2 ? 1 : 0}`;
 

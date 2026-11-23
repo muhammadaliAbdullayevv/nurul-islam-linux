@@ -29,6 +29,7 @@ import { PRAYER_RICH_UI, getSpecialEventDetail } from '../../data/prayerRichData
 import { useLanguage, formatGregorianDate } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMinuteDate } from '../LivePrayerClock';
+import { getCachedRemoteAppConfig, subscribeRemoteAppConfig } from '../../utils/remoteAppConfig';
 
 interface PrayerTabProps {
   currentCity: Coordinates;
@@ -71,6 +72,11 @@ export const PrayerTab: React.FC<PrayerTabProps> = ({
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'detecting' | 'ok' | 'err'>('idle');
   const [shareCopied, setShareCopied] = useState(false);
   const [selectedSpecialEvent, setSelectedSpecialEvent] = useState<UpcomingSpecialItem | null>(null);
+  const [remoteNotice, setRemoteNotice] = useState(() => getCachedRemoteAppConfig().prayerNotice);
+
+  useEffect(() => {
+    return subscribeRemoteAppConfig((cfg) => setRemoteNotice(cfg.prayerNotice));
+  }, []);
 
   const initialCityDate = getCityCurrentDate(new Date(), currentCity.timezone);
   const [viewMonth, setViewMonth] = useState(initialCityDate.getMonth());
@@ -255,6 +261,18 @@ export const PrayerTab: React.FC<PrayerTabProps> = ({
 
   return (
     <div className={`space-y-3.5 pb-8 ${isDay ? 'text-slate-900' : 'text-slate-100'}`}>
+      {remoteNotice.enabled && remoteNotice.text && (
+        <div
+          className={`px-3.5 py-2.5 rounded-2xl border text-xs font-medium ${
+            isDay
+              ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+              : 'bg-emerald-950/70 border-emerald-800/60 text-emerald-200'
+          }`}
+        >
+          {remoteNotice.text}
+        </div>
+      )}
+
       {/* Top 3 Side Buttons: Muhim kunlar (Default) | Oylik namoz | Konvertor */}
       <div
         className={`grid grid-cols-3 gap-1.5 p-1 rounded-2xl border ${

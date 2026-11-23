@@ -40,6 +40,7 @@ import { LiveRamadanHero, useMinuteDate } from '../LivePrayerClock';
 import { latinToCyrillicUz } from '../../utils/uzbekScript';
 import { useLanguage, formatGregorianDate } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { getCachedRemoteAppConfig, subscribeRemoteAppConfig } from '../../utils/remoteAppConfig';
 
 interface RamadanTabProps {
   currentCity: Coordinates;
@@ -61,6 +62,13 @@ export const RamadanTab: React.FC<RamadanTabProps> = ({
   const prep = RAMADAN_PREP_DATA[language] || RAMADAN_PREP_DATA.en;
   const nowMinute = useMinuteDate();
   const [prepModal, setPrepModal] = useState<'duas' | 'rules' | null>(null);
+  const [remoteRamadanMode, setRemoteRamadanMode] = useState<'auto' | 'force_on' | 'force_off'>(
+    () => getCachedRemoteAppConfig().ramadanMode
+  );
+
+  useEffect(() => {
+    return subscribeRemoteAppConfig((cfg) => setRemoteRamadanMode(cfg.ramadanMode));
+  }, []);
 
   useEffect(() => {
     const onBack = (e: Event) => {
@@ -170,10 +178,15 @@ export const RamadanTab: React.FC<RamadanTabProps> = ({
 
   const selectedDayDua = RAMADAN_30_DAYS_DUAS.find(d => d.day === selectedDayNumber) || RAMADAN_30_DAYS_DUAS[0];
 
-  // Check city's current Hijri month: when NOT Ramadan (month !== 9), render Pre-Ramadan Preparation View
+  // Check city's current Hijri month (or Owner Remote Ramadan Mode override)
   const cityNow = getCityCurrentDate(nowMinute, currentCity.timezone);
   const cityHijri = getHijriParts(cityNow);
-  const isRamadanNow = cityHijri.month === 9;
+  const isRamadanNow =
+    remoteRamadanMode === 'force_on'
+      ? true
+      : remoteRamadanMode === 'force_off'
+      ? false
+      : cityHijri.month === 9;
 
   if (!isRamadanNow) {
     const cityMidnightMs = new Date(cityNow.getFullYear(), cityNow.getMonth(), cityNow.getDate(), 12, 0, 0).getTime();

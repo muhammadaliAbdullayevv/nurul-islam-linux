@@ -31,6 +31,11 @@ import {
 import { openExternalUrl } from '../../utils/nativePrayerBridge';
 import { hasLearnedHomePage2, markHomePage2Opened } from '../../utils/telemetry';
 import {
+  RemoteAppConfig,
+  getCachedRemoteAppConfig,
+  subscribeRemoteAppConfig,
+} from '../../utils/remoteAppConfig';
+import {
   AllahNamesIcon,
   DuaHandsIcon,
   FortyFardIcon,
@@ -223,8 +228,13 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [showSwipeOverlay, setShowSwipeOverlay] = useState<boolean>(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const peekTimersRef = useRef<number[]>([]);
-  const [broadcasts, setBroadcasts] = useState<LiveBroadcast[]>(() => loadCachedBroadcasts());
+  const [broadcasts, setBroadcasts] = useState<LiveBroadcast[]>(() => loadCachedBroadcasts(language));
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => getDismissedBroadcastIds());
+  const [remoteConfig, setRemoteConfig] = useState<RemoteAppConfig>(() => getCachedRemoteAppConfig());
+
+  useEffect(() => {
+    return subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
+  }, []);
 
   // Reorderable feature state (Long-press & move anywhere across Page 1 and Page 2)
   const [featureOrder, setFeatureOrder] = useState<string[]>(() => loadSavedFeatureOrder());
@@ -271,18 +281,18 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   useEffect(() => {
     let alive = true;
-    fetchActiveBroadcasts().then((list) => {
+    fetchActiveBroadcasts(language).then((list) => {
       if (alive) setBroadcasts(list);
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [language]);
 
-  const activeBroadcast = useMemo(
-    () => broadcasts.find((b) => !dismissedIds.includes(b.id)) || null,
-    [broadcasts, dismissedIds]
-  );
+  const activeBroadcast = useMemo(() => {
+    if (remoteConfig.features.broadcasts === false) return null;
+    return broadcasts.find((b) => !dismissedIds.includes(b.id)) || null;
+  }, [broadcasts, dismissedIds, remoteConfig.features.broadcasts]);
 
   const handleDismissBroadcast = (id: string) => {
     dismissBroadcastId(id);
@@ -317,7 +327,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       gregorianStr: formatGregorianDate(cityNow, language),
       isFriday: cityNow.getDay() === 5,
     };
-  }, [prayerTimes, currentTime, currentCity.timezone, language]);
+  }, [prayerTimes, currentTime, currentCity.timezone, language, remoteConfig.hijriDayOffset]);
 
   const fridayPillText =
     language === 'ru' ? 'Джума' : language === 'en' ? 'Juma' : 'Juma';
@@ -490,16 +500,27 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   }, [fridayBadgeText, isFriday, language, t.features]);
 
   const orderedFeatures = useMemo(() => {
+    const isEnabled = (id: string) => {
+      if (id === 'ehson' && remoteConfig.features.ehson === false) return false;
+      if (id === 'radio' && remoteConfig.features.radio === false) return false;
+      if (id === 'library' && remoteConfig.features.library === false) return false;
+      if (id === 'masjids' && remoteConfig.features.masjids === false) return false;
+      if (id === 'zakat' && remoteConfig.features.zakat === false) return false;
+      if (id === 'ramadan' && remoteConfig.features.ramadan === false) return false;
+      return true;
+    };
     const out: HomeFeatureDef[] = [];
     for (const id of featureOrder) {
+      if (!isEnabled(id)) continue;
       const f = allFeaturesMap.get(id);
       if (f) out.push(f);
     }
     for (const [id, f] of allFeaturesMap.entries()) {
+      if (!isEnabled(id)) continue;
       if (!featureOrder.includes(id)) out.push(f);
     }
     return out;
-  }, [allFeaturesMap, featureOrder]);
+  }, [allFeaturesMap, featureOrder, remoteConfig.features]);
 
   const featurePages = useMemo(() => {
     const pages: HomeFeatureDef[][] = [];
@@ -988,6 +1009,26 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
         </div>
 
+        {/* Remote Emergency Maintenance Notice (Widescreen) */}
+        {remoteConfig.maintenance.enabled && (remoteConfig.maintenance.title || remoteConfig.maintenance.message) && (
+          <div
+            className={`rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-xs ${
+              isDay
+                ? 'bg-amber-50 border-amber-300 text-amber-950'
+                : 'bg-amber-950/70 border-amber-500/60 text-amber-100'
+            }`}
+          >
+            <div className="min-w-0">
+              {remoteConfig.maintenance.title && (
+                <h3 className="text-xs font-extrabold">{remoteConfig.maintenance.title}</h3>
+              )}
+              {remoteConfig.maintenance.message && (
+                <p className="text-[11.5px] opacity-90 mt-0.5">{remoteConfig.maintenance.message}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Live Owner Broadcast Banner on Widescreen Web / Desktop */}
         {activeBroadcast && (
           <div
@@ -1294,6 +1335,26 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           })}
         </div>
       </div>
+
+      {/* REMOTE EMERGENCY MAINTENANCE NOTICE (Mobile) */}
+      {remoteConfig.maintenance.enabled && (remoteConfig.maintenance.title || remoteConfig.maintenance.message) && !isReorderMode && (
+        <div className="px-3.5 pt-2 shrink-0">
+          <div
+            className={`rounded-2xl border px-3 py-2.5 shadow-xs ${
+              isDay
+                ? 'bg-amber-50 border-amber-300 text-amber-950'
+                : 'bg-amber-950/70 border-amber-500/60 text-amber-100'
+            }`}
+          >
+            {remoteConfig.maintenance.title && (
+              <div className="text-xs font-extrabold">{remoteConfig.maintenance.title}</div>
+            )}
+            {remoteConfig.maintenance.message && (
+              <p className="text-[11px] opacity-90 mt-0.5 leading-snug">{remoteConfig.maintenance.message}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* LIVE OWNER BROADCAST BANNER */}
       {activeBroadcast && !isReorderMode && (

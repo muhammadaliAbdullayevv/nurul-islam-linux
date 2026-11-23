@@ -16,10 +16,11 @@ import { AppLanguage } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
-  QURAN_RADIO_STATIONS,
   RadioCategory,
+  getEffectiveRadioStations,
   getRadioStationById,
 } from '../../data/quranRadioStations';
+import { subscribeRemoteAppConfig } from '../../utils/remoteAppConfig';
 import {
   QuranRadioState,
   loadFavoriteRadioIds,
@@ -130,6 +131,13 @@ export const RadioTab: React.FC = () => {
   const [category, setCategory] = useState<RadioCategory>('all');
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>(() => loadFavoriteRadioIds());
+  const [stations, setStations] = useState(() => getEffectiveRadioStations());
+
+  useEffect(() => {
+    return subscribeRemoteAppConfig(() => {
+      setStations(getEffectiveRadioStations());
+    });
+  }, []);
 
   useEffect(() => {
     return quranRadioPlayer.subscribe((st) => {
@@ -140,7 +148,7 @@ export const RadioTab: React.FC = () => {
     });
   }, []);
 
-  const currentStation = useMemo(() => getRadioStationById(selectedId), [selectedId]);
+  const currentStation = useMemo(() => getRadioStationById(selectedId), [selectedId, stations]);
   const isCurrentActive = radioState.active && radioState.stationId === currentStation.id;
   const isPlaying = isCurrentActive && radioState.status === 'playing';
   const isConnecting = isCurrentActive && radioState.status === 'connecting';
@@ -156,7 +164,7 @@ export const RadioTab: React.FC = () => {
 
   const filteredStations = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return QURAN_RADIO_STATIONS.filter((st) => {
+    return stations.filter((st) => {
       if (category === 'favorites' && !favorites.includes(st.id)) return false;
       if (category !== 'all' && category !== 'favorites' && st.category !== category) return false;
       if (!q) return true;

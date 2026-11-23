@@ -65,6 +65,7 @@ import {
   getReleaseNoteText
 } from './utils/appUpdater';
 import { HOME_PAGE2_LEARNED_EVENT, sendAnonymousHeartbeat } from './utils/telemetry';
+import { fetchRemoteAppConfig } from './utils/remoteAppConfig';
 import { addQuranListenSeconds, resetUserActivity } from './utils/userActivity';
 import { modalLoaders, scheduleIdleTabPrefetch, tabLoaders } from './utils/tabLoaders';
 
@@ -803,7 +804,18 @@ function AppContent() {
     return () => window.clearInterval(id);
   }, [nativeAudioState.active, nativeAudioState.isPlaying]);
 
-  // Anonymous telemetry heartbeat for Owner Control Center analytics (zero PII)
+  // Anonymous telemetry heartbeat + Live Remote App Config sync (zero PII)
+  useEffect(() => {
+    void fetchRemoteAppConfig(true);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchRemoteAppConfig(false);
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
   useEffect(() => {
     const send = () => {
       void sendAnonymousHeartbeat({

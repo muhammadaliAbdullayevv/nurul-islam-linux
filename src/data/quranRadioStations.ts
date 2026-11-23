@@ -1,4 +1,5 @@
 import { AppLanguage } from '../types';
+import { getCachedRemoteAppConfig } from '../utils/remoteAppConfig';
 
 export type RadioCategory = 'all' | 'reciters' | 'haramain' | 'calm' | 'favorites';
 
@@ -368,6 +369,34 @@ export const QURAN_RADIO_STATIONS: QuranRadioStation[] = [
   },
 ];
 
+export function getEffectiveRadioStations(): QuranRadioStation[] {
+  const cfg = getCachedRemoteAppConfig();
+  const disabled = new Set(cfg.radio.disabledStationIds || []);
+  const activeBuiltins = QURAN_RADIO_STATIONS.filter((s) => !disabled.has(s.id));
+  const extras: QuranRadioStation[] = (cfg.radio.extraStations || []).map((st) => ({
+    id: st.id,
+    category: st.category,
+    arabicName: st.arabicName || st.name,
+    name: {
+      uz_lat: st.name,
+      uz_cyr: st.name,
+      en: st.name,
+      ru: st.name,
+    },
+    subtitle: {
+      uz_lat: st.subtitle || '24/7 Jonli efir',
+      uz_cyr: st.subtitle || '24/7 Жонли эфир',
+      en: st.subtitle || '24/7 Live Stream',
+      ru: st.subtitle || '24/7 Прямой эфир',
+    },
+    accent: 'emerald',
+    streamUrls: [st.streamUrl],
+  }));
+  const combined = [...activeBuiltins, ...extras];
+  return combined.length > 0 ? combined : QURAN_RADIO_STATIONS;
+}
+
 export function getRadioStationById(id: string | null | undefined): QuranRadioStation {
-  return QURAN_RADIO_STATIONS.find((s) => s.id === id) || QURAN_RADIO_STATIONS[0];
+  const list = getEffectiveRadioStations();
+  return list.find((s) => s.id === id) || list[0];
 }

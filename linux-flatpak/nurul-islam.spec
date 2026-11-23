@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.75
+Version:        1.8.76
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.76-1
+- Add live Remote App Config support (Hijri moon-sighting offset, Ramadan mode, feature switches, official Zakat Nisab notes, Quran Radio remote stream control, maintenance notices), in-app Feedback & Bug Reporting, dynamic Telegram/Privacy Policy links, accurate platform telemetry, and upgrade Owner Control Center to a full SaaS dashboard
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.75-1
 - Remove all AI-authored book texts and curate a 100% verbatim human-translated 31-book Islamic Library (11 full-length verified Uzbek classical books + 20 verbatim Arabic/Russian/English classics) with explicit translator credits, language badges on covers, language filter pills, and automatic native-language-first shelf sorting
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.74-1

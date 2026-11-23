@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.76" date="2026-11-24">
+      <description>
+        <p>Added live Remote App Config support (Hijri moon-sighting offset, Ramadan mode, feature visibility toggles, official Zakat Nisab notes, Quran Radio remote stream control, and maintenance banners), in-app Feedback and Bug Reporting, dynamic Telegram Support and Privacy Policy links, accurate platform telemetry, and a redesigned Owner Control Center.</p>
+      </description>
+    </release>
     <release version="1.8.75" date="2026-11-23">
       <description>
         <p>Removed all AI-authored summaries from the Islamic Library and curated 31 strictly verified, verbatim, human-translated classical Islamic books — including 11 full-length Uzbek editions (Arba'in with full commentary, Al-Adhkar 303, Shama'il al-Muhammadiyyah 415, Riyad us-Salihin 1,864 and commentary, Zabidi Bukhari 2,034, Muttafaqun Alayh 408) plus 20 verbatim Arabic/Russian/English classics — complete with explicit translator credits, language tags on every cover, language filters, and automatic native-language-first sorting.</p>

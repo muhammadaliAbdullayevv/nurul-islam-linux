@@ -16,11 +16,14 @@ import {
   LayoutGrid,
   Lock,
   MapPin,
+  MessageSquarePlus,
   Moon,
   Pencil,
   RefreshCw,
   RotateCcw,
+  Send,
   Settings,
+  ShieldCheck,
   Smartphone,
   Sparkles,
   Sun,
@@ -37,10 +40,18 @@ import {
   PrayerAlertPrefs,
   checkNativeNotificationPermission,
   isNativeAndroidBridgeAvailable,
+  openExternalUrl,
   pinPrayerHomeWidget,
   playPrayerChimePreview,
   requestNativeNotificationPermission,
 } from '../../utils/nativePrayerBridge';
+import {
+  FeedbackCategory,
+  RemoteAppConfig,
+  getCachedRemoteAppConfig,
+  submitUserFeedback,
+  subscribeRemoteAppConfig,
+} from '../../utils/remoteAppConfig';
 import {
   RemoteAppRelease,
   UPDATE_SITE_URL,
@@ -419,6 +430,132 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [refreshingWeb, setRefreshingWeb] = useState(false);
 
   const isRamadanSeason = useMemo(() => getHijriParts(new Date()).month === 9, []);
+  const [remoteConfig, setRemoteConfig] = useState<RemoteAppConfig>(() => getCachedRemoteAppConfig());
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [fbCategory, setFbCategory] = useState<FeedbackCategory>('suggestion');
+  const [fbMessage, setFbMessage] = useState('');
+  const [fbContact, setFbContact] = useState('');
+  const [fbSending, setFbSending] = useState(false);
+  const [fbResult, setFbResult] = useState<'idle' | 'ok' | 'err'>('idle');
+
+  useEffect(() => {
+    return subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
+  }, []);
+
+  const fbCopy = useMemo(() => {
+    if (language === 'ru') {
+      return {
+        rowTitle: 'Отзыв или сообщить об ошибке',
+        rowDesc: 'Напишите напрямую разработчику Nurul Islam',
+        privacyTitle: 'Политика конфиденциальности',
+        telegramTitle: 'Telegram канал и поддержка',
+        modalTitle: 'Отправить отзыв',
+        cats: {
+          suggestion: 'Идея / Предложение',
+          bug: 'Ошибка / Сбой',
+          prayer_time: 'Время намаза',
+          content: 'Книга / Текст',
+          other: 'Другое',
+        },
+        msgPlaceholder: 'Опишите ваш вопрос, ошибку или пожелание...',
+        contactPlaceholder: 'Telegram или email (необязательно)',
+        sendBtn: 'Отправить',
+        sending: 'Отправка...',
+        sentOk: 'Спасибо! Ваше сообщение доставлено команде Nurul Islam.',
+        sentErr: 'Не удалось отправить. Проверьте интернет и повторите.',
+      };
+    }
+    if (language === 'en') {
+      return {
+        rowTitle: 'Send Feedback / Report Issue',
+        rowDesc: 'Message the Nurul Islam team directly',
+        privacyTitle: 'Privacy Policy',
+        telegramTitle: 'Telegram Channel & Support',
+        modalTitle: 'Send Feedback',
+        cats: {
+          suggestion: 'Suggestion',
+          bug: 'Bug / Crash',
+          prayer_time: 'Prayer Times',
+          content: 'Book / Content',
+          other: 'Other',
+        },
+        msgPlaceholder: 'Describe your suggestion, issue, or question...',
+        contactPlaceholder: 'Telegram handle or email (optional)',
+        sendBtn: 'Submit Feedback',
+        sending: 'Sending...',
+        sentOk: 'Thank you! Your feedback has been received.',
+        sentErr: 'Could not send right now. Check your connection and retry.',
+      };
+    }
+    if (language === 'uz_cyr') {
+      return {
+        rowTitle: 'Таклиф ёки хатолик юбориш',
+        rowDesc: 'Nurul Islam жамоасига бевосита хабар йўлланг',
+        privacyTitle: 'Махфийлик сиёсати',
+        telegramTitle: 'Telegram канал ва ёрдам',
+        modalTitle: 'Мурожаат юбориш',
+        cats: {
+          suggestion: 'Таклиф',
+          bug: 'Хатолик',
+          prayer_time: 'Намоз вақти',
+          content: 'Китоб / Матн',
+          other: 'Бошқа',
+        },
+        msgPlaceholder: 'Таклифингиз ёки учраган хатоликни ёзинг...',
+        contactPlaceholder: 'Telegram ёки email (ихтиёрий)',
+        sendBtn: 'Юбориш',
+        sending: 'Юборилмоқда...',
+        sentOk: 'Раҳмат! Мурожаатингиз қабул қилинди.',
+        sentErr: 'Юбориб бўлмади. Интернетни текшириб қайта урининг.',
+      };
+    }
+    return {
+      rowTitle: 'Taklif yoki xatolik yuborish',
+      rowDesc: 'Nurul Islam jamoasiga bevosita xabar yo‘llang',
+      privacyTitle: 'Maxfiylik siyosati',
+      telegramTitle: 'Telegram kanal va yordam',
+      modalTitle: 'Murojaat yuborish',
+      cats: {
+        suggestion: 'Taklif',
+        bug: 'Xatolik',
+        prayer_time: 'Namoz vaqti',
+        content: 'Kitob / Matn',
+        other: 'Boshqa',
+      },
+      msgPlaceholder: 'Taklifingiz yoki uchragan xatolikni yozing...',
+      contactPlaceholder: 'Telegram yoki email (ixtiyoriy)',
+      sendBtn: 'Yuborish',
+      sending: 'Yuborilmoqda...',
+      sentOk: 'Rahmat! Murojaatingiz qabul qilindi.',
+      sentErr: 'Yuborib bo‘lmadi. Internetni tekshirib qayta urining.',
+    };
+  }, [language]);
+
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (fbMessage.trim().length < 4 || fbSending) return;
+    setFbSending(true);
+    setFbResult('idle');
+    const res = await submitUserFeedback({
+      category: fbCategory,
+      message: fbMessage,
+      contact: fbContact,
+      language,
+      city: currentCity.cityName,
+    });
+    setFbSending(false);
+    if (res.ok) {
+      setFbResult('ok');
+      setFbMessage('');
+      setFbContact('');
+      window.setTimeout(() => {
+        setIsFeedbackOpen(false);
+        setFbResult('idle');
+      }, 1500);
+    } else {
+      setFbResult('err');
+    }
+  };
   const completedSurahsCount = useMemo(() => {
     void activityTick;
     return loadCompletedSurahs().length;
@@ -918,6 +1055,77 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               </div>
             </div>
 
+            {/* Direct Feedback / Bug Report Row */}
+            <button
+              type="button"
+              onClick={() => {
+                setFbResult('idle');
+                setIsFeedbackOpen(true);
+              }}
+              className={`w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition ${
+                isDay ? 'hover:bg-slate-50/80 active:bg-[#eef9ea]/50' : 'hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={iconBoxCls}>
+                  <MessageSquarePlus className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-bold truncate">{fbCopy.rowTitle}</div>
+                  <div className={`text-[11.5px] truncate ${subTextCls}`}>{fbCopy.rowDesc}</div>
+                </div>
+              </div>
+              <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
+            </button>
+
+            {/* Dynamic Telegram / Support Link */}
+            {remoteConfig.links.telegramUrl && (
+              <button
+                type="button"
+                onClick={() => openExternalUrl(remoteConfig.links.telegramUrl)}
+                className={`w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition ${
+                  isDay ? 'hover:bg-slate-50/80' : 'hover:bg-slate-800/40'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={iconBoxCls}>
+                    <Send className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-bold truncate">{fbCopy.telegramTitle}</div>
+                    <div className={`text-[11.5px] truncate ${subTextCls}`}>
+                      {remoteConfig.links.telegramUrl.replace(/^https?:\/\//, '')}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
+              </button>
+            )}
+
+            {/* Dynamic Privacy Policy Link (Play Store Required) */}
+            {remoteConfig.links.privacyPolicyUrl && (
+              <button
+                type="button"
+                onClick={() => openExternalUrl(remoteConfig.links.privacyPolicyUrl)}
+                className={`w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition ${
+                  isDay ? 'hover:bg-slate-50/80' : 'hover:bg-slate-800/40'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={iconBoxCls}>
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-bold truncate">{fbCopy.privacyTitle}</div>
+                    <div className={`text-[11.5px] truncate ${subTextCls}`}>
+                      {remoteConfig.links.privacyPolicyUrl.replace(/^https?:\/\//, '')}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
+              </button>
+            )}
+
             {/* Subtle Reset Row */}
             <div>
               {!confirmingReset ? (
@@ -979,6 +1187,109 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             </div>
           </div>
         </div>
+
+        {/* In-App Feedback & Bug Report Modal */}
+        {isFeedbackOpen && (
+          <div className="fixed inset-0 z-[75] bg-black/65 backdrop-blur-xs flex items-center justify-center p-4">
+            <form
+              onSubmit={handleSubmitFeedback}
+              className={`w-full max-w-sm rounded-3xl border p-5 space-y-3.5 shadow-2xl ${
+                isDay
+                  ? 'bg-white border-[#dde3ea] text-slate-900'
+                  : 'bg-slate-900 border-emerald-800/70 text-slate-100'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className={iconBoxCls}>
+                    <MessageSquarePlus className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-bold">{fbCopy.modalTitle}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsFeedbackOpen(false)}
+                  className={`p-1.5 rounded-xl ${
+                    isDay ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'
+                  }`}
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {(['suggestion', 'bug', 'prayer_time', 'content', 'other'] as FeedbackCategory[]).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setFbCategory(cat)}
+                    className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition ${
+                      fbCategory === cat
+                        ? isDay
+                          ? 'bg-[#158509] border-[#158509] text-white'
+                          : 'bg-amber-400 border-amber-400 text-slate-950'
+                        : isDay
+                        ? 'bg-slate-50 border-slate-200 text-slate-600'
+                        : 'bg-slate-950 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {fbCopy.cats[cat]}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                required
+                minLength={4}
+                maxLength={1500}
+                rows={4}
+                value={fbMessage}
+                onChange={(e) => setFbMessage(e.target.value)}
+                placeholder={fbCopy.msgPlaceholder}
+                className={`w-full rounded-2xl border p-3 text-xs leading-relaxed focus:outline-none ${
+                  isDay
+                    ? 'bg-[#f8fafc] border-slate-300 text-slate-900 focus:border-[#158509]'
+                    : 'bg-slate-950 border-emerald-900/70 text-white focus:border-amber-400'
+                }`}
+              />
+
+              <input
+                type="text"
+                maxLength={120}
+                value={fbContact}
+                onChange={(e) => setFbContact(e.target.value)}
+                placeholder={fbCopy.contactPlaceholder}
+                className={`w-full rounded-xl border px-3 py-2 text-xs focus:outline-none ${
+                  isDay
+                    ? 'bg-[#f8fafc] border-slate-300 text-slate-900 focus:border-[#158509]'
+                    : 'bg-slate-950 border-emerald-900/70 text-white focus:border-amber-400'
+                }`}
+              />
+
+              {fbResult === 'ok' && (
+                <p className={`text-xs font-bold ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`}>
+                  ✓ {fbCopy.sentOk}
+                </p>
+              )}
+              {fbResult === 'err' && (
+                <p className="text-xs font-semibold text-rose-500">{fbCopy.sentErr}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={fbSending || fbMessage.trim().length < 4}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50 ${
+                  isDay
+                    ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                }`}
+              >
+                {fbSending ? fbCopy.sending : fbCopy.sendBtn}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     );
   }

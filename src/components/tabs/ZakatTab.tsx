@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { getCachedRemoteAppConfig, subscribeRemoteAppConfig } from '../../utils/remoteAppConfig';
 
 export const ZakatTab: React.FC = () => {
   const { isDay } = useTheme();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const [remoteZakat, setRemoteZakat] = useState(() => getCachedRemoteAppConfig().zakat);
   const [cash, setCash] = useState<string>('5000');
   const [goldGrams, setGoldGrams] = useState<string>('0');
-  const [goldPricePerGram, setGoldPricePerGram] = useState<string>('75');
+  const [goldPricePerGram, setGoldPricePerGram] = useState<string>(() =>
+    String(getCachedRemoteAppConfig().zakat.goldPriceUsd || 85)
+  );
   const [investments, setInvestments] = useState<string>('0');
   const [debts, setDebts] = useState<string>('0');
+
+  useEffect(() => {
+    return subscribeRemoteAppConfig((cfg) => {
+      setRemoteZakat(cfg.zakat);
+    });
+  }, []);
 
   const cashVal = parseFloat(cash) || 0;
   const goldVal = (parseFloat(goldGrams) || 0) * (parseFloat(goldPricePerGram) || 75);
@@ -74,6 +84,35 @@ export const ZakatTab: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Optional Official Nisab Reference Banner (Remotely controlled by Owner) */}
+      {(remoteZakat.officialNisabUzs > 0 || remoteZakat.nisabNote) && (
+        <div
+          className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between gap-3 ${
+            isDay
+              ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
+              : 'bg-emerald-950/60 border-emerald-800/60 text-emerald-200'
+          }`}
+        >
+          <div className="min-w-0">
+            <div className="font-bold">
+              {remoteZakat.nisabNote ||
+                (language === 'ru'
+                  ? 'Официальный нисаб УМУ (Узбекистан)'
+                  : language === 'en'
+                  ? 'Official Uzbekistan Zakat Nisab'
+                  : language === 'uz_cyr'
+                  ? 'ЎМИ расмий закот нисоби'
+                  : "O'MI rasmiy zakot nisobi")}
+            </div>
+            {remoteZakat.officialNisabUzs > 0 && (
+              <div className="font-mono font-extrabold text-sm mt-0.5">
+                {remoteZakat.officialNisabUzs.toLocaleString('en-US')} UZS
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Inputs Form */}
       <div
