@@ -45,7 +45,20 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
           globPatterns: ['**/*.{js,css,html,ico,png,webp,svg,woff,woff2,jpg}'],
+          globIgnores: ['**/privacy.html'],
+          navigateFallbackDenylist: [
+            /^\/owner(?:\/|$)/i,
+            /^\/api(?:\/|$)/i,
+            /^\/privacy\.html$/i,
+            /^\/downloads(?:\/|$)/i,
+            /^\/linux(?:\/|$)/i,
+            /^\/version\.json$/i,
+            /^\/\.well-known(?:\/|$)/i,
+          ],
           runtimeCaching: [
             {
               urlPattern: /\/data\/.+\.json$/i,

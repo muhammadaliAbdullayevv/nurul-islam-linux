@@ -22,6 +22,18 @@
     <meta name="twitter:image" content="https://nurulislam.mabdullayev.dev/pwa-512x512.png" />
     <link rel="preload" href="/fonts/amiri-400-arabic.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/dm-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <script>
+      if (/^\/(owner|api|privacy\.html|downloads|linux|version\.json)(\/|$)/i.test(location.pathname) && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+            if (!sessionStorage.getItem('nq_sw_bypass_reloaded')) {
+              sessionStorage.setItem('nq_sw_bypass_reloaded', '1');
+              location.reload();
+            }
+          });
+        });
+      }
+    </script>
   </head>
   <body class="bg-[#ecf1f5] text-slate-900 antialiased selection:bg-[#158509] selection:text-white">
     <div id="root"></div>
