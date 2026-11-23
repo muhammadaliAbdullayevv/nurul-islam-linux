@@ -235,6 +235,7 @@ function AppContent() {
   const [selectedAyahNumber, setSelectedAyahNumber] = useState<number | null>(initialRoute.ayahNumber);
   const [surahReturnTab, setSurahReturnTab] = useState<string | null>(null);
   const [isReadingSurah, setIsReadingSurah] = useState(Boolean(initialRoute.surahNumber));
+  const [isReadingBook, setIsReadingBook] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
@@ -522,6 +523,9 @@ function AppContent() {
         setSelectedAyahNumber(null);
         setIsReadingSurah(false);
       }
+      if (nextTab !== 'library') {
+        setIsReadingBook(false);
+      }
       pushWebHash({
         tab: nextTab,
         azkarSection: nextTab === 'azkar' ? nextAzkar : 'hub',
@@ -562,6 +566,9 @@ function AppContent() {
         setSelectedSurahNumber(null);
         setIsReadingSurah(false);
       }
+      if (prevTab !== 'library') {
+        setIsReadingBook(false);
+      }
       pushWebHash({
         tab: prevTab,
         azkarSection: prevTab === 'azkar' ? azkarInitialSection : 'hub',
@@ -576,6 +583,7 @@ function AppContent() {
       setActiveTab('home');
       setSelectedSurahNumber(null);
       setIsReadingSurah(false);
+      setIsReadingBook(false);
       pushWebHash({
         tab: 'home',
         azkarSection: 'hub',
@@ -1191,7 +1199,7 @@ function AppContent() {
       <AndroidShell
         activeTab={activeTab}
         activeSubTab={activeTab === 'azkar' ? `azkar:${azkarInitialSection}` : activeTab}
-        hideBottomNav={activeTab === 'quran' && isReadingSurah}
+        hideBottomNav={(activeTab === 'quran' && isReadingSurah) || (activeTab === 'library' && isReadingBook)}
         onTabChange={navigateToTab}
         onBack={handleBack}
         onSelectLanguage={handleSelectLanguage}
@@ -1303,7 +1311,7 @@ function AppContent() {
           {activeTab !== 'home' && activeTab !== 'profile' && (
           <div
             className={
-              activeTab === 'quran' && isReadingSurah
+              (activeTab === 'quran' && isReadingSurah) || (activeTab === 'library' && isReadingBook)
                 ? 'flex-1 min-h-0 h-full flex flex-col'
                 : activeTab === 'ramadan'
                 ? 'nq-ramadan-day-scope'
@@ -1419,7 +1427,9 @@ function AppContent() {
 
               {activeTab === 'wisdom' && <WisdomTab />}
 
-              {activeTab === 'library' && <LibraryTab />}
+              {activeTab === 'library' && (
+                <LibraryTab onBookOpenChange={setIsReadingBook} />
+              )}
 
               {activeTab === 'radio' && <RadioTab />}
             </Suspense>

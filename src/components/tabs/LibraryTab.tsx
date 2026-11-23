@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
   Check,
-  CheckCircle2,
-  ChevronLeft,
   ChevronRight,
   Copy,
   Heart,
@@ -39,6 +37,7 @@ interface LibraryProgressState {
   readChapterIds: string[];
   lastBookId: string | null;
   lastChapterIndex: number;
+  lastPageByBook: Record<string, number>;
 }
 
 function loadLibraryProgress(): LibraryProgressState {
@@ -46,18 +45,28 @@ function loadLibraryProgress(): LibraryProgressState {
     const raw = localStorage.getItem(LIBRARY_PROGRESS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<LibraryProgressState>;
+      const rawMap = parsed.lastPageByBook;
+      const lastPageByBook: Record<string, number> = {};
+      if (rawMap && typeof rawMap === 'object') {
+        for (const [k, v] of Object.entries(rawMap)) {
+          if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+            lastPageByBook[k] = Math.floor(v);
+          }
+        }
+      }
       return {
         readChapterIds: Array.isArray(parsed.readChapterIds)
           ? parsed.readChapterIds.filter((x): x is string => typeof x === 'string')
           : [],
         lastBookId: typeof parsed.lastBookId === 'string' ? parsed.lastBookId : null,
         lastChapterIndex: typeof parsed.lastChapterIndex === 'number' ? parsed.lastChapterIndex : 0,
+        lastPageByBook,
       };
     }
   } catch {
     // ignore storage errors
   }
-  return { readChapterIds: [], lastBookId: null, lastChapterIndex: 0 };
+  return { readChapterIds: [], lastBookId: null, lastChapterIndex: 0, lastPageByBook: {} };
 }
 
 function saveLibraryProgress(state: LibraryProgressState): void {
@@ -111,17 +120,14 @@ const LIBRARY_UI: Record<
     contentsTitle: string;
     chapterRoman: (roman: string) => string;
     takeawayTitle: string;
-    markRead: string;
-    markedRead: string;
-    prevPage: string;
-    nextPage: string;
     sepiaLabel: string;
     ivoryLabel: string;
     copiedToast: string;
     sharedToast: string;
     emptyFavs: string;
     publicDomainNote: string;
-    swipeHint: string;
+    swipeWhisper: string;
+    pageShort: (n: number) => string;
   }
 > = {
   uz_lat: {
@@ -140,17 +146,14 @@ const LIBRARY_UI: Record<
     contentsTitle: 'Mundarija',
     chapterRoman: (roman) => `${roman} BOB`,
     takeawayTitle: 'Amaliy xulosa',
-    markRead: 'O‘qildi',
-    markedRead: 'O‘qilgan',
-    prevPage: 'Oldingi',
-    nextPage: 'Keyingi',
     sepiaLabel: 'Qog‘oz',
     ivoryLabel: 'Oq',
     copiedToast: 'Nusxa olindi',
     sharedToast: 'Ulashish kartasi tayyor',
     emptyFavs: 'Sevimli kitoblaringiz hozircha yo‘q — yurakcha belgisini bosib saqlang.',
     publicDomainNote: 'Barcha kitoblar ochiq klassik islom merosi asosida 100% oflayn o‘qish uchun tayyorlangan',
-    swipeHint: 'Sahifani varaqlash uchun chapga yoki o‘ngga suring',
+    swipeWhisper: '← suring →',
+    pageShort: (n) => `${n}-bet`,
   },
   uz_cyr: {
     heroTitle: 'Классик Ислом Кутубхонаси',
@@ -168,17 +171,14 @@ const LIBRARY_UI: Record<
     contentsTitle: 'Мундарижа',
     chapterRoman: (roman) => `${roman} БОБ`,
     takeawayTitle: 'Амалий хулоса',
-    markRead: 'Ўқилди',
-    markedRead: 'Ўқилган',
-    prevPage: 'Олдинги',
-    nextPage: 'Кейинги',
     sepiaLabel: 'Қоғоз',
     ivoryLabel: 'Оқ',
     copiedToast: 'Нусха олинди',
     sharedToast: 'Улашиш картаси тайёр',
     emptyFavs: 'Севимли китобларингиз ҳозирча йўқ — юракча белгисини босиб сақланг.',
     publicDomainNote: 'Барча китоблар очиқ классик ислом мероси асосида 100% офлайн ўқиш учун тайёрланган',
-    swipeHint: 'Саҳифани варақлаш учун чапга ёки ўнгга суринг',
+    swipeWhisper: '← суринг →',
+    pageShort: (n) => `${n}-бет`,
   },
   ru: {
     heroTitle: 'Классическая Исламская Библиотека',
@@ -196,17 +196,14 @@ const LIBRARY_UI: Record<
     contentsTitle: 'Оглавление',
     chapterRoman: (roman) => `ГЛАВА ${roman}`,
     takeawayTitle: 'Практический вывод',
-    markRead: 'Прочитано',
-    markedRead: 'Прочитано ✓',
-    prevPage: 'Назад',
-    nextPage: 'Далее',
     sepiaLabel: 'Бумага',
     ivoryLabel: 'Белый',
     copiedToast: 'Скопировано',
     sharedToast: 'Карточка готова',
     emptyFavs: 'Избранных книг пока нет — нажмите на сердечко, чтобы добавить.',
     publicDomainNote: 'Все книги подготовлены на основе классического наследия и доступны полностью офлайн',
-    swipeHint: 'Смахните влево или вправо, чтобы перелистнуть страницу',
+    swipeWhisper: '← листайте →',
+    pageShort: (n) => `стр. ${n}`,
   },
   en: {
     heroTitle: 'Classical Islamic Library',
@@ -224,17 +221,14 @@ const LIBRARY_UI: Record<
     contentsTitle: 'Contents',
     chapterRoman: (roman) => `CHAPTER ${roman}`,
     takeawayTitle: 'Practical Reflection',
-    markRead: 'Mark Read',
-    markedRead: 'Read ✓',
-    prevPage: 'Prev',
-    nextPage: 'Next',
     sepiaLabel: 'Paper',
     ivoryLabel: 'White',
     copiedToast: 'Copied to clipboard',
     sharedToast: 'Quote card ready',
     emptyFavs: 'No favorite books yet — tap the heart icon on any book to save it.',
     publicDomainNote: 'Curated public-domain classical works crafted for calm 100% offline reading',
-    swipeHint: 'Swipe left or right to turn pages',
+    swipeWhisper: '← swipe →',
+    pageShort: (n) => `p. ${n}`,
   },
 };
 
@@ -254,14 +248,360 @@ function getCoverGradient(theme: ClassicalBook['coverTheme']): string {
   }
 }
 
-export const LibraryTab: React.FC = () => {
+type BookPageItem =
+  | { kind: 'chapter-header'; romanLabel: string; title: string }
+  | { kind: 'epigraph'; quote: string; label?: string; isArabic: boolean }
+  | { kind: 'paragraph'; text: string; isFirstInChapter: boolean; isContinuation: boolean }
+  | { kind: 'takeaway'; text: string };
+
+interface BookPage {
+  chapterIndex: number;
+  chapterId: string;
+  chapterNumber: number;
+  chapterTitle: string;
+  pageNumber: number;
+  isLastPageOfChapter: boolean;
+  items: BookPageItem[];
+}
+
+function getBodySizeClass(fontScale: number): string {
+  if (fontScale === 0) return 'text-[14px] leading-[1.8]';
+  if (fontScale === 2) return 'text-[17px] leading-[1.86]';
+  return 'text-[15.5px] leading-[1.83]';
+}
+
+function createMeasurementNode(
+  item: BookPageItem,
+  isFirstOnPage: boolean,
+  bodySizeCls: string,
+  takeawayTitle: string
+): HTMLElement {
+  if (item.kind === 'chapter-header') {
+    const wrap = document.createElement('div');
+    wrap.className = 'text-center mb-3';
+    const romanEl = document.createElement('div');
+    romanEl.className = 'font-display text-[10.5px] font-bold tracking-[0.24em] uppercase';
+    romanEl.textContent = `— ${item.romanLabel} —`;
+    const h1 = document.createElement('h1');
+    h1.className = 'font-display text-[19px] sm:text-[22px] font-bold leading-snug tracking-tight mt-1';
+    h1.textContent = item.title;
+    const orn = document.createElement('div');
+    orn.className = 'flex items-center justify-center gap-2.5 pt-1';
+    orn.innerHTML = '<span class="w-10 border-t"></span><span class="text-[11px] leading-none">❖</span><span class="w-10 border-t"></span>';
+    wrap.append(romanEl, h1, orn);
+    return wrap;
+  }
+
+  if (item.kind === 'epigraph') {
+    const bq = document.createElement('blockquote');
+    bq.className = `${isFirstOnPage ? 'mb-3' : 'my-2.5'} py-2.5 px-1.5 border-y text-center`;
+    const p = document.createElement('p');
+    p.dir = item.isArabic ? 'rtl' : 'ltr';
+    p.className = item.isArabic
+      ? 'font-arabic text-[20px] sm:text-[23px] leading-[1.92]'
+      : 'font-display italic text-[14px] sm:text-[15.5px] leading-relaxed whitespace-pre-line';
+    p.textContent = item.quote;
+    bq.appendChild(p);
+    if (item.label) {
+      const ft = document.createElement('footer');
+      ft.className = 'font-display text-[10.5px] italic mt-1';
+      ft.textContent = `— ${item.label}`;
+      bq.appendChild(ft);
+    }
+    return bq;
+  }
+
+  if (item.kind === 'paragraph') {
+    const p = document.createElement('p');
+    const spacing = isFirstOnPage ? '' : 'mt-3';
+    const deco = item.isFirstInChapter
+      ? 'first-letter:float-left first-letter:font-display first-letter:text-[42px] first-letter:font-bold first-letter:leading-[0.84] first-letter:mr-2 first-letter:mt-1'
+      : item.isContinuation
+      ? ''
+      : 'indent-6';
+    p.className = `flow-root font-display text-justify ${bodySizeCls} ${spacing} ${deco}`;
+    p.textContent = item.text;
+    return p;
+  }
+
+  // takeaway
+  const aside = document.createElement('aside');
+  aside.className = isFirstOnPage ? 'pt-1' : 'mt-4 pt-2.5';
+  const rule = document.createElement('div');
+  rule.className = 'w-16 border-t mb-2';
+  const row = document.createElement('div');
+  row.className = 'flex items-start justify-between gap-2';
+  const p = document.createElement('p');
+  p.className = 'font-display italic text-[12.5px] sm:text-[13px] leading-relaxed';
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'not-italic font-bold mr-1.5';
+  labelSpan.textContent = `❖ ${takeawayTitle}:`;
+  p.append(labelSpan, document.createTextNode(item.text));
+  const iconSpacer = document.createElement('span');
+  iconSpacer.className = 'w-6 h-6 shrink-0';
+  row.append(p, iconSpacer);
+  aside.append(rule, row);
+  return aside;
+}
+
+/**
+ * Pixel-accurate DOM pagination engine: flows every chapter across fixed-height
+ * physical book leaves so zero vertical scrolling or line clipping ever occurs
+ * on any viewport height, width, language, or font scale.
+ */
+function paginateClassicalBook(
+  book: ClassicalBook,
+  language: AppLanguage,
+  fontScale: number,
+  stageWidth: number,
+  stageHeight: number,
+  chapterRomanFn: (roman: string) => string,
+  takeawayTitle: string
+): BookPage[] {
+  const bodySizeCls = getBodySizeClass(fontScale);
+
+  // Fallback before initial ResizeObserver tick
+  if (typeof document === 'undefined' || stageWidth < 120 || stageHeight < 140) {
+    return book.chapters.map((ch, idx) => {
+      const roman = ROMAN_NUMERALS[ch.number - 1] || String(ch.number);
+      const chapterTitle = resolveBookText(ch.title, language);
+      const paragraphs = resolveBookParagraphs(ch.paragraphs, language);
+      const items: BookPageItem[] = [
+        { kind: 'chapter-header', romanLabel: chapterRomanFn(roman), title: chapterTitle },
+      ];
+      if (ch.sourceQuote) {
+        items.push({
+          kind: 'epigraph',
+          quote: ch.sourceQuote,
+          label: ch.sourceLabel ? resolveBookText(ch.sourceLabel, language) : undefined,
+          isArabic: /[\u0600-\u06FF]/.test(ch.sourceQuote),
+        });
+      }
+      if (paragraphs[0]) {
+        items.push({
+          kind: 'paragraph',
+          text: paragraphs[0],
+          isFirstInChapter: true,
+          isContinuation: false,
+        });
+      }
+      return {
+        chapterIndex: idx,
+        chapterId: ch.id,
+        chapterNumber: ch.number,
+        chapterTitle,
+        pageNumber: idx + 1,
+        isLastPageOfChapter: true,
+        items,
+      };
+    });
+  }
+
+  const measurer = document.createElement('div');
+  measurer.style.position = 'fixed';
+  measurer.style.left = '-99999px';
+  measurer.style.top = '0';
+  measurer.style.width = `${stageWidth}px`;
+  measurer.style.visibility = 'hidden';
+  measurer.style.pointerEvents = 'none';
+  measurer.style.boxSizing = 'border-box';
+  measurer.style.overflow = 'hidden';
+  document.body.appendChild(measurer);
+
+  // 10px bottom safety margin prevents font descender clipping across WebKit2GTK/Android WebView
+  const maxH = Math.max(120, Math.floor(stageHeight) - 10);
+  const allPages: BookPage[] = [];
+
+  try {
+    book.chapters.forEach((ch, chIdx) => {
+      const roman = ROMAN_NUMERALS[ch.number - 1] || String(ch.number);
+      const chapterTitle = resolveBookText(ch.title, language);
+      const paragraphs = resolveBookParagraphs(ch.paragraphs, language);
+      const takeaway = resolveBookText(ch.takeaway, language);
+
+      const queue: BookPageItem[] = [
+        { kind: 'chapter-header', romanLabel: chapterRomanFn(roman), title: chapterTitle },
+      ];
+      if (ch.sourceQuote) {
+        queue.push({
+          kind: 'epigraph',
+          quote: ch.sourceQuote,
+          label: ch.sourceLabel ? resolveBookText(ch.sourceLabel, language) : undefined,
+          isArabic: /[\u0600-\u06FF]/.test(ch.sourceQuote),
+        });
+      }
+      paragraphs.forEach((pText, pIdx) => {
+        if (pText.trim()) {
+          queue.push({
+            kind: 'paragraph',
+            text: pText.trim(),
+            isFirstInChapter: pIdx === 0,
+            isContinuation: false,
+          });
+        }
+      });
+      if (takeaway.trim()) {
+        queue.push({ kind: 'takeaway', text: takeaway.trim() });
+      }
+
+      const chapterLeafItems: BookPageItem[][] = [];
+      let curItems: BookPageItem[] = [];
+      measurer.innerHTML = '';
+
+      const flushPage = () => {
+        if (curItems.length > 0) {
+          chapterLeafItems.push(curItems);
+          curItems = [];
+          measurer.innerHTML = '';
+        }
+      };
+
+      const pushItemToMeasurer = (item: BookPageItem) => {
+        const node = createMeasurementNode(item, curItems.length === 0, bodySizeCls, takeawayTitle);
+        measurer.appendChild(node);
+        return node;
+      };
+
+      let qi = 0;
+      let safetyGuards = 0;
+      while (qi < queue.length && safetyGuards < 500) {
+        safetyGuards += 1;
+        const item = queue[qi];
+        const testNode = pushItemToMeasurer(item);
+
+        if (measurer.scrollHeight <= maxH) {
+          curItems.push(item);
+          qi += 1;
+          continue;
+        }
+
+        // Did not fit as a whole
+        measurer.removeChild(testNode);
+
+        if (item.kind === 'paragraph') {
+          const words = item.text.split(/\s+/).filter(Boolean);
+          if (words.length <= 1) {
+            if (curItems.length > 0) {
+              flushPage();
+              continue;
+            }
+            curItems.push(item);
+            qi += 1;
+            continue;
+          }
+
+          // Binary search maximum words that fit on the remaining vertical space
+          const probe = createMeasurementNode(
+            { ...item, text: '' },
+            curItems.length === 0,
+            bodySizeCls,
+            takeawayTitle
+          );
+          measurer.appendChild(probe);
+
+          let lo = 1;
+          let hi = words.length - 1;
+          let bestK = 0;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            probe.textContent = words.slice(0, mid).join(' ');
+            if (measurer.scrollHeight <= maxH) {
+              bestK = mid;
+              lo = mid + 1;
+            } else {
+              hi = mid - 1;
+            }
+          }
+          measurer.removeChild(probe);
+
+          // Avoid a cramped 1-line stub at the bottom of a page when we can start fresh on next leaf
+          if (bestK < 8 && curItems.length > 0 && words.length > 10) {
+            flushPage();
+            continue;
+          }
+
+          if (bestK === 0) {
+            if (curItems.length > 0) {
+              flushPage();
+              continue;
+            }
+            // Extreme tiny screen safety: guarantee forward progress
+            bestK = Math.min(words.length, 10);
+          }
+
+          // Avoid leaving a tiny 1–5 word orphan alone at the top of the next page
+          if (words.length - bestK > 0 && words.length - bestK < 6 && bestK >= 14) {
+            bestK = Math.max(8, words.length - 7);
+          }
+
+          const headText = words.slice(0, bestK).join(' ');
+          const tailText = words.slice(bestK).join(' ');
+
+          curItems.push({ ...item, text: headText });
+          flushPage();
+
+          if (tailText) {
+            queue[qi] = {
+              kind: 'paragraph',
+              text: tailText,
+              isFirstInChapter: false,
+              isContinuation: true,
+            };
+          } else {
+            qi += 1;
+          }
+        } else {
+          // Non-splittable block (chapter-header, epigraph, takeaway)
+          if (curItems.length > 0) {
+            flushPage();
+            continue;
+          }
+          // Empty page: accept item as-is so we never stall
+          curItems.push(item);
+          flushPage();
+          qi += 1;
+        }
+      }
+
+      flushPage();
+
+      chapterLeafItems.forEach((leafItems, leafIdx) => {
+        allPages.push({
+          chapterIndex: chIdx,
+          chapterId: ch.id,
+          chapterNumber: ch.number,
+          chapterTitle,
+          pageNumber: allPages.length + 1,
+          isLastPageOfChapter: leafIdx === chapterLeafItems.length - 1,
+          items: leafItems,
+        });
+      });
+    });
+  } finally {
+    document.body.removeChild(measurer);
+  }
+
+  return allPages;
+}
+
+export interface LibraryTabProps {
+  onBookOpenChange?: (isOpen: boolean) => void;
+}
+
+export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
   const { isDay } = useTheme();
   const { language } = useLanguage();
   const ui = LIBRARY_UI[language] || LIBRARY_UI.uz_lat;
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const swipeStartXRef = useRef<number | null>(null);
-  const swipeStartYRef = useRef<number | null>(null);
+  const bodyStageRef = useRef<HTMLDivElement | null>(null);
+  const bookDeckRef = useRef<HTMLDivElement | null>(null);
+
+  // Interactive drag-to-turn refs
+  const pointerIdRef = useRef<number | null>(null);
+  const startXRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(0);
+  const lastDxRef = useRef<number>(0);
+  const animTimerRef = useRef<number | null>(null);
 
   const [progress, setProgress] = useState<LibraryProgressState>(loadLibraryProgress);
   const [favorites, setFavorites] = useState<string[]>(loadLibraryFavs);
@@ -269,12 +609,27 @@ export const LibraryTab: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
-  const [chapterIndex, setChapterIndex] = useState<number>(0);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [pendingChapterTarget, setPendingChapterTarget] = useState<number | null>(null);
   const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
+  const [stageSize, setStageSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+  const [fontsReadyTick, setFontsReadyTick] = useState(0);
+
+  // Live swipe animation state
+  const [dragX, setDragX] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [animatingTo, setAnimatingTo] = useState<null | 'next' | 'prev' | 'cancel'>(null);
+
   const [fontScale, setFontScale] = useState<number>(() => {
     try {
-      const saved = Number(localStorage.getItem(LIBRARY_FONT_KEY));
-      if (saved >= 0 && saved <= 2) return saved;
+      const raw = localStorage.getItem(LIBRARY_FONT_KEY);
+      if (raw !== null) {
+        const saved = Number(raw);
+        if (Number.isInteger(saved) && saved >= 0 && saved <= 2) return saved;
+      }
     } catch {
       // ignore
     }
@@ -298,6 +653,176 @@ export const LibraryTab: React.FC = () => {
     []
   );
 
+  // Tell AppShell to lock viewport height with zero vertical scroll while reading a book
+  useEffect(() => {
+    onBookOpenChange?.(Boolean(activeBookId));
+    return () => onBookOpenChange?.(false);
+  }, [activeBookId, onBookOpenChange]);
+
+  // Re-measure cleanly once custom Lora / Amiri fonts finish loading
+  useEffect(() => {
+    if (!activeBookId || typeof document === 'undefined' || !document.fonts?.ready) return;
+    let alive = true;
+    void document.fonts.ready.then(() => {
+      if (alive) setFontsReadyTick((n) => n + 1);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [activeBookId]);
+
+  // Measure the exact fixed reading stage inside the book margin frame
+  useEffect(() => {
+    if (!activeBookId) return;
+    const el = bodyStageRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const w = Math.floor(el.clientWidth);
+      const h = Math.floor(el.clientHeight);
+      if (w > 0 && h > 0) {
+        setStageSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+      }
+    };
+
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(el);
+    window.addEventListener('resize', updateSize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateSize);
+    };
+  }, [activeBookId]);
+
+  // Paginate the open book across exact screen-height physical book leaves
+  const pages = useMemo<BookPage[]>(() => {
+    if (!activeBook) return [];
+    // fontsReadyTick intentionally triggers accurate re-measurement once webfonts settle
+    void fontsReadyTick;
+    return paginateClassicalBook(
+      activeBook,
+      language,
+      fontScale,
+      stageSize.width,
+      stageSize.height,
+      ui.chapterRoman,
+      ui.takeawayTitle
+    );
+  }, [activeBook, fontScale, fontsReadyTick, language, stageSize.height, stageSize.width, ui.chapterRoman, ui.takeawayTitle]);
+
+  // Keep pageIndex strictly in bounds when fontScale / viewport resizes
+  useEffect(() => {
+    if (!activeBook || pages.length === 0) return;
+    if (pendingChapterTarget !== null) {
+      const idx = pages.findIndex((p) => p.chapterIndex === pendingChapterTarget);
+      if (idx >= 0) {
+        setPageIndex(idx);
+      }
+      if (stageSize.width > 0 && stageSize.height > 0) {
+        setPendingChapterTarget(null);
+      }
+      return;
+    }
+    if (pageIndex >= pages.length) {
+      setPageIndex(Math.max(0, pages.length - 1));
+    }
+  }, [activeBook, pageIndex, pages, pendingChapterTarget, stageSize.height, stageSize.width]);
+
+  // Cleanup any running turn animation timer on unmount or book close
+  useEffect(() => {
+    return () => {
+      if (animTimerRef.current !== null) {
+        window.clearTimeout(animTimerRef.current);
+      }
+    };
+  }, []);
+
+  const currentPage = pages[pageIndex] || pages[0] || null;
+
+  // Automatically track reading position & mark chapters read effortlessly as the reader turns pages
+  useEffect(() => {
+    if (!activeBook || !currentPage) return;
+
+    setProgress((prev) => {
+      const sameBook = prev.lastBookId === activeBook.id;
+      const sameChapter = prev.lastChapterIndex === currentPage.chapterIndex;
+      const sameSavedPage = prev.lastPageByBook[activeBook.id] === pageIndex;
+      if (sameBook && sameChapter && sameSavedPage) return prev;
+      const next: LibraryProgressState = {
+        ...prev,
+        lastBookId: activeBook.id,
+        lastChapterIndex: currentPage.chapterIndex,
+        lastPageByBook: {
+          ...prev.lastPageByBook,
+          [activeBook.id]: pageIndex,
+        },
+      };
+      saveLibraryProgress(next);
+      return next;
+    });
+
+    if (!currentPage.isLastPageOfChapter) return;
+    const chId = currentPage.chapterId;
+    const timer = window.setTimeout(() => {
+      setProgress((prev) => {
+        if (prev.readChapterIds.includes(chId)) return prev;
+        const next: LibraryProgressState = {
+          ...prev,
+          readChapterIds: [...prev.readChapterIds, chId],
+        };
+        saveLibraryProgress(next);
+        return next;
+      });
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [activeBook, currentPage, pageIndex]);
+
+  // Animated page turn helper (used by swipe release AND keyboard Left/Right arrows)
+  const triggerTurn = useCallback(
+    (direction: 'next' | 'prev') => {
+      if (animatingTo !== null || pages.length <= 1) return;
+      if (direction === 'next' && pageIndex >= pages.length - 1) return;
+      if (direction === 'prev' && pageIndex <= 0) return;
+
+      const deckWidth = bookDeckRef.current?.clientWidth || 360;
+      setIsDragging(false);
+      setAnimatingTo(direction);
+      setDragX(direction === 'next' ? -(deckWidth + 36) : deckWidth);
+
+      if (animTimerRef.current !== null) {
+        window.clearTimeout(animTimerRef.current);
+      }
+      animTimerRef.current = window.setTimeout(() => {
+        setPageIndex((cur) =>
+          direction === 'next'
+            ? Math.min(pages.length - 1, cur + 1)
+            : Math.max(0, cur - 1)
+        );
+        setAnimatingTo(null);
+        setDragX(0);
+        animTimerRef.current = null;
+      }, 220);
+    },
+    [animatingTo, pageIndex, pages.length]
+  );
+
+  // Desktop keyboard navigation (Left / Right / PageUp / PageDown)
+  useEffect(() => {
+    if (!activeBookId || isTocOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        e.preventDefault();
+        triggerTurn('next');
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        triggerTurn('prev');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeBookId, isTocOpen, triggerTurn]);
+
   // Android hardware / gesture back button cleanly exits TOC -> Book Page -> Bookshelf
   useEffect(() => {
     if (!activeBookId) return;
@@ -313,12 +838,6 @@ export const LibraryTab: React.FC = () => {
     return () => window.removeEventListener('nq:android-back', onBack);
   }, [activeBookId, isTocOpen]);
 
-  // Scroll reader container cleanly to top on page turn
-  useEffect(() => {
-    const scroller = rootRef.current?.closest('.overflow-y-auto') as HTMLElement | null;
-    if (scroller) scroller.scrollTop = 0;
-  }, [activeBookId, chapterIndex]);
-
   const showToast = (msg: string) => {
     setToastMsg(msg);
     window.setTimeout(() => {
@@ -329,52 +848,37 @@ export const LibraryTab: React.FC = () => {
   const openBook = (bookId: string, chIdx?: number) => {
     const book = getBookById(bookId);
     if (!book) return;
-    const resolvedIdx =
-      typeof chIdx === 'number'
-        ? Math.max(0, Math.min(book.chapters.length - 1, chIdx))
-        : progress.lastBookId === bookId
-        ? Math.max(0, Math.min(book.chapters.length - 1, progress.lastChapterIndex))
-        : 0;
     setActiveBookId(bookId);
-    setChapterIndex(resolvedIdx);
     setIsTocOpen(false);
-    setProgress((prev) => {
-      const next: LibraryProgressState = {
-        ...prev,
-        lastBookId: bookId,
-        lastChapterIndex: resolvedIdx,
-      };
-      saveLibraryProgress(next);
-      return next;
-    });
+    setDragX(0);
+    setIsDragging(false);
+    setAnimatingTo(null);
+    if (typeof chIdx === 'number') {
+      setPendingChapterTarget(Math.max(0, Math.min(book.chapters.length - 1, chIdx)));
+      setPageIndex(0);
+    } else {
+      const savedPage = progress.lastPageByBook[bookId];
+      if (typeof savedPage === 'number' && savedPage >= 0) {
+        setPendingChapterTarget(null);
+        setPageIndex(savedPage);
+      } else {
+        setPendingChapterTarget(0);
+        setPageIndex(0);
+      }
+    }
   };
 
-  const goToChapter = (nextIdx: number) => {
-    if (!activeBook) return;
-    const safeIdx = Math.max(0, Math.min(activeBook.chapters.length - 1, nextIdx));
-    setChapterIndex(safeIdx);
+  const jumpToChapter = (chIdx: number) => {
+    const targetPageIdx = pages.findIndex((p) => p.chapterIndex === chIdx);
+    if (targetPageIdx >= 0) {
+      setPageIndex(targetPageIdx);
+    } else {
+      setPendingChapterTarget(chIdx);
+    }
+    setDragX(0);
+    setIsDragging(false);
+    setAnimatingTo(null);
     setIsTocOpen(false);
-    setProgress((prev) => {
-      const next: LibraryProgressState = {
-        ...prev,
-        lastBookId: activeBook.id,
-        lastChapterIndex: safeIdx,
-      };
-      saveLibraryProgress(next);
-      return next;
-    });
-  };
-
-  const toggleChapterRead = (chapterId: string) => {
-    setProgress((prev) => {
-      const exists = prev.readChapterIds.includes(chapterId);
-      const readChapterIds = exists
-        ? prev.readChapterIds.filter((id) => id !== chapterId)
-        : [...prev.readChapterIds, chapterId];
-      const next = { ...prev, readChapterIds };
-      saveLibraryProgress(next);
-      return next;
-    });
   };
 
   const toggleFavoriteBook = (bookId: string) => {
@@ -386,12 +890,16 @@ export const LibraryTab: React.FC = () => {
   };
 
   const cycleFontScale = (delta: 1 | -1) => {
+    const activeChIdx = currentPage?.chapterIndex ?? 0;
     setFontScale((prev) => {
       const next = Math.max(0, Math.min(2, prev + delta));
-      try {
-        localStorage.setItem(LIBRARY_FONT_KEY, String(next));
-      } catch {
-        // ignore
+      if (next !== prev) {
+        setPendingChapterTarget(activeChIdx);
+        try {
+          localStorage.setItem(LIBRARY_FONT_KEY, String(next));
+        } catch {
+          // ignore
+        }
       }
       return next;
     });
@@ -433,26 +941,21 @@ export const LibraryTab: React.FC = () => {
     : 'bg-slate-900/90 border-emerald-900/60';
   const subText = isDay ? 'text-slate-500' : 'text-slate-400';
 
-  /* ==================== PHYSICAL OPEN-BOOK PAGE VIEW ==================== */
-  if (activeBook) {
-    const chapter = activeBook.chapters[chapterIndex] || activeBook.chapters[0];
+  /* ==================== FULL-SCREEN ZERO-SCROLL SWIPE BOOK READER ==================== */
+  if (activeBook && currentPage) {
+    const chapter = activeBook.chapters[currentPage.chapterIndex] || activeBook.chapters[0];
     const bookTitle = resolveBookText(activeBook.title, language);
     const bookAuthor = resolveBookText(activeBook.author, language);
     const chapterTitle = resolveBookText(chapter.title, language);
     const paragraphs = resolveBookParagraphs(chapter.paragraphs, language);
     const takeaway = resolveBookText(chapter.takeaway, language);
-    const isRead = progress.readChapterIds.includes(chapter.id);
     const isFav = favorites.includes(activeBook.id);
     const isSepia = isDay && paperTone === 'sepia';
     const isArabicQuote = Boolean(chapter.sourceQuote && /[\u0600-\u06FF]/.test(chapter.sourceQuote));
-    const roman = ROMAN_NUMERALS[chapter.number - 1] || String(chapter.number);
+    const bodySizeCls = getBodySizeClass(fontScale);
 
-    const bodySizeCls =
-      fontScale === 0
-        ? 'text-[14.5px] leading-[1.88]'
-        : fontScale === 2
-        ? 'text-[17.5px] leading-[1.95]'
-        : 'text-[16px] leading-[1.92]';
+    const prevPage = pageIndex > 0 ? pages[pageIndex - 1] : null;
+    const nextPage = pageIndex < pages.length - 1 ? pages[pageIndex + 1] : null;
 
     const handleCopyChapter = () => {
       const lines = [
@@ -502,23 +1005,71 @@ export const LibraryTab: React.FC = () => {
       }
     };
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-      swipeStartXRef.current = e.changedTouches[0]?.clientX ?? null;
-      swipeStartYRef.current = e.changedTouches[0]?.clientY ?? null;
+    // Unified touch + mouse pointer drag handlers for natural book page turning
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (animatingTo !== null) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('button')) return;
+
+      pointerIdRef.current = e.pointerId;
+      startXRef.current = e.clientX;
+      startTimeRef.current = performance.now();
+      lastDxRef.current = 0;
+      setIsDragging(true);
+      setDragX(0);
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore if unsupported
+      }
     };
 
-    const handleTouchEnd = (e: React.TouchEvent) => {
-      if (swipeStartXRef.current === null || swipeStartYRef.current === null) return;
-      const dx = (e.changedTouches[0]?.clientX ?? 0) - swipeStartXRef.current;
-      const dy = (e.changedTouches[0]?.clientY ?? 0) - swipeStartYRef.current;
-      swipeStartXRef.current = null;
-      swipeStartYRef.current = null;
-      if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        if (dx < 0 && chapterIndex < activeBook.chapters.length - 1) {
-          goToChapter(chapterIndex + 1);
-        } else if (dx > 0 && chapterIndex > 0) {
-          goToChapter(chapterIndex - 1);
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDragging || pointerIdRef.current !== e.pointerId) return;
+      const rawDx = e.clientX - startXRef.current;
+      let dx = rawDx;
+      if (rawDx > 0 && !prevPage) {
+        dx = Math.min(32, rawDx * 0.16);
+      } else if (rawDx < 0 && !nextPage) {
+        dx = Math.max(-32, rawDx * 0.16);
+      }
+      lastDxRef.current = dx;
+      setDragX(dx);
+    };
+
+    const finishPointerDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDragging || pointerIdRef.current !== e.pointerId) return;
+      pointerIdRef.current = null;
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
         }
+      } catch {
+        // ignore
+      }
+
+      const dx = lastDxRef.current;
+      const elapsed = Math.max(1, performance.now() - startTimeRef.current);
+      const velocity = dx / elapsed; // px per ms
+      const deckWidth = bookDeckRef.current?.clientWidth || 360;
+      const threshold = Math.min(64, deckWidth * 0.15);
+
+      if ((dx < -threshold || (dx < -16 && velocity < -0.3)) && nextPage) {
+        triggerTurn('next');
+      } else if ((dx > threshold || (dx > 16 && velocity > 0.3)) && prevPage) {
+        triggerTurn('prev');
+      } else {
+        setIsDragging(false);
+        setAnimatingTo('cancel');
+        setDragX(0);
+        if (animTimerRef.current !== null) {
+          window.clearTimeout(animTimerRef.current);
+        }
+        animTimerRef.current = window.setTimeout(() => {
+          setAnimatingTo(null);
+          animTimerRef.current = null;
+        }, 190);
       }
     };
 
@@ -559,13 +1110,179 @@ export const LibraryTab: React.FC = () => {
       ? 'first-letter:text-[#0c4703]'
       : 'first-letter:text-[#e8c675]';
 
+    const deckWidth = bookDeckRef.current?.clientWidth || 360;
+    const turnTransition =
+      animatingTo !== null ? 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+
+    const renderPageLeaf = (page: BookPage, measureRef?: React.RefObject<HTMLDivElement | null>) => (
+      <article
+        className={`relative w-full h-full flex flex-col rounded-l-[3px] rounded-r-[14px] border overflow-hidden shadow-[0_10px_28px_rgba(32,20,6,0.16)] ${sheetBg}`}
+      >
+        {/* Realistic Left Book-Binding Spine Gutter Shadow */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-7 z-10"
+          style={{
+            background: isDay
+              ? 'linear-gradient(90deg, rgba(66,40,12,0.18) 0%, rgba(66,40,12,0.06) 11px, rgba(66,40,12,0) 28px)'
+              : 'linear-gradient(90deg, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.16) 12px, rgba(0,0,0,0) 28px)',
+          }}
+        />
+
+        {/* Classical Printed Book Margin Frame — fills 100% height with zero scroll */}
+        <div className="p-2.5 sm:p-4 pl-4 sm:pl-6 flex-1 min-h-0 flex flex-col">
+          <div
+            className={`border ${ruleColor} rounded-l-[2px] rounded-r-[10px] px-4 sm:px-7 py-3 sm:py-5 flex-1 min-h-0 flex flex-col overflow-hidden`}
+          >
+            {/* Fixed Running Book Header */}
+            <header className={`shrink-0 pb-2 mb-2.5 border-b ${ruleColor} text-center space-y-0.5`}>
+              <p
+                className={`font-display text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-semibold truncate ${mutedInk}`}
+              >
+                {bookTitle}
+              </p>
+              <p className={`text-[9.5px] sm:text-[10px] italic font-display truncate ${mutedInk} opacity-85`}>
+                {page.items[0]?.kind === 'chapter-header'
+                  ? `${bookAuthor} · ${activeBook.era}`
+                  : `${ui.chapterRoman(ROMAN_NUMERALS[page.chapterNumber - 1] || String(page.chapterNumber))} · ${page.chapterTitle}`}
+              </p>
+            </header>
+
+            {/* Exact Screen-Fit Reading Stage (Zero Vertical Scroll!) */}
+            <div ref={measureRef} className="flex-1 min-h-0 overflow-hidden">
+              {page.items.map((item, idx) => {
+                const isFirstOnPage = idx === 0;
+
+                if (item.kind === 'chapter-header') {
+                  return (
+                    <div key={`hdr-${idx}`} className="text-center mb-3">
+                      <div
+                        className={`font-display text-[10.5px] font-bold tracking-[0.24em] uppercase ${ornamentColor}`}
+                      >
+                        — {item.romanLabel} —
+                      </div>
+                      <h1 className="font-display text-[19px] sm:text-[22px] font-bold leading-snug tracking-tight mt-1">
+                        {item.title}
+                      </h1>
+                      <div className={`flex items-center justify-center gap-2.5 pt-1 ${ornamentColor} opacity-75`}>
+                        <span className={`w-10 border-t ${ruleColor}`} />
+                        <span className="text-[11px] leading-none">❖</span>
+                        <span className={`w-10 border-t ${ruleColor}`} />
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item.kind === 'epigraph') {
+                  return (
+                    <blockquote
+                      key={`epi-${idx}`}
+                      className={`${isFirstOnPage ? 'mb-3' : 'my-2.5'} py-2.5 px-1.5 border-y ${ruleColor} text-center`}
+                    >
+                      <p
+                        dir={item.isArabic ? 'rtl' : 'ltr'}
+                        className={
+                          item.isArabic
+                            ? `font-arabic text-[20px] sm:text-[23px] leading-[1.92] ${
+                                isSepia ? 'text-[#3c2408]' : isDay ? 'text-[#0c4703]' : 'text-[#f2d388]'
+                              }`
+                            : `font-display italic text-[14px] sm:text-[15.5px] leading-relaxed whitespace-pre-line ${
+                                isSepia ? 'text-[#4c300f]' : isDay ? 'text-[#0c4703]' : 'text-[#f2d388]'
+                              }`
+                        }
+                      >
+                        {item.quote}
+                      </p>
+                      {item.label && (
+                        <footer className={`font-display text-[10.5px] italic mt-1 ${mutedInk}`}>
+                          — {item.label}
+                        </footer>
+                      )}
+                    </blockquote>
+                  );
+                }
+
+                if (item.kind === 'paragraph') {
+                  return (
+                    <p
+                      key={`p-${idx}`}
+                      className={`flow-root font-display text-justify ${bodySizeCls} ${
+                        isFirstOnPage ? '' : 'mt-3'
+                      } ${
+                        item.isFirstInChapter
+                          ? `first-letter:float-left first-letter:font-display first-letter:text-[42px] first-letter:font-bold first-letter:leading-[0.84] first-letter:mr-2 first-letter:mt-1 ${dropCapColor}`
+                          : item.isContinuation
+                          ? ''
+                          : 'indent-6'
+                      }`}
+                    >
+                      {item.text}
+                    </p>
+                  );
+                }
+
+                // takeaway footnote
+                return (
+                  <aside key={`tk-${idx}`} className={isFirstOnPage ? 'pt-1' : 'mt-4 pt-2.5'}>
+                    <div className={`w-16 border-t ${ruleColor} mb-2`} />
+                    <div className="flex items-start justify-between gap-2">
+                      <p className={`font-display italic text-[12.5px] sm:text-[13px] leading-relaxed ${mutedInk}`}>
+                        <span className={`not-italic font-bold mr-1.5 ${ornamentColor}`}>
+                          ❖ {ui.takeawayTitle}:
+                        </span>
+                        {item.text}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleCopyChapter}
+                        className={`p-1 rounded-lg shrink-0 transition opacity-70 hover:opacity-100 ${mutedInk}`}
+                        aria-label="Copy passage"
+                        title="Copy"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </aside>
+                );
+              })}
+            </div>
+
+            {/* Printed Book Folio Footer (No buttons — pure swipe pagination) */}
+            <footer
+              className={`shrink-0 pt-2 mt-2 border-t ${ruleColor} flex items-center justify-between gap-2 text-[10.5px] font-display ${mutedInk}`}
+            >
+              <span className="font-arabic text-xs opacity-80 truncate">{activeBook.arabicTitle}</span>
+              {page.pageNumber === 1 && pages.length > 1 && (
+                <span className="text-[10px] italic opacity-65 whitespace-nowrap">
+                  {ui.swipeWhisper}
+                </span>
+              )}
+              <span className="font-bold tracking-widest tabular-nums shrink-0">
+                — {page.pageNumber} / {pages.length} —
+              </span>
+            </footer>
+          </div>
+        </div>
+      </article>
+    );
+
+    const showingForwardSwipe = dragX < 0 || animatingTo === 'next';
+    const showingBackwardSwipe = dragX > 0 || animatingTo === 'prev';
+    const currentLeafTransform =
+      showingForwardSwipe
+        ? `translate3d(${dragX}px, 0, 0) rotate(${Math.max(-2.2, (dragX / Math.max(200, deckWidth)) * 2)}deg)`
+        : !prevPage && dragX > 0
+        ? `translate3d(${dragX}px, 0, 0)`
+        : 'translate3d(0, 0, 0)';
+
     return (
       <div
-        ref={rootRef}
-        className={`space-y-3 pb-8 animate-in fade-in ${isDay ? 'text-slate-900' : 'text-slate-100'}`}
+        className={`flex-1 min-h-0 h-full flex flex-col gap-2 pt-2 pb-1 overflow-hidden animate-in fade-in ${
+          isDay ? 'text-slate-900' : 'text-slate-100'
+        }`}
       >
-        {/* Whisper-Quiet Top Reading Toolbar (No bulky banner!) */}
-        <div className="flex items-center justify-between gap-1.5">
+        {/* Whisper-Quiet Top Reading Toolbar */}
+        <div className="shrink-0 flex items-center justify-between gap-1.5">
           <button
             type="button"
             onClick={() => setActiveBookId(null)}
@@ -658,208 +1375,76 @@ export const LibraryTab: React.FC = () => {
           </div>
         </div>
 
-        {toastMsg && (
-          <div
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold text-center border animate-in fade-in ${
-              isDay
-                ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
-                : 'bg-emerald-950 border-emerald-700 text-amber-300'
-            }`}
-          >
-            {toastMsg}
-          </div>
-        )}
-
-        {/* PHYSICAL BOUND BOOK SHEET WITH STACKED PAGES, SPINE CREASE & ILLUMINATED FRAME */}
+        {/* FULL-SCREEN INTERACTIVE SWIPE BOOK DECK (No Next/Prev/O'qildi buttons, zero scroll) */}
         <div
-          className="relative pr-2 pb-2"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          ref={bookDeckRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishPointerDrag}
+          onPointerCancel={finishPointerDrag}
+          className="relative flex-1 min-h-0 pr-2 pb-2 overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
         >
-          {/* Underlying Stacked Book Pages (3D physical edge depth) */}
-          <div
-            aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 translate-x-2 translate-y-2 rounded-l-[3px] rounded-r-[14px] border ${stackBg2}`}
-          />
-          <div
-            aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 translate-x-1 translate-y-1 rounded-l-[3px] rounded-r-[14px] border ${stackBg1}`}
-          />
+          {/* Floating Copy/Share Toast Overlay (never shifts book height!) */}
+          {toastMsg && (
+            <div
+              className={`pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-40 px-3.5 py-1.5 rounded-full text-xs font-bold border shadow-md animate-in fade-in ${
+                isDay
+                  ? 'bg-[#eef9ea] border-[#b7e2ad] text-[#0c4703]'
+                  : 'bg-emerald-950 border-emerald-700 text-amber-300'
+              }`}
+            >
+              {toastMsg}
+            </div>
+          )}
 
-          {/* Active Printed Book Leaf */}
-          <article
-            className={`relative rounded-l-[3px] rounded-r-[14px] border overflow-hidden shadow-[0_10px_28px_rgba(32,20,6,0.14)] transition-colors ${sheetBg}`}
-          >
-            {/* Realistic Left Book-Binding Spine Gutter Shadow */}
+          {/* Stacked Physical Book Page Edges Underneath */}
+          {pages.length - 1 - pageIndex >= 2 && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-7"
-              style={{
-                background: isDay
-                  ? 'linear-gradient(90deg, rgba(66,40,12,0.18) 0%, rgba(66,40,12,0.06) 11px, rgba(66,40,12,0) 28px)'
-                  : 'linear-gradient(90deg, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.16) 12px, rgba(0,0,0,0) 28px)',
-              }}
+              className={`pointer-events-none absolute inset-0 right-2 bottom-2 translate-x-2 translate-y-2 rounded-l-[3px] rounded-r-[14px] border ${stackBg2}`}
             />
+          )}
+          {pages.length - 1 - pageIndex >= 1 && (
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 right-2 bottom-2 translate-x-1 translate-y-1 rounded-l-[3px] rounded-r-[14px] border ${stackBg1}`}
+            />
+          )}
 
-            {/* Subtle Fine Classical Book Border Frame */}
-            <div className="p-3 sm:p-4 pl-5 sm:pl-6">
-              <div
-                className={`border ${ruleColor} rounded-l-[2px] rounded-r-[10px] px-4 sm:px-7 py-5 sm:py-7 min-h-[62dvh] flex flex-col justify-between`}
-              >
-                <div>
-                  {/* Running Book Header (Classic printed top folio) */}
-                  <header className={`pb-3 mb-5 border-b ${ruleColor} text-center space-y-0.5`}>
-                    <p
-                      className={`font-display text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-semibold truncate ${mutedInk}`}
-                    >
-                      {bookTitle}
-                    </p>
-                    <p className={`text-[10px] italic font-display truncate ${mutedInk} opacity-85`}>
-                      {bookAuthor} · {activeBook.era}
-                    </p>
-                  </header>
-
-                  {/* Ornamental Chapter Opening */}
-                  <div className="text-center space-y-1.5 mb-5">
-                    <div
-                      className={`font-display text-[11px] font-bold tracking-[0.24em] uppercase ${ornamentColor}`}
-                    >
-                      — {ui.chapterRoman(roman)} —
-                    </div>
-                    <h1 className="font-display text-[21px] sm:text-[24px] font-bold leading-snug tracking-tight">
-                      {chapterTitle}
-                    </h1>
-                    <div className={`flex items-center justify-center gap-2.5 pt-1 ${ornamentColor} opacity-75`}>
-                      <span className={`w-10 border-t ${ruleColor}`} />
-                      <span className="text-xs leading-none">❖</span>
-                      <span className={`w-10 border-t ${ruleColor}`} />
-                    </div>
-                  </div>
-
-                  {/* Classical Arabic / Verse Epigraph (Printed inline between rules — no chat bubble!) */}
-                  {chapter.sourceQuote && (
-                    <blockquote className={`my-5 py-3.5 px-2 border-y ${ruleColor} text-center space-y-2`}>
-                      <p
-                        dir={isArabicQuote ? 'rtl' : 'ltr'}
-                        className={
-                          isArabicQuote
-                            ? `font-arabic text-[22px] sm:text-[25px] leading-[2.05] ${
-                                isSepia ? 'text-[#3c2408]' : isDay ? 'text-[#0c4703]' : 'text-[#f2d388]'
-                              }`
-                            : `font-display italic text-[15px] sm:text-[16.5px] leading-relaxed whitespace-pre-line ${
-                                isSepia ? 'text-[#4c300f]' : isDay ? 'text-[#0c4703]' : 'text-[#f2d388]'
-                              }`
-                        }
-                      >
-                        {chapter.sourceQuote}
-                      </p>
-                      {chapter.sourceLabel && (
-                        <footer className={`font-display text-[11px] italic ${mutedInk}`}>
-                          — {resolveBookText(chapter.sourceLabel, language)}
-                        </footer>
-                      )}
-                    </blockquote>
-                  )}
-
-                  {/* Authentic Justified Serif Book Prose with Illuminated Drop Cap */}
-                  <div className={`font-display space-y-4 text-justify ${bodySizeCls}`}>
-                    {paragraphs.map((para, idx) => (
-                      <p
-                        key={idx}
-                        className={
-                          idx === 0
-                            ? `first-letter:float-left first-letter:font-display first-letter:text-[46px] first-letter:font-bold first-letter:leading-[0.84] first-letter:mr-2.5 first-letter:mt-1 ${dropCapColor}`
-                            : 'indent-6'
-                        }
-                      >
-                        {para}
-                      </p>
-                    ))}
-                  </div>
-
-                  {/* Classic Book Footnote / Marginalia Reflection */}
-                  <aside className="mt-7 pt-4">
-                    <div className={`w-20 border-t ${ruleColor} mb-3`} />
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`font-display italic text-[13.5px] leading-relaxed ${mutedInk}`}>
-                        <span className={`not-italic font-bold mr-1.5 ${ornamentColor}`}>
-                          ❖ {ui.takeawayTitle}:
-                        </span>
-                        {takeaway}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleCopyChapter}
-                        className={`p-1.5 rounded-lg shrink-0 transition opacity-70 hover:opacity-100 ${mutedInk}`}
-                        aria-label="Copy passage"
-                        title="Copy"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </aside>
-                </div>
-
-                {/* Printed Page Folio Number Footer */}
-                <footer className={`mt-8 pt-3 border-t ${ruleColor} flex items-center justify-between text-[11px] font-display ${mutedInk}`}>
-                  <span className="font-arabic text-xs opacity-80">{activeBook.arabicTitle}</span>
-                  <span className="font-bold tracking-widest tabular-nums">
-                    — {chapter.number} / {activeBook.chapters.length} —
-                  </span>
-                </footer>
+          {/* Inner Positioned Leaf Stage */}
+          <div className="relative w-full h-full">
+            {/* Layer 1: Revealed Next Page underneath when swiping left */}
+            {showingForwardSwipe && nextPage && (
+              <div className="absolute inset-0 z-10 pointer-events-none">
+                {renderPageLeaf(nextPage)}
               </div>
+            )}
+
+            {/* Layer 2: Active Current Page Leaf */}
+            <div
+              className="absolute inset-0 z-20 will-change-transform"
+              style={{
+                transform: currentLeafTransform,
+                transition: turnTransition,
+              }}
+            >
+              {renderPageLeaf(currentPage, bodyStageRef)}
             </div>
-          </article>
+
+            {/* Layer 3: Incoming Previous Page sliding smoothly back over from left when swiping right */}
+            {showingBackwardSwipe && prevPage && (
+              <div
+                className="absolute inset-0 z-30 will-change-transform pointer-events-none"
+                style={{
+                  transform: `translate3d(${dragX - deckWidth}px, 0, 0)`,
+                  transition: turnTransition,
+                }}
+              >
+                {renderPageLeaf(prevPage)}
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Clean Page-Turn Footer Controls */}
-        <div className="grid grid-cols-3 gap-2 pt-0.5">
-          <button
-            type="button"
-            disabled={chapterIndex <= 0}
-            onClick={() => goToChapter(chapterIndex - 1)}
-            className={`py-2.5 px-2 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1 transition active:scale-[0.98] disabled:opacity-35 ${cardCls}`}
-          >
-            <ChevronLeft className="w-4 h-4 shrink-0" />
-            <span className="truncate">{ui.prevPage}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => toggleChapterRead(chapter.id)}
-            className={`py-2.5 px-2 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1 transition active:scale-[0.98] ${
-              isRead
-                ? isDay
-                  ? 'bg-[#158509] border-[#158509] text-white nq-keep-dark'
-                  : 'bg-amber-400 border-amber-400 text-slate-950'
-                : isDay
-                ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
-                : 'bg-emerald-950 border-emerald-800 text-emerald-300'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{isRead ? ui.markedRead : ui.markRead}</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={chapterIndex >= activeBook.chapters.length - 1}
-            onClick={() => {
-              if (!isRead) toggleChapterRead(chapter.id);
-              goToChapter(chapterIndex + 1);
-            }}
-            className={`py-2.5 px-2 rounded-2xl text-xs font-bold flex items-center justify-center gap-1 transition active:scale-[0.98] disabled:opacity-35 ${
-              isDay
-                ? 'bg-[#158509] hover:bg-[#0c5007] text-white nq-keep-dark'
-                : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
-            }`}
-          >
-            <span className="truncate">{ui.nextPage}</span>
-            <ChevronRight className="w-4 h-4 shrink-0" />
-          </button>
-        </div>
-
-        <p className={`text-center text-[10.5px] ${subText}`}>{ui.swipeHint}</p>
 
         {/* Table of Contents (Mundarija) Sheet */}
         {isTocOpen && (
@@ -895,13 +1480,14 @@ export const LibraryTab: React.FC = () => {
               </div>
               <div className="overflow-y-auto p-3 space-y-1.5">
                 {activeBook.chapters.map((ch, idx) => {
-                  const selected = idx === chapterIndex;
+                  const selected = idx === currentPage.chapterIndex;
                   const done = progress.readChapterIds.includes(ch.id);
+                  const firstPageOfChapter = pages.find((p) => p.chapterIndex === idx)?.pageNumber;
                   return (
                     <button
                       key={ch.id}
                       type="button"
-                      onClick={() => goToChapter(idx)}
+                      onClick={() => jumpToChapter(idx)}
                       className={`w-full p-3 rounded-2xl border flex items-center justify-between gap-2 text-left transition ${
                         selected
                           ? isDay
@@ -930,7 +1516,14 @@ export const LibraryTab: React.FC = () => {
                           {resolveBookText(ch.title, language)}
                         </span>
                       </div>
-                      <ChevronRight className={`w-4 h-4 shrink-0 ${subText}`} />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {firstPageOfChapter && (
+                          <span className={`text-[10.5px] font-mono ${subText}`}>
+                            {ui.pageShort(firstPageOfChapter)}
+                          </span>
+                        )}
+                        <ChevronRight className={`w-4 h-4 ${subText}`} />
+                      </div>
                     </button>
                   );
                 })}
@@ -959,7 +1552,6 @@ export const LibraryTab: React.FC = () => {
 
   return (
     <div
-      ref={rootRef}
       className={`space-y-3.5 pb-6 animate-in fade-in ${isDay ? 'text-slate-900' : 'text-slate-100'}`}
     >
       {/* Library Hero + Continue Reading */}
@@ -1002,7 +1594,7 @@ export const LibraryTab: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => openBook(lastBook.id, progress.lastChapterIndex)}
+              onClick={() => openBook(lastBook.id)}
               className="px-3 py-1.5 rounded-xl bg-[#d0f39f] text-[#0c4703] text-xs font-extrabold shrink-0 active:scale-95 transition"
             >
               {ui.resumeBtn}

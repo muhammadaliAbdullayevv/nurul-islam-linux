@@ -668,8 +668,9 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
           style={
             isSecondaryFeature
               ? {
-                  paddingBottom:
-                    'calc(1rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))',
+                  paddingBottom: hideBottomNav
+                    ? 'calc(0.45rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))'
+                    : 'calc(1rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))',
                 }
               : undefined
           }

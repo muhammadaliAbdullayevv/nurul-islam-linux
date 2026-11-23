@@ -1,14 +1,14 @@
 {
-  "versionCode": 90,
-  "versionName": "1.8.71",
+  "versionCode": 91,
+  "versionName": "1.8.72",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 90,
+  "minSupportedVersionCode": 91,
   "notes": {
-    "uz_lat": "1) Muallimi Soniy va Tajvid bo'limi to'liq ovozli bo'ldi: barcha 168 ta harf, bo'g'in, qoida va Fotiha/Ixlos misollari uchun 100% oflayn arabcha MP3 ovozlar qo'shildi (Android, Linux va vebda darhol eshitiladi, 0.7× sekin / 1.0× oddiy tezlik ishlaydi). 2) Islom Kutubxonasi haqiqiy jildli bosma kitob ko'rinishiga o'tkazildi: kitob muqovasi, sahifa chetlari, klassik ramka, serif matn, birinchi harf bezagi (drop cap) va chapga/o'ngga surib varaqlash!",
-    "uz_cyr": "1) Муаллими Соний ва Тажвид бўлими тўлиқ овозли бўлди: барча 168 та ҳарф, бўғин, қоида ва Фотиҳа/Ихлос мисоллари учун 100% офлайн арабча MP3 овозлар қўшилди. 2) Ислом Кутубхонаси ҳақиқий жилдли босма китоб кўринишига ўтказилди: китоб муқоваси, саҳифа четлари, классик рамка ва варақлаш!",
-    "en": "1) Fixed Muallimi Soniy & Tajweed Trainer audio permanently: bundled 168 crystal-clear 100% offline Arabic MP3 clips (including real Mishary Al-Afasy recitation for Al-Fatihah & Al-Ikhlas) that play reliably on Android, Linux Desktop, iOS & Web with working 0.7×/1.0× speed. 2) Redesigned the Islamic Library into a real physical bound book experience with standing hardcover covers, stacked parchment page edges, spine gutter shadow, classical serif typography, illuminated drop cap, and swipe-to-turn pages!",
-    "ru": "1) Полностью исправлен звук в тренажёре Муаллими Сани и Таджвид: встроены 168 офлайн аудиозаписей арабского произношения (включая живое чтение Мишари Аль-Афаси для сур Фатиха и Ихлас) с рабочей скоростью 0.7×/1.0×. 2) Исламская Библиотека оформлена как настоящая печатная книга: вертикальные переплёты, стопка страниц, книжные поля, шрифт с засечками, буквица и перелистывание свайпом!"
+    "uz_lat": "Islom Kutubxonasi to'liq haqiqiy kitob varaqlash tajribasiga o'tkazildi: har bir sahifa ekranga pastga surmasdan aniq sig'adi, sahifalar chapga/o'ngga surish orqali jonli varaqlanadi, ortiqcha Keyingi/Oldingi va O'qildi tugmalari olib tashlandi (o'qish jarayoni avtomatik saqlanadi).",
+    "uz_cyr": "Ислом Кутубхонаси тўлиқ ҳақиқий китоб варақлаш тажрибасига ўтказилди: ҳар бир саҳифа экранга пастга сурмасдан аниқ сиғади, саҳифалар чапга/ўнгга суриш орқали жонли варақланади, ортиқча Кейинги/Олдинги ва Ўқилди тугмалари олиб ташланди.",
+    "en": "Upgraded the Islamic Library into a true screen-fit swipe book reader: every page automatically paginates to fit your screen with zero vertical scrolling, pages turn smoothly by swiping left or right (with live page-underneath peel), and cluttering Next/Prev and Mark Read buttons were removed (reading progress saves automatically).",
+    "ru": "Исламская Библиотека обновлена до полноценного постраничного книжного ридера: каждая страница точно помещается на экран без вертикальной прокрутки, страницы плавно перелистываются свайпом влево/вправо, а кнопки Далее/Назад и Прочитано убраны (прогресс сохраняется автоматически)."
   }
 }
