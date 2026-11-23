@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.74
+Version:        1.8.75
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.75-1
+- Remove all AI-authored book texts and curate a 100% verbatim human-translated 31-book Islamic Library (11 full-length verified Uzbek classical books + 20 verbatim Arabic/Russian/English classics) with explicit translator credits, language badges on covers, language filter pills, and automatic native-language-first shelf sorting
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.74-1
 - Expand Islamic Library into a 41-book Hybrid Full-Length Library (700+ chapters, 3,800+ pages): 16 full-length offline bundled books + 25 cloud volumes auto-cached permanently in IndexedDB, with instant per-chapter swipe pagination and lightweight lazy catalog
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.73-1

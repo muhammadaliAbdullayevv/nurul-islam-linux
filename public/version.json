@@ -1,14 +1,14 @@
 {
-  "versionCode": 93,
-  "versionName": "1.8.74",
+  "versionCode": 94,
+  "versionName": "1.8.75",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 93,
+  "minSupportedVersionCode": 94,
   "notes": {
-    "uz_lat": "Islom Kutubxonasi ulkan to'liq kutubxonaga aylantirildi: 41 ta to'liq klassik asar (712 bob, 3,500+ sahifa)! 16 ta asosiy kitob (Arba'in 42 to'liq hadis, Al-Azkor 303 duo, Ibodati Islomiya 16 bob, Aqoidi Tahoviya 105 modda, Ey Farzand 16 nasihat, Sabot ul-Ojizin, Mahbub ul-Qulub, Devoni Hikmat va boshqalar) 100% oflayn; yana 25 ta yirik klassik jild (Sahih al-Buxoriy, Sahih Muslim, Termiziy, Abu Dovud, Kimyoyi Saodat, Guliston, Al-Hidoya, Moturidiy va boshqalar) bir marta ochilgach qurilmada doimiy oflayn saqlanadi!",
-    "uz_cyr": "Ислом Кутубхонаси улкан тўлиқ кутубхонага айлантирилди: 41 та тўлиқ классик асар (712 боб, 3,500+ саҳифа)! 16 та асосий китоб 100% офлайн, яна 25 та йирик классик жилд (Саҳиҳ ал-Бухорий, Саҳиҳ Муслим, Термизий, Кимёи Саодат, Гулистон, Ал-Ҳидоя ва бошқалар) бир марта очилгач қурилмада доимий офлайн сақланади!",
-    "en": "Massive Hybrid Classical Islamic Library upgrade: 41 full-length books (712 chapters, 3,500+ pages)! 16 core classics work 100% offline immediately (Complete 42-Hadith Arba'in, Al-Adhkar 303 remembrances, 16-chapter Ibadati Islamiya, 105-article Aqidah at-Tahawiyyah, 16-chapter Ayyuhal Walad, 13-chapter Ta'lim al-Muta'allim, etc.), plus 25 massive cloud volumes (Sahih al-Bukhari, Sahih Muslim, Tirmidhi, Abu Dawud, Muwatta, Alchemy of Happiness, Gulistan, Al-Hidayah, Kitab al-Tawhid & more) that cache permanently offline on first open with instant swipe pagination!",
-    "ru": "Масштабное обновление Исламской Библиотеки: 41 полная классическая книга (712 глав, 3500+ страниц)! 16 основных книг доступны сразу офлайн, а ещё 25 объёмных томов (Сахих аль-Бухари, Сахих Муслим, Тирмизи, Абу Дауд, Кимийа ас-Саадат, Гулистан, Аль-Хидая и др.) автоматически сохраняются офлайн при первом открытии с мгновенным свайп-перелистыванием!"
+    "uz_lat": "Islom Kutubxonasi 100% ishonchli va inson tomonidan tarjima qilingan mo'tabar kitoblarga tozalandi (barcha AI yozgan matnlar olib tashlandi): 31 ta haqiqiy klassik asar — jumladan 11 ta to'liq o'zbekcha hadis va zikr kitoblari (Arba'in to'liq o'zbekcha sharhi bilan, Al-Azkor 303 duo, Shamoilul-Muhammadiya 415 hadis, Riyozus Solihiyn 1,864 hadis va sharhi, Imom Zabidiy Buxoriy muxtasari 2,034 hadis, Imomlar ittifoq qilgan hadislar va boshqalar)! Har bir kitobda til belgisi (O'Z / RU / EN / AR), tarjimon ma'lumoti va til bo'yicha saralash qo'shildi.",
+    "uz_cyr": "Ислом Кутубхонаси 100% ишончли ва инсон томонидан таржима қилинган мўътабар китобларга тозаланди (барча AI матнлари олиб ташланди): 31 та ҳақиқий классик асар — жумладан 11 та тўлиқ ўзбекча китоб (Арбаъин ўзбекча шарҳи билан, Ал-Азкор, Шамоилул-Муҳаммадия, Риёзус Солиҳийн, Забидий ва бошқалар), тил белгилари ва таржимон маълумотлари билан!",
+    "en": "Cleaned the Islamic Library to 100% authentic, verbatim, human-translated editions only (all AI-written summaries removed): 31 verified classical works including 11 full-length Uzbek editions (complete Arba'in with Uzbek commentary, Al-Adhkar 303, Shama'il 415, Riyad us-Salihin 1,864 & full commentary, Zabidi Bukhari 2,034, Muttafaqun Alayh 408) plus 20 verbatim Arabic/Russian/English classics — now with explicit translator credits, language tags on every cover, language filter pills, and automatic native-language-first sorting!",
+    "ru": "Исламская Библиотека полностью очищена до 100% достоверных человеческих переводов (все ИИ-тексты удалены): 31 проверенное классическое издание, включая 11 полных узбекских книг и 20 оригинальных сборников на арабском, русском и английском языках — с указанием переводчиков, языковыми метками и фильтром по языку!"
   }
 }

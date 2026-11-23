@@ -8,8 +8,8 @@ import { UPDATE_SITE_URL } from './appUpdater';
 const DB_NAME = 'nq_library_books_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'books';
-const REMOTE_CATALOG_CACHE_KEY = 'nq_library_remote_catalog_v1';
-const CACHED_BOOK_IDS_KEY = 'nq_library_cached_ids_v1';
+const REMOTE_CATALOG_CACHE_KEY = 'nq_library_remote_catalog_v2';
+const CACHED_BOOK_IDS_KEY = 'nq_library_cached_ids_v2';
 
 const memoryBookCache = new Map<string, BookContentFile>();
 
@@ -151,7 +151,7 @@ export async function refreshRemoteLibraryCatalog(
   const timer = window.setTimeout(() => controller.abort(), 7000);
   try {
     const urls = [
-      `${CLOUD_BOOKS_BASE_URL}/catalog.json`,
+      `${CLOUD_BOOKS_BASE_URL}/catalog.json?v=2`,
       '/data/hadith/books/catalog.json',
     ];
     for (const url of urls) {
@@ -170,20 +170,27 @@ export async function refreshRemoteLibraryCatalog(
           // ignore quota error
         }
 
-        const byId = new Map<string, BookCatalogItem>();
-        // Keep local bundled books as bundled (offline-first); overlay any newer remote cloud metadata/additions
+        const localBundledMap = new Map<string, BookCatalogItem>();
         for (const local of localBooks) {
-          byId.set(local.id, local);
+          if (local.storage === 'bundled') localBundledMap.set(local.id, local);
         }
+
+        // Treat remote manifest as authoritative list so removed/retired books disappear cleanly
+        const merged: BookCatalogItem[] = [];
+        const seen = new Set<string>();
         for (const remote of manifest.books) {
-          if (!remote || typeof remote.id !== 'string') continue;
-          const existing = byId.get(remote.id);
-          if (existing && existing.storage === 'bundled') {
-            continue;
-          }
-          byId.set(remote.id, { ...remote, storage: 'cloud' });
+          if (!remote || typeof remote.id !== 'string' || seen.has(remote.id)) continue;
+          seen.add(remote.id);
+          const bundled = localBundledMap.get(remote.id);
+          merged.push(bundled ? bundled : { ...remote, storage: 'cloud' });
         }
-        return Array.from(byId.values());
+        for (const local of localBooks) {
+          if (local.storage === 'bundled' && !seen.has(local.id)) {
+            merged.unshift(local);
+            seen.add(local.id);
+          }
+        }
+        return merged;
       } catch {
         // try next URL
       }

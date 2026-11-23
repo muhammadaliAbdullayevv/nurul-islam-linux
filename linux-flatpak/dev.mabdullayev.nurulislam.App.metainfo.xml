@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.75" date="2026-11-23">
+      <description>
+        <p>Removed all AI-authored summaries from the Islamic Library and curated 31 strictly verified, verbatim, human-translated classical Islamic books — including 11 full-length Uzbek editions (Arba'in with full commentary, Al-Adhkar 303, Shama'il al-Muhammadiyyah 415, Riyad us-Salihin 1,864 and commentary, Zabidi Bukhari 2,034, Muttafaqun Alayh 408) plus 20 verbatim Arabic/Russian/English classics — complete with explicit translator credits, language tags on every cover, language filters, and automatic native-language-first sorting.</p>
+      </description>
+    </release>
     <release version="1.8.74" date="2026-11-23">
       <description>
         <p>Upgraded the Islamic Library into a 41-book Hybrid Full-Length Library (700+ chapters, 3,800+ pages): 16 core classics bundled 100% offline plus 25 full-length cloud volumes (Sahih al-Bukhari, Sahih Muslim, Tirmidhi, Abu Dawud, Muwatta, Alchemy of Happiness, Gulistan, Al-Hidayah, Kitab al-Tawhid, and more) that automatically cache offline on first open, powered by instant per-chapter swipe pagination.</p>

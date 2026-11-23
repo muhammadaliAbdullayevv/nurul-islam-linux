@@ -39,6 +39,7 @@ export interface BookCatalogItem {
   arabicTitle: string;
   title: LocalizedBookField;
   author: LocalizedBookField;
+  translator: LocalizedBookField;
   summary: LocalizedBookField;
   chaptersCount: number;
   estimatedPages: number;

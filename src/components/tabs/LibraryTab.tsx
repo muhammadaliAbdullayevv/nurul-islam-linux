@@ -162,18 +162,20 @@ const LIBRARY_UI: Record<
     offlineErrorHint: string;
     retryBtn: string;
     offlineBadge: string;
+    allLangsLabel: string;
+    translatorLabel: string;
   }
 > = {
   uz_lat: {
     heroTitle: 'Klassik Islom Kutubxonasi',
-    heroSubtitle: (b, p) => `${b} ta to‘liq kitob · ${p.toLocaleString()}+ sahifa`,
+    heroSubtitle: (b, p) => `${b} ta mo‘tabar kitob · ${p.toLocaleString()}+ sahifa`,
     continueReading: 'O‘qishni davom ettirish',
     resumeBtn: 'Davom etish',
-    searchPlaceholder: 'Kitob, muallif yoki mavzu qidirish...',
+    searchPlaceholder: 'Kitob, muallif yoki tarjimon qidirish...',
     catAll: 'Barchasi',
     catFiqh: 'Fiqh & Aqida',
     catHadith: 'Hadis & Siyrat',
-    catSpirituality: 'Tarbiya & Meros',
+    catSpirituality: 'Tarbiya & Zikr',
     catOffline: 'Oflayn',
     catFavs: 'Sevimli',
     pagesUnit: (n) => `~${n} bet`,
@@ -187,7 +189,7 @@ const LIBRARY_UI: Record<
     copiedToast: 'Nusxa olindi',
     sharedToast: 'Ulashish kartasi tayyor',
     emptyList: 'Mos kitob topilmadi.',
-    publicDomainNote: 'Oflayn asosiy kitoblar darhol ochiladi; bulutdagi kitoblar bir marta ochilgach qurilmada oflayn saqlanadi',
+    publicDomainNote: 'Barcha kitoblar faqat haqiqiy, ishonchli va inson tomonidan tarjima qilingan mo‘tabar nashrlardir (AI matnlarsiz)',
     swipeWhisper: '← suring →',
     pageShort: (n) => `${n}-bet`,
     loadingBook: 'Kitob sahifalari tayyorlanmoqda...',
@@ -196,17 +198,19 @@ const LIBRARY_UI: Record<
     offlineErrorHint: 'Internetga ulanib bir marta ochsangiz, keyin 100% oflayn o‘qishingiz mumkin.',
     retryBtn: 'Qayta urinish',
     offlineBadge: 'Oflayn',
+    allLangsLabel: 'Barcha tillar',
+    translatorLabel: 'Tarjima / Nashr',
   },
   uz_cyr: {
     heroTitle: 'Классик Ислом Кутубхонаси',
-    heroSubtitle: (b, p) => `${b} та тўлиқ китоб · ${p.toLocaleString()}+ саҳифа`,
+    heroSubtitle: (b, p) => `${b} та мўътабар китоб · ${p.toLocaleString()}+ саҳифа`,
     continueReading: 'Ўқишни давом эттириш',
     resumeBtn: 'Давом этиш',
-    searchPlaceholder: 'Китоб, муаллиф ёки мавзу қидириш...',
+    searchPlaceholder: 'Китоб, муаллиф ёки таржимон қидириш...',
     catAll: 'Барчаси',
     catFiqh: 'Фиқҳ & Ақида',
     catHadith: 'Ҳадис & Сийрат',
-    catSpirituality: 'Тарбия & Мерос',
+    catSpirituality: 'Тарбия & Зикр',
     catOffline: 'Офлайн',
     catFavs: 'Севимли',
     pagesUnit: (n) => `~${n} бет`,
@@ -220,7 +224,7 @@ const LIBRARY_UI: Record<
     copiedToast: 'Нусха олинди',
     sharedToast: 'Улашиш картаси тайёр',
     emptyList: 'Мос китоб топилмади.',
-    publicDomainNote: 'Офлайн асосий китоблар дарҳол очилади; булутдаги китоблар бир марта очилгач қурилмада офлайн сақланади',
+    publicDomainNote: 'Барча китоблар фақат ҳақиқий, ишончли ва инсон томонидан таржима қилинган мўътабар нашрлардир',
     swipeWhisper: '← суринг →',
     pageShort: (n) => `${n}-бет`,
     loadingBook: 'Китоб саҳифалари тайёрланмоқда...',
@@ -229,17 +233,19 @@ const LIBRARY_UI: Record<
     offlineErrorHint: 'Интернетга уланиб бир марта очсангиз, кейин 100% офлайн ўқишингиз мумкин.',
     retryBtn: 'Қайта уриниш',
     offlineBadge: 'Офлайн',
+    allLangsLabel: 'Барча тиллар',
+    translatorLabel: 'Таржима / Нашр',
   },
   ru: {
     heroTitle: 'Классическая Исламская Библиотека',
-    heroSubtitle: (b, p) => `${b} полных книг · ${p.toLocaleString()}+ страниц`,
+    heroSubtitle: (b, p) => `${b} подлинных книг · ${p.toLocaleString()}+ страниц`,
     continueReading: 'Продолжить чтение',
     resumeBtn: 'Читать',
-    searchPlaceholder: 'Поиск книги, автора или темы...',
+    searchPlaceholder: 'Поиск книги, автора или переводчика...',
     catAll: 'Все',
     catFiqh: 'Фикх и Акыда',
     catHadith: 'Хадисы и Сира',
-    catSpirituality: 'Наследие и Нравы',
+    catSpirituality: 'Зикр и Нравы',
     catOffline: 'Офлайн',
     catFavs: 'Избранное',
     pagesUnit: (n) => `~${n} стр.`,
@@ -253,7 +259,7 @@ const LIBRARY_UI: Record<
     copiedToast: 'Скопировано',
     sharedToast: 'Карточка готова',
     emptyList: 'Подходящие книги не найдены.',
-    publicDomainNote: 'Базовые книги доступны сразу офлайн; облачные тома сохраняются на устройстве после первого открытия',
+    publicDomainNote: 'Только подлинные опубликованные человеческие переводы и оригиналы (без текстов ИИ)',
     swipeWhisper: '← листайте →',
     pageShort: (n) => `стр. ${n}`,
     loadingBook: 'Загрузка страниц книги...',
@@ -262,17 +268,19 @@ const LIBRARY_UI: Record<
     offlineErrorHint: 'Подключитесь к интернету один раз, чтобы сохранить книгу для офлайн-чтения.',
     retryBtn: 'Повторить',
     offlineBadge: 'Офлайн',
+    allLangsLabel: 'Все языки',
+    translatorLabel: 'Перевод / Издание',
   },
   en: {
     heroTitle: 'Classical Islamic Library',
-    heroSubtitle: (b, p) => `${b} full-length books · ${p.toLocaleString()}+ pages`,
+    heroSubtitle: (b, p) => `${b} authentic books · ${p.toLocaleString()}+ pages`,
     continueReading: 'Continue Reading',
     resumeBtn: 'Resume',
-    searchPlaceholder: 'Search book, scholar, or topic...',
+    searchPlaceholder: 'Search book, scholar, or translator...',
     catAll: 'All',
     catFiqh: 'Fiqh & Creed',
     catHadith: 'Hadith & Seerah',
-    catSpirituality: 'Heritage & Ethics',
+    catSpirituality: 'Remembrance & Ethics',
     catOffline: 'Offline',
     catFavs: 'Favorites',
     pagesUnit: (n) => `~${n} pp.`,
@@ -286,7 +294,7 @@ const LIBRARY_UI: Record<
     copiedToast: 'Copied to clipboard',
     sharedToast: 'Quote card ready',
     emptyList: 'No matching books found.',
-    publicDomainNote: 'Core classics work offline immediately; cloud volumes cache permanently offline after first open',
+    publicDomainNote: 'Strictly verified, verbatim human-translated editions and classical originals (zero AI-written books)',
     swipeWhisper: '← swipe →',
     pageShort: (n) => `p. ${n}`,
     loadingBook: 'Opening book pages...',
@@ -295,8 +303,21 @@ const LIBRARY_UI: Record<
     offlineErrorHint: 'Connect to the internet once to save this volume permanently for offline reading.',
     retryBtn: 'Try again',
     offlineBadge: 'Offline',
+    allLangsLabel: 'All languages',
+    translatorLabel: 'Translation / Edition',
   },
 };
+
+function formatBookLangBadge(langs: BookCatalogItem['contentLangs']): string {
+  const order: Array<'uz' | 'ru' | 'en' | 'ar'> = ['uz', 'ru', 'en', 'ar'];
+  const labels: Record<'uz' | 'ru' | 'en' | 'ar', string> = {
+    uz: 'O‘Z',
+    ru: 'RU',
+    en: 'EN',
+    ar: 'AR',
+  };
+  return order.filter((l) => langs.includes(l)).map((l) => labels[l]).join(' · ');
+}
 
 function getCoverGradient(theme: BookCatalogItem['coverTheme']): string {
   switch (theme) {
@@ -688,6 +709,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
   const [progress, setProgress] = useState<LibraryProgressState>(loadLibraryProgress);
   const [favorites, setFavorites] = useState<string[]>(loadLibraryFavs);
   const [shelfFilter, setShelfFilter] = useState<ShelfFilter>('all');
+  const [langFilter, setLangFilter] = useState<'all' | 'uz' | 'ru' | 'en'>('all');
   const [search, setSearch] = useState('');
 
   // Open book state
@@ -697,7 +719,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
   const [loadBookError, setLoadBookError] = useState<string | null>(null);
   const [chapterIndex, setChapterIndex] = useState<number>(0);
   const [pageInChapter, setPageInChapter] = useState<number>(0);
-  const [contentLangOverride, setContentLangOverride] = useState<'auto' | 'ru' | 'en'>('auto');
+  const [contentLangOverride, setContentLangOverride] = useState<'auto' | 'uz' | 'ru' | 'en'>('auto');
   const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
 
   const [stageSize, setStageSize] = useState<{ width: number; height: number }>({
@@ -1139,7 +1161,11 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
 
   const filteredBooks = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return catalog.filter((book) => {
+    const userPrefLang: 'uz' | 'ru' | 'en' =
+      language === 'ru' ? 'ru' : language === 'en' ? 'en' : 'uz';
+
+    const matched = catalog.filter((book) => {
+      if (langFilter !== 'all' && !book.contentLangs.includes(langFilter)) return false;
       if (shelfFilter === 'favorites' && !favorites.includes(book.id)) return false;
       if (shelfFilter === 'offline' && !isBookOfflineReady(book)) return false;
       if (
@@ -1153,17 +1179,27 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
       if (!q) return true;
       const tStr = resolveLocalizedBookText(book.title, language).toLowerCase();
       const aStr = resolveLocalizedBookText(book.author, language).toLowerCase();
+      const trStr = resolveLocalizedBookText(book.translator, language).toLowerCase();
       const sStr = resolveLocalizedBookText(book.summary, language).toLowerCase();
       return (
         tStr.includes(q) ||
         aStr.includes(q) ||
+        trStr.includes(q) ||
         sStr.includes(q) ||
         (book.title.uz_lat || '').toLowerCase().includes(q) ||
         (book.title.en || '').toLowerCase().includes(q) ||
         (book.title.ru || '').toLowerCase().includes(q)
       );
     });
-  }, [catalog, favorites, isBookOfflineReady, language, search, shelfFilter]);
+
+    // Always surface books natively available in the user's selected app language FIRST!
+    return matched.sort((a, b) => {
+      const aMatches = a.contentLangs.includes(userPrefLang) ? 1 : 0;
+      const bMatches = b.contentLangs.includes(userPrefLang) ? 1 : 0;
+      if (aMatches !== bMatches) return bMatches - aMatches;
+      return 0;
+    });
+  }, [catalog, favorites, isBookOfflineReady, langFilter, language, search, shelfFilter]);
 
   const cardCls = isDay
     ? 'bg-white border-[#dde3ea] shadow-xs'
@@ -1178,28 +1214,49 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
     () => catalog.filter((b) => isBookOfflineReady(b)).length,
     [catalog, isBookOfflineReady]
   );
+  const langCounts = useMemo(
+    () => ({
+      uz: catalog.filter((b) => b.contentLangs.includes('uz')).length,
+      ru: catalog.filter((b) => b.contentLangs.includes('ru')).length,
+      en: catalog.filter((b) => b.contentLangs.includes('en')).length,
+    }),
+    [catalog]
+  );
 
   /* ==================== FULL-SCREEN ZERO-SCROLL SWIPE BOOK READER ==================== */
   if (activeBookMeta) {
     const bookTitle = resolveLocalizedBookText(activeBookMeta.title, language);
     const bookAuthor = resolveLocalizedBookText(activeBookMeta.author, language);
+    const bookTranslator = resolveLocalizedBookText(activeBookMeta.translator, language);
     const isFav = favorites.includes(activeBookMeta.id);
     const isSepia = isDay && paperTone === 'sepia';
     const bodySizeCls = getBodySizeClass(fontScale);
 
-    // Show subtle RU/EN translation switch if a cloud book has RU+EN without native Uzbek text
-    const showLangSwitch =
-      !activeBookMeta.contentLangs.includes('uz') &&
-      activeBookMeta.contentLangs.includes('ru') &&
-      activeBookMeta.contentLangs.includes('en');
-    const activeLangChip: 'ru' | 'en' =
-      contentLangOverride === 'ru'
+    // Support 1-tap switching whenever a book offers 2+ translation languages (e.g. O'Z/EN on Arba'in, RU/EN on Bukhari)
+    const switchableLangs = activeBookMeta.contentLangs.filter(
+      (l): l is 'uz' | 'ru' | 'en' => l === 'uz' || l === 'ru' || l === 'en'
+    );
+    const showLangSwitch = switchableLangs.length >= 2;
+    const defaultActiveLang: 'uz' | 'ru' | 'en' =
+      language === 'ru' && switchableLangs.includes('ru')
         ? 'ru'
-        : contentLangOverride === 'en'
+        : language === 'en' && switchableLangs.includes('en')
         ? 'en'
-        : language === 'en'
-        ? 'en'
-        : 'ru';
+        : (language === 'uz_lat' || language === 'uz_cyr') && switchableLangs.includes('uz')
+        ? 'uz'
+        : switchableLangs.includes('ru')
+        ? 'ru'
+        : switchableLangs[0] || 'en';
+    const activeLangChip: 'uz' | 'ru' | 'en' =
+      contentLangOverride !== 'auto' && switchableLangs.includes(contentLangOverride)
+        ? contentLangOverride
+        : defaultActiveLang;
+    const cycleBookContentLang = () => {
+      if (!showLangSwitch) return;
+      const curIdx = switchableLangs.indexOf(activeLangChip);
+      const next = switchableLangs[(curIdx + 1) % switchableLangs.length];
+      setContentLangOverride(next);
+    };
 
     const sheetBg = isSepia
       ? 'bg-[#fbf6ea] border-[#d9c79e] text-[#2a1f12]'
@@ -1564,7 +1621,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
             {showLangSwitch && (
               <button
                 type="button"
-                onClick={() => setContentLangOverride(activeLangChip === 'ru' ? 'en' : 'ru')}
+                onClick={cycleBookContentLang}
                 className={`px-2 py-1.5 rounded-xl border text-[10.5px] font-extrabold uppercase transition ${
                   isDay
                     ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
@@ -1572,7 +1629,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
                 }`}
                 title="Switch translation language"
               >
-                {activeLangChip}
+                {activeLangChip === 'uz' ? 'O‘Z' : activeLangChip.toUpperCase()}
               </button>
             )}
             <button
@@ -1702,6 +1759,11 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
                     <p className={`font-arabic text-2xl ${ornamentColor}`}>{activeBookMeta.arabicTitle}</p>
                     <h2 className="font-display text-xl font-bold">{bookTitle}</h2>
                     <p className={`font-display italic text-xs ${mutedInk}`}>{bookAuthor}</p>
+                    {bookTranslator && (
+                      <p className={`text-[11px] max-w-xs leading-snug opacity-85 ${mutedInk}`}>
+                        {ui.translatorLabel}: {bookTranslator}
+                      </p>
+                    )}
 
                     {loadBookError ? (
                       <div className="space-y-3 pt-2 max-w-xs">
@@ -1793,6 +1855,11 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
                   <p className={`text-[11px] truncate ${subText}`}>
                     {bookTitle} · {ui.chaptersUnit(activeBookContent.chapters.length)}
                   </p>
+                  {bookTranslator && (
+                    <p className={`text-[10.5px] mt-0.5 leading-snug ${subText}`}>
+                      {ui.translatorLabel}: {bookTranslator}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1960,6 +2027,38 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
         })}
       </div>
 
+      {/* Language Filter Bar (O'zbekcha / Русский / English) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        {(
+          [
+            { id: 'all', label: ui.allLangsLabel },
+            { id: 'uz', label: `O‘zbekcha (${langCounts.uz})` },
+            { id: 'ru', label: `Русский (${langCounts.ru})` },
+            { id: 'en', label: `English (${langCounts.en})` },
+          ] as Array<{ id: 'all' | 'uz' | 'ru' | 'en'; label: string }>
+        ).map((lf) => {
+          const active = langFilter === lf.id;
+          return (
+            <button
+              key={lf.id}
+              type="button"
+              onClick={() => setLangFilter(lf.id)}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border whitespace-nowrap transition shrink-0 ${
+                active
+                  ? isDay
+                    ? 'bg-[#eef9ea] border-[#158509] text-[#0c4703]'
+                    : 'bg-emerald-950 border-amber-400 text-amber-300'
+                  : isDay
+                  ? 'bg-white/80 border-[#dde3ea] text-slate-600 hover:border-[#158509]/40'
+                  : 'bg-slate-900/80 border-emerald-900/50 text-slate-400 hover:border-amber-400/50'
+              }`}
+            >
+              {lf.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Realistic Standing Hardcover Book Covers Grid */}
       {filteredBooks.length === 0 ? (
         <div className={`rounded-2xl border p-6 text-center text-xs ${cardCls} ${subText}`}>
@@ -2014,8 +2113,8 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({ onBookOpenChange }) => {
                   {/* Gold Embossed Inner Book Frame */}
                   <div className="absolute inset-2.5 left-5 border border-[#fde68a]/40 rounded-r-[8px] rounded-l-[2px] p-2.5 flex flex-col justify-between">
                     <div className="flex items-start justify-between gap-1">
-                      <span className="text-[9px] font-bold tracking-wider uppercase text-[#fde68a]/85 truncate">
-                        {book.era}
+                      <span className="px-1.5 py-0.5 rounded-md bg-black/30 border border-[#fde68a]/30 text-[8.5px] font-extrabold tracking-wider uppercase text-[#fde68a] truncate">
+                        {formatBookLangBadge(book.contentLangs)}
                       </span>
                       <div className="flex items-center gap-1 shrink-0">
                         {!offlineReady && (
