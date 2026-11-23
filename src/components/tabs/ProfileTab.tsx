@@ -26,22 +26,20 @@ import {
   Sun,
   Trash2,
   Trophy,
-  Volume2,
   X,
 } from 'lucide-react';
 import { AppLanguage, Bookmark as BookmarkType, CalcMethod, Coordinates, TranslationId } from '../../types';
 import { getLocalizedSurahMeta } from '../../data/surahs';
-import { getLocalizedCityLabel } from '../../utils/prayerTimes';
+import { loadCompletedSurahs } from '../../data/juz';
+import { getHijriParts, getLocalizedCityLabel } from '../../utils/prayerTimes';
 import {
-  AlertPrayerKey,
+  DEFAULT_ALERT_PREFS,
   PrayerAlertPrefs,
-  PrayerAlertSoundMode,
   checkNativeNotificationPermission,
   isNativeAndroidBridgeAvailable,
   pinPrayerHomeWidget,
   playPrayerChimePreview,
   requestNativeNotificationPermission,
-  triggerTestPrayerAlert,
 } from '../../utils/nativePrayerBridge';
 import {
   RemoteAppRelease,
@@ -123,12 +121,13 @@ const PROFILE_UI: Record<
     downloadApkBtn: string;
     webAutoUpdateSub: string;
     refreshWebBtn: string;
-    soundLabel: string;
-    soundChime: string;
-    soundSystem: string;
-    soundSilent: string;
-    preLabel: string;
+    alertsSimpleSub: string;
     widgetAddShort: string;
+    bookmarksHelp: string;
+    bookmarksEmptyHint: string;
+    openQuranBtn: string;
+    khatmCardTitle: string;
+    khatmCardSub: (done: number) => string;
   }
 > = {
   uz_lat: {
@@ -164,12 +163,13 @@ const PROFILE_UI: Record<
     downloadApkBtn: 'Android APK yuklab olish',
     webAutoUpdateSub: 'Veb-ilova avtomatik yangilanadi',
     refreshWebBtn: 'Yangilash',
-    soundLabel: 'Ovoz',
-    soundChime: 'Maxsus',
-    soundSystem: 'Tizim',
-    soundSilent: 'Ovozsiz',
-    preLabel: 'Oldindan',
+    alertsSimpleSub: '5 vaqt namoz · Nurul Islam ovozi',
     widgetAddShort: "Qo'shish",
+    bookmarksHelp: "Qur'ondan saqlagan oyatlaringiz — bosib o'sha oyatga o'ting",
+    bookmarksEmptyHint: "Qur'on o'qiyotganda istalgan oyatdagi xatcho'p belgisini bosing — bu yerda saqlanadi.",
+    openQuranBtn: "Qur'onni ochish",
+    khatmCardTitle: "O'qilgan suralar (Xatm)",
+    khatmCardSub: (done) => `${done} / 114 sura`,
   },
   uz_cyr: {
     settingsTitle: 'Созламалар',
@@ -204,12 +204,13 @@ const PROFILE_UI: Record<
     downloadApkBtn: 'Android APK юклаб олиш',
     webAutoUpdateSub: 'Веб-илова автоматик янгиланади',
     refreshWebBtn: 'Янгилаш',
-    soundLabel: 'Овоз',
-    soundChime: 'Махсус',
-    soundSystem: 'Тизим',
-    soundSilent: 'Овозсиз',
-    preLabel: 'Олдиндан',
+    alertsSimpleSub: '5 вақт намоз · Нурул Ислам овози',
     widgetAddShort: 'Қўшиш',
+    bookmarksHelp: 'Қуръондан сақлаган оятларингиз — босиб ўша оятга ўтинг',
+    bookmarksEmptyHint: 'Қуръон ўқиётганда исталган оятдаги хатчўп белгисини босинг — бу ерда сақланади.',
+    openQuranBtn: 'Қуръонни очиш',
+    khatmCardTitle: 'Ўқилган суралар (Хатм)',
+    khatmCardSub: (done) => `${done} / 114 сура`,
   },
   ru: {
     settingsTitle: 'Настройки',
@@ -244,12 +245,13 @@ const PROFILE_UI: Record<
     downloadApkBtn: 'Скачать Android APK',
     webAutoUpdateSub: 'Веб-приложение обновляется автоматически',
     refreshWebBtn: 'Обновить',
-    soundLabel: 'Звук',
-    soundChime: 'Особый',
-    soundSystem: 'Системный',
-    soundSilent: 'Без звука',
-    preLabel: 'Заранее',
+    alertsSimpleSub: '5 намазов · Фирменный звук Nurul Islam',
     widgetAddShort: 'Добавить',
+    bookmarksHelp: 'Сохранённые аяты Корана — нажмите, чтобы открыть нужный аят',
+    bookmarksEmptyHint: 'Нажмите значок закладки у любого аята при чтении Корана — он появится здесь.',
+    openQuranBtn: 'Открыть Коран',
+    khatmCardTitle: 'Прочитанные суры (Хатм)',
+    khatmCardSub: (done) => `${done} / 114 сур`,
   },
   en: {
     settingsTitle: 'Settings',
@@ -284,12 +286,13 @@ const PROFILE_UI: Record<
     downloadApkBtn: 'Download Android APK',
     webAutoUpdateSub: 'Web app updates automatically',
     refreshWebBtn: 'Refresh',
-    soundLabel: 'Sound',
-    soundChime: 'Chime',
-    soundSystem: 'System',
-    soundSilent: 'Silent',
-    preLabel: 'Reminder',
+    alertsSimpleSub: 'All 5 daily prayers · Nurul Islam chime',
     widgetAddShort: 'Add',
+    bookmarksHelp: 'Your saved Quran verses — tap any item to jump straight to that Ayah',
+    bookmarksEmptyHint: 'Tap the bookmark icon on any verse while reading the Quran to save it here.',
+    openQuranBtn: 'Open Quran',
+    khatmCardTitle: 'Surahs Completed (Khatm)',
+    khatmCardSub: (done) => `${done} / 114 surahs`,
   },
 };
 
@@ -381,7 +384,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   onSelectLanguage,
   alertPrefs,
   onChangeAlertPrefs,
-  todayFajrTime,
   updateRelease,
   updateStatus,
   updateProgress,
@@ -411,11 +413,16 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [activityTick, setActivityTick] = useState(0);
 
   const [hasNotifPerm, setHasNotifPerm] = useState<boolean>(checkNativeNotificationPermission);
-  const [testSent, setTestSent] = useState(false);
   const [widgetRequested, setWidgetRequested] = useState(false);
   const [showAllBookmarks, setShowAllBookmarks] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [refreshingWeb, setRefreshingWeb] = useState(false);
+
+  const isRamadanSeason = useMemo(() => getHijriParts(new Date()).month === 9, []);
+  const completedSurahsCount = useMemo(() => {
+    void activityTick;
+    return loadCompletedSurahs().length;
+  }, [activityTick]);
 
   useEffect(() => {
     const refresh = () => {
@@ -485,10 +492,14 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
     if (nextEnabled && !hasNotifPerm) {
       requestNativeNotificationPermission((granted) => {
         setHasNotifPerm(granted);
-        if (granted) onChangeAlertPrefs({ ...alertPrefs, enabled: true });
+        if (granted) {
+          onChangeAlertPrefs({ ...DEFAULT_ALERT_PREFS, enabled: true });
+          playPrayerChimePreview();
+        }
       });
     } else {
-      onChangeAlertPrefs({ ...alertPrefs, enabled: nextEnabled });
+      onChangeAlertPrefs({ ...DEFAULT_ALERT_PREFS, enabled: nextEnabled });
+      if (nextEnabled) playPrayerChimePreview();
     }
   };
 
@@ -678,8 +689,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 </a>
               </div>
             ) : (
-              <div className="p-3.5 space-y-3">
-                {/* Master Sliding Toggle Switch */}
+              <div className="p-3.5 space-y-2.5">
+                {/* Single Clean ON/OFF Prayer Notification Switch (Nurul Islam Prayer Chime, 5 daily prayers) */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={iconBoxCls}>
@@ -687,7 +698,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="text-[13px] font-bold">{t.alerts.title}</div>
-                      <div className={`text-[11.5px] truncate ${subTextCls}`}>{t.alerts.enableDesc}</div>
+                      <div className={`text-[11.5px] truncate ${subTextCls}`}>{ui.alertsSimpleSub}</div>
                     </div>
                   </div>
                   <button
@@ -713,180 +724,26 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   </button>
                 </div>
 
-                {/* Collapsible alert options — only shown when enabled so Settings stays ultra-clean */}
-                {alertPrefs.enabled && (
+                {alertPrefs.enabled && !hasNotifPerm && (
                   <div
-                    className={`pt-3 border-t space-y-3 animate-in fade-in ${
-                      isDay ? 'border-slate-100' : 'border-slate-800/80'
+                    className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs ${
+                      isDay
+                        ? 'bg-amber-50 border-amber-200 text-amber-900'
+                        : 'bg-amber-950/40 border-amber-700/50 text-amber-200'
                     }`}
                   >
-                    {!hasNotifPerm && (
-                      <div
-                        className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs ${
-                          isDay
-                            ? 'bg-amber-50 border-amber-200 text-amber-900'
-                            : 'bg-amber-950/40 border-amber-700/50 text-amber-200'
-                        }`}
-                      >
-                        <span>{t.alerts.permNeeded}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            requestNativeNotificationPermission((granted) => setHasNotifPerm(granted))
-                          }
-                          className={`px-2.5 py-1 rounded-lg font-bold shrink-0 ${
-                            isDay ? 'bg-[#158509] text-white' : 'bg-amber-400 text-slate-950'
-                          }`}
-                        >
-                          {t.alerts.allowPermBtn}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* 6 Prayer Chips */}
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(
-                        [
-                          { key: 'imsak', label: t.prayers.imsak },
-                          { key: 'fajr', label: t.prayers.fajr },
-                          { key: 'dhuhr', label: t.prayers.dhuhr },
-                          { key: 'asr', label: t.prayers.asr },
-                          { key: 'maghrib', label: t.prayers.maghrib },
-                          { key: 'isha', label: t.prayers.isha },
-                        ] as Array<{ key: AlertPrayerKey; label: string }>
-                      ).map((item) => {
-                        const active = alertPrefs.prayers[item.key];
-                        return (
-                          <button
-                            key={item.key}
-                            type="button"
-                            onClick={() =>
-                              onChangeAlertPrefs({
-                                ...alertPrefs,
-                                prayers: { ...alertPrefs.prayers, [item.key]: !active },
-                              })
-                            }
-                            className={`py-2 px-2 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1 transition ${
-                              active
-                                ? isDay
-                                  ? 'bg-[#eef9ea] border-[#9cd692] text-[#0c4703]'
-                                  : 'bg-emerald-950 border-emerald-600/80 text-emerald-300'
-                                : isDay
-                                ? 'bg-[#f4f7f9] border-[#e2e8f0] text-slate-400'
-                                : 'bg-slate-950 border-slate-800 text-slate-500'
-                            }`}
-                          >
-                            {active && <Check className="w-3 h-3 shrink-0" />}
-                            <span className="truncate">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Sound Selector */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className={`text-xs font-medium ${isDay ? 'text-slate-600' : 'text-slate-300'}`}>
-                        {ui.soundLabel}
-                      </span>
-                      <div className={segWrapCls}>
-                        {(
-                          [
-                            { id: 'chime', label: ui.soundChime },
-                            { id: 'default', label: ui.soundSystem },
-                            { id: 'silent', label: ui.soundSilent },
-                          ] as Array<{ id: PrayerAlertSoundMode; label: string }>
-                        ).map((opt) => {
-                          const selected = (alertPrefs.soundMode || 'chime') === opt.id;
-                          return (
-                            <button
-                              key={opt.id}
-                              type="button"
-                              onClick={() => {
-                                onChangeAlertPrefs({ ...alertPrefs, soundMode: opt.id });
-                                if (opt.id === 'chime') playPrayerChimePreview();
-                              }}
-                              className={`px-2.5 py-1 rounded-[9px] text-[11px] font-bold flex items-center gap-1 transition ${
-                                selected
-                                  ? isDay
-                                    ? 'bg-white text-[#0c4703] shadow-xs'
-                                    : 'bg-amber-400 text-slate-950 shadow-xs'
-                                  : isDay
-                                  ? 'text-slate-600 hover:text-slate-900'
-                                  : 'text-slate-400 hover:text-slate-200'
-                              }`}
-                            >
-                              {opt.id === 'chime' && <Volume2 className="w-3 h-3 shrink-0" />}
-                              <span>{opt.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Pre-Prayer Reminder */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className={`text-xs font-medium ${isDay ? 'text-slate-600' : 'text-slate-300'}`}>
-                        {ui.preLabel}
-                      </span>
-                      <div className={segWrapCls}>
-                        {([0, 10, 15] as const).map((mins) => {
-                          const selected = alertPrefs.preReminderMins === mins;
-                          return (
-                            <button
-                              key={mins}
-                              type="button"
-                              onClick={() => onChangeAlertPrefs({ ...alertPrefs, preReminderMins: mins })}
-                              className={`px-2.5 py-1 rounded-[9px] text-[11px] font-bold transition ${
-                                selected
-                                  ? isDay
-                                    ? 'bg-white text-[#0c4703] shadow-xs'
-                                    : 'bg-amber-400 text-slate-950 shadow-xs'
-                                  : isDay
-                                  ? 'text-slate-600 hover:text-slate-900'
-                                  : 'text-slate-400 hover:text-slate-200'
-                              }`}
-                            >
-                              {mins === 0 ? t.alerts.offOpt : `${mins} ${t.alerts.minSuffix}`}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Subtle Test Alert Action */}
-                    <div className="flex justify-end pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const send = () => {
-                            triggerTestPrayerAlert(
-                              t.prayers.fajr,
-                              todayFajrTime,
-                              loc.city,
-                              alertPrefs.soundMode || 'chime'
-                            );
-                            setTestSent(true);
-                            window.setTimeout(() => setTestSent(false), 2400);
-                          };
-                          if (!hasNotifPerm) {
-                            requestNativeNotificationPermission((granted) => {
-                              setHasNotifPerm(granted);
-                              if (granted) send();
-                            });
-                            return;
-                          }
-                          send();
-                        }}
-                        className={`text-xs font-bold flex items-center gap-0.5 transition ${
-                          isDay
-                            ? 'text-[#158509] hover:text-[#0c4703]'
-                            : 'text-amber-300 hover:text-amber-200'
-                        }`}
-                      >
-                        <span>{testSent ? t.alerts.testSent : `${t.alerts.testBtn} (${todayFajrTime})`}</span>
-                        {!testSent && <ChevronRight className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
+                    <span>{t.alerts.permNeeded}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        requestNativeNotificationPermission((granted) => setHasNotifPerm(granted))
+                      }
+                      className={`px-2.5 py-1 rounded-lg font-bold shrink-0 ${
+                        isDay ? 'bg-[#158509] text-white' : 'bg-amber-400 text-slate-950'
+                      }`}
+                    >
+                      {t.alerts.allowPermBtn}
+                    </button>
                   </div>
                 )}
               </div>
@@ -1544,20 +1401,24 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         </div>
       </div>
 
-      {/* Saved Quran Bookmarks (Directly on Profile — 1 tap jumps straight to Ayah!) */}
+      {/* Saved Quran Bookmarks — Clear Purpose, 1-Tap Jump to Highlighted Ayah */}
       <div className={`${cardCls} p-3.5 space-y-2.5`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bookmark className={`w-4 h-4 ${isDay ? 'text-[#158509]' : 'text-amber-400'}`} />
-            <span className="text-xs font-bold">
-              {t.profile.bookmarksTitle} ({bookmarks.length})
-            </span>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Bookmark className={`w-4 h-4 shrink-0 ${isDay ? 'text-[#158509]' : 'text-amber-400'}`} />
+              <span className="text-[13px] font-bold">
+                {t.profile.bookmarksTitle}
+                {bookmarks.length > 0 ? ` (${bookmarks.length})` : ''}
+              </span>
+            </div>
+            <p className={`text-[11px] mt-0.5 ${subTextCls}`}>{ui.bookmarksHelp}</p>
           </div>
           {bookmarks.length > 0 && (
             <button
               type="button"
               onClick={onClearBookmarks}
-              className={`text-[11px] font-semibold ${
+              className={`text-[11px] font-semibold shrink-0 pt-0.5 ${
                 isDay ? 'text-rose-600 hover:text-rose-700' : 'text-rose-400 hover:text-rose-300'
               }`}
             >
@@ -1567,7 +1428,23 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         </div>
 
         {bookmarks.length === 0 ? (
-          <p className={`text-xs ${subTextCls}`}>{t.profile.noBookmarks}</p>
+          <div
+            className={`rounded-xl border border-dashed p-3 flex items-center justify-between gap-3 ${
+              isDay ? 'bg-[#f8fbf7] border-[#d3e4cf]' : 'bg-slate-950/60 border-emerald-900/50'
+            }`}
+          >
+            <p className={`text-[11.5px] leading-relaxed ${subTextCls}`}>{ui.bookmarksEmptyHint}</p>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('quran')}
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 flex items-center gap-1 transition active:scale-95 ${
+                isDay ? 'bg-[#158509] text-white' : 'bg-amber-400 text-slate-950'
+              }`}
+            >
+              <span>{ui.openQuranBtn}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         ) : (
           <div className="space-y-1.5">
             {visibleBookmarks.map((bm) => {
@@ -1575,26 +1452,38 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               return (
                 <div
                   key={bm.id}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs ${
-                    isDay ? 'bg-[#f4f8f5] border-[#e1ece3]' : 'bg-slate-950/70 border-slate-800/80'
+                  className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs transition ${
+                    isDay
+                      ? 'bg-[#f6faf5] border-[#dce9d9] hover:border-[#158509]/50'
+                      : 'bg-slate-950/70 border-slate-800/80 hover:border-amber-400/50'
                   }`}
                 >
                   <button
                     type="button"
                     onClick={() => onOpenSurah(bm.surahNumber, bm.ayahNumber)}
-                    className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                    className="flex-1 min-w-0 flex items-center gap-2.5 text-left"
                   >
-                    <BookOpen className={`w-3.5 h-3.5 shrink-0 ${isDay ? 'text-[#158509]' : 'text-amber-400'}`} />
-                    <span className="font-semibold truncate">{surahTitle}</span>
-                    <span className={`tabular-nums shrink-0 ${isDay ? 'text-[#0c4703]' : 'text-emerald-400'}`}>
-                      {t.quran.ayahWord} {bm.ayahNumber}
+                    <span
+                      className={`w-7 h-7 rounded-lg font-mono font-bold text-[11px] flex items-center justify-center shrink-0 ${
+                        isDay
+                          ? 'bg-[#eef9ea] text-[#0c4703] border border-[#cde8c3]'
+                          : 'bg-emerald-950 text-amber-300 border border-emerald-800/60'
+                      }`}
+                    >
+                      {bm.surahNumber}
                     </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold truncate">{surahTitle}</div>
+                      <div className={`text-[10.5px] font-medium ${isDay ? 'text-[#158509]' : 'text-amber-300'}`}>
+                        {t.quran.ayahWord} {bm.ayahNumber}
+                      </div>
+                    </div>
                   </button>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => onRemoveBookmark(bm.id)}
-                      className={`p-1 rounded-lg ${
+                      className={`p-1.5 rounded-lg transition ${
                         isDay ? 'text-slate-400 hover:text-rose-600' : 'text-slate-500 hover:text-rose-400'
                       }`}
                       aria-label="Remove bookmark"
@@ -1604,10 +1493,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     <button
                       type="button"
                       onClick={() => onOpenSurah(bm.surahNumber, bm.ayahNumber)}
-                      className="p-0.5 text-slate-400"
+                      className={`p-1 rounded-lg ${isDay ? 'text-[#158509]' : 'text-amber-400'}`}
                       aria-label="Open bookmark"
                     >
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -1629,25 +1518,63 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         )}
       </div>
 
-      {/* Compact Ramadan Fasts Shortcut */}
+      {/* Year-Round Quran Khatm Progress (Replaces off-season 0/30 Ramadan counter) */}
       <button
         type="button"
-        onClick={() => onNavigateTab('ramadan')}
-        className={`${cardCls} w-full px-3.5 py-3 flex items-center justify-between text-left transition active:scale-[0.99]`}
+        onClick={() => onNavigateTab('quran')}
+        className={`${cardCls} w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition active:scale-[0.99]`}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className={iconBoxCls}>
-            <Moon className="w-4 h-4" />
+            <BookOpen className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <div className={`text-[10.5px] font-semibold uppercase truncate ${subTextCls}`}>
-              {t.profile.ramadanFastsStat}
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[12.5px] font-bold truncate">{ui.khatmCardTitle}</span>
+              <span className={`text-[11px] font-mono font-bold tabular-nums shrink-0 ${isDay ? 'text-[#158509]' : 'text-amber-300'}`}>
+                {ui.khatmCardSub(completedSurahsCount)}
+              </span>
             </div>
-            <div className="text-sm font-extrabold tabular-nums">{summary.fastedCount} / 30</div>
+            <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDay ? 'bg-slate-100' : 'bg-slate-800'}`}>
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${isDay ? 'bg-[#158509]' : 'bg-amber-400'}`}
+                style={{ width: `${Math.max(completedSurahsCount > 0 ? 4 : 0, Math.round((completedSurahsCount / 114) * 100))}%` }}
+              />
+            </div>
           </div>
         </div>
         <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
       </button>
+
+      {/* Seasonal Ramadan Fasts Tracker — Only shown during Ramadan or if fasts are already recorded */}
+      {(isRamadanSeason || summary.fastedCount > 0) && (
+        <button
+          type="button"
+          onClick={() => onNavigateTab('ramadan')}
+          className={`${cardCls} w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition active:scale-[0.99]`}
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className={iconBoxCls}>
+              <Moon className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[12.5px] font-bold truncate">{t.profile.ramadanFastsStat}</span>
+                <span className={`text-[11px] font-mono font-bold tabular-nums shrink-0 ${isDay ? 'text-[#158509]' : 'text-amber-300'}`}>
+                  {summary.fastedCount} / 30
+                </span>
+              </div>
+              <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDay ? 'bg-slate-100' : 'bg-slate-800'}`}>
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${isDay ? 'bg-[#158509]' : 'bg-amber-400'}`}
+                  style={{ width: `${Math.min(100, Math.round((summary.fastedCount / 30) * 100))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
+        </button>
+      )}
     </div>
   );
 };

@@ -105,6 +105,7 @@ import {
 interface QuranTabProps {
   initialSurahNumber?: number | null;
   initialAyahNumber?: number | null;
+  backButtonLabel?: string;
   onCloseSurahDetail?: () => void;
   onSurahDetailActiveChange?: (isActive: boolean) => void;
   selectedTranslation: TranslationId;
@@ -392,6 +393,8 @@ interface AyahCardProps {
   selectedTranslation: TranslationId;
   isDay: boolean;
   isActive: boolean;
+  isHighlighted: boolean;
+  highlightBadgeLabel?: string;
   isPlayingThis: boolean;
   activeWordPos: number | null;
   isBookmarked: boolean;
@@ -412,6 +415,8 @@ const AyahCard = React.memo<AyahCardProps>(
     selectedTranslation,
     isDay,
     isActive,
+    isHighlighted,
+    highlightBadgeLabel,
     isPlayingThis,
     activeWordPos,
     isBookmarked,
@@ -436,11 +441,15 @@ const AyahCard = React.memo<AyahCardProps>(
       <div
         id={`ayah-${ayah.numberInSurah}`}
         onClick={() => onPlayAyah(ayah.numberInSurah)}
-        className={`${isActive ? '' : 'nq-ayah-card '}p-4 rounded-2xl border cursor-pointer transition-all duration-300 active:scale-[0.995] ${
+        className={`${isActive || isHighlighted ? '' : 'nq-ayah-card '}p-4 rounded-2xl border cursor-pointer transition-all duration-300 active:scale-[0.995] ${
           isActive
             ? isDay
               ? 'bg-[#eef9ea] border-[#158509] shadow-md ring-1 ring-[#158509]/30'
               : 'bg-emerald-950/90 border-amber-400 shadow-lg'
+            : isHighlighted
+            ? isDay
+              ? 'bg-amber-50/95 border-amber-400 shadow-md ring-2 ring-amber-400/50'
+              : 'bg-amber-950/40 border-amber-400 shadow-lg ring-2 ring-amber-400/45'
             : isDay
             ? 'bg-white border-[#dde3ea] shadow-xs'
             : 'bg-slate-900/75 border-emerald-900/40'
@@ -448,15 +457,25 @@ const AyahCard = React.memo<AyahCardProps>(
       >
         <div
           className={`flex items-center justify-between pb-2.5 border-b text-xs ${
-            isDay ? 'border-slate-100' : 'border-emerald-900/30'
+            isHighlighted
+              ? isDay
+                ? 'border-amber-200/80'
+                : 'border-amber-500/30'
+              : isDay
+              ? 'border-slate-100'
+              : 'border-emerald-900/30'
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <span
-              className={`w-7 h-7 rounded-xl font-bold text-xs flex items-center justify-center font-mono ${
+              className={`w-7 h-7 rounded-xl font-bold text-xs flex items-center justify-center font-mono shrink-0 ${
                 isActive
                   ? isDay
                     ? 'bg-[#158509] text-white nq-keep-dark'
+                    : 'bg-amber-400 text-slate-950'
+                  : isHighlighted
+                  ? isDay
+                    ? 'bg-amber-500 text-white nq-keep-dark'
                     : 'bg-amber-400 text-slate-950'
                   : isDay
                   ? 'bg-[#eef9ea] text-[#0c4703] border border-[#cde8c3]'
@@ -465,9 +484,21 @@ const AyahCard = React.memo<AyahCardProps>(
             >
               {ayah.numberInSurah}
             </span>
-            <span className={`text-[11px] font-medium ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
+            <span className={`text-[11px] font-medium shrink-0 ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
               {surahNumber}:{ayah.numberInSurah}
             </span>
+            {isHighlighted && highlightBadgeLabel && (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold truncate ${
+                  isDay
+                    ? 'bg-amber-200/80 text-amber-950 border border-amber-300'
+                    : 'bg-amber-400/20 text-amber-200 border border-amber-400/40'
+                }`}
+              >
+                <BookmarkCheck className="w-3 h-3 shrink-0" />
+                <span className="truncate">{highlightBadgeLabel}</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
@@ -598,6 +629,7 @@ AyahCard.displayName = 'AyahCard';
 export const QuranTab: React.FC<QuranTabProps> = ({
   initialSurahNumber,
   initialAyahNumber,
+  backButtonLabel,
   onCloseSurahDetail,
   onSurahDetailActiveChange,
   selectedTranslation,
@@ -611,6 +643,9 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const [activeSurahNumber, setActiveSurahNumber] = useState<number | null>(initialSurahNumber || null);
   const [activeSurahData, setActiveSurahData] = useState<SurahDetail | null>(null);
   const [isLoadingSurah, setIsLoadingSurah] = useState(false);
+  const [highlightedAyah, setHighlightedAyah] = useState<number | null>(
+    initialAyahNumber && initialAyahNumber >= 1 ? initialAyahNumber : null
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'juz' | 'bookmarks'>('all');
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
@@ -697,19 +732,59 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     return () => observer.disconnect();
   }, [activeSurahData?.number, activeSurahData?.ayahs.length, visibleAyahCount]);
 
-  // Scroll cleanly to target Ayah (when resuming or opening from 30 Juz index)
+  // Scroll cleanly & reliably to target Ayah (when opening a Saved Bookmark, resuming, or jumping from Juz index)
   useEffect(() => {
     const target = targetScrollAyahRef.current;
-    if (!activeSurahData || activeSurahData.ayahs.length === 0 || target <= 1) return;
-    const rafId = requestAnimationFrame(() => {
+    if (isLoadingSurah || !activeSurahData || activeSurahData.ayahs.length === 0 || target < 1) return;
+
+    if (visibleAyahCount < target) {
+      setVisibleAyahCount(Math.min(activeSurahData.ayahs.length, target + 15));
+      return;
+    }
+
+    const scrollToTarget = (smooth: boolean): boolean => {
       const el = document.getElementById(`ayah-${target}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        targetScrollAyahRef.current = 1;
+      if (!el) return false;
+      const container = versesScrollRef.current;
+      if (container && container.scrollHeight > container.clientHeight + 4) {
+        const cRect = container.getBoundingClientRect();
+        const eRect = el.getBoundingClientRect();
+        const offsetInContainer = eRect.top - cRect.top + container.scrollTop;
+        const targetTop =
+          eRect.height > cRect.height - 28
+            ? Math.max(0, offsetInContainer - 12)
+            : Math.max(0, offsetInContainer - (cRect.height - eRect.height) / 2);
+        container.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
+        return true;
       }
+      if (target === 1) {
+        container?.scrollTo({ top: 0, behavior: 'auto' });
+        return true;
+      }
+      el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
+      return Boolean(container && container.scrollHeight > container.clientHeight + 4);
+    };
+
+    let raf2 = 0;
+    let settleTimer = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const moved = scrollToTarget(false);
+        // Re-center once after Arabic webfont / layout paint settles
+        settleTimer = window.setTimeout(() => {
+          const settled = scrollToTarget(false);
+          if (moved || settled) {
+            targetScrollAyahRef.current = 0;
+          }
+        }, 160);
+      });
     });
-    return () => cancelAnimationFrame(rafId);
-  }, [activeSurahData]);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.clearTimeout(settleTimer);
+    };
+  }, [activeSurahData, isLoadingSurah, visibleAyahCount, highlightedAyah]);
 
   useEffect(() => {
     activeSurahRef.current = activeSurahData;
@@ -1751,7 +1826,9 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     if (initialSurahNumber) {
       savedListScrollTopRef.current = 0;
       tappedListSurahRef.current = initialSurahNumber;
-      loadSurah(initialSurahNumber, false, initialAyahNumber || 1);
+      const target = initialAyahNumber && initialAyahNumber >= 1 ? initialAyahNumber : null;
+      setHighlightedAyah(target);
+      loadSurah(initialSurahNumber, false, target || 1);
     }
   }, [initialSurahNumber, initialAyahNumber, loadSurah]);
 
@@ -1910,6 +1987,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const closeSurahDetail = useCallback(() => {
     loadedSurahIdRef.current = null;
     shouldRestoreListScrollRef.current = true;
+    setHighlightedAyah(null);
     setActiveSurahNumber(null);
     setActiveSurahData(null);
     if (onCloseSurahDetail) onCloseSurahDetail();
@@ -2190,7 +2268,8 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
   // ======================== SURAH DETAIL READER VIEW ========================
   if (activeSurahNumber && activeSurahData) {
-    const displayAyahNum = currentPlayingAyah ?? (activeSurahData.ayahs[0]?.numberInSurah || 1);
+    const displayAyahNum =
+      currentPlayingAyah ?? highlightedAyah ?? (activeSurahData.ayahs[0]?.numberInSurah || 1);
     const totalLoadedAyahs = activeSurahData.ayahs.length;
     const locActiveSurah = getLocalizedSurahMeta(
       activeSurahData.number,
@@ -2230,7 +2309,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{t.quran.backToSurahs}</span>
+            <span>{backButtonLabel || t.quran.backToSurahs}</span>
           </button>
 
           <h1
@@ -2323,8 +2402,17 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                   bookmarkedSet.add(b.ayahNumber);
                 }
               }
+              const savedAyahBadgeLabel =
+                language === 'uz_cyr'
+                  ? 'Сақланган оят'
+                  : language === 'ru'
+                  ? 'Сохранённый аят'
+                  : language === 'en'
+                  ? 'Saved Ayah'
+                  : 'Saqlangan oyat';
               return activeSurahData.ayahs.slice(0, visibleAyahCount).map((ayah) => {
                 const isActive = currentPlayingAyah === ayah.numberInSurah;
+                const isHighlighted = highlightedAyah === ayah.numberInSurah;
                 return (
                   <AyahCard
                     key={ayah.numberInSurah}
@@ -2334,6 +2422,8 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                     selectedTranslation={selectedTranslation}
                     isDay={isDay}
                     isActive={isActive}
+                    isHighlighted={isHighlighted}
+                    highlightBadgeLabel={bookmarkedSet.has(ayah.numberInSurah) ? savedAyahBadgeLabel : undefined}
                     isPlayingThis={isActive && isAudioPlaying}
                     activeWordPos={isActive ? activeWordPos : null}
                     isBookmarked={bookmarkedSet.has(ayah.numberInSurah)}

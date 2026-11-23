@@ -13,8 +13,76 @@ import { NAMES_OF_ALLAH, getLocalizedAllahName } from '../../data/names99';
 import { soundFx } from '../../utils/audio';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import pearlBeadImg from '../../assets/tasbih-bead-pearl.webp';
-import amberBeadImg from '../../assets/tasbih-bead-amber.webp';
+
+/**
+ * Handcrafted 3D Luxury Islamic Misbaha Bead (Pure Scalable Vector Art — 0 KB raster weight, razor-sharp at any DPI)
+ * - Primary Bead: Warm Royal Honey-Amber polished gemstone sphere with translucent sub-surface caustic glow
+ *   and machined 24k satin-gold cord ferrules.
+ * - Divider Bead (every 11th): Imperial Deep Emerald-Jade cabochon spacer framed by double stepped 24k gold collars.
+ */
+const TasbihGemBead: React.FC<{ isDivider: boolean; isCenter: boolean }> = React.memo(
+  ({ isDivider, isCenter }) => {
+    if (isDivider) {
+      return (
+        <svg
+          viewBox="0 0 64 64"
+          className="w-[46px] h-[46px] max-w-none shrink-0 select-none overflow-visible"
+          style={{
+            filter: isCenter
+              ? 'drop-shadow(0 8px 14px rgba(0, 0, 0, 0.56)) drop-shadow(0 0 12px rgba(251, 191, 36, 0.55))'
+              : 'drop-shadow(0 5px 8px rgba(0, 0, 0, 0.48))',
+          }}
+        >
+          {/* Left & Right stepped 24k brushed-gold end-cap ferrules */}
+          <rect x="4" y="25" width="7" height="14" rx="3" fill="url(#nqBeadGoldCap)" stroke="#5c3906" strokeWidth="0.7" />
+          <rect x="9.5" y="22.5" width="4.5" height="19" rx="2" fill="url(#nqBeadGoldCollar)" stroke="#5c3906" strokeWidth="0.6" />
+          <rect x="53" y="25" width="7" height="14" rx="3" fill="url(#nqBeadGoldCap)" stroke="#5c3906" strokeWidth="0.7" />
+          <rect x="50" y="22.5" width="4.5" height="19" rx="2" fill="url(#nqBeadGoldCollar)" stroke="#5c3906" strokeWidth="0.6" />
+
+          {/* Imperial Emerald-Jade Spacer Body */}
+          <ellipse cx="32" cy="32" rx="20.5" ry="19.5" fill="url(#nqBeadJadeBody)" stroke="rgba(253, 230, 138, 0.45)" strokeWidth="0.8" />
+          {/* Internal Jade Caustic Sub-Surface Glow */}
+          <ellipse cx="36" cy="39" rx="12" ry="7" fill="url(#nqBeadJadeCaustic)" />
+          {/* Gleaming 24k Gold Meridian Accent Ring */}
+          <ellipse cx="32" cy="32" rx="3.2" ry="19.3" fill="none" stroke="url(#nqBeadGoldCollar)" strokeWidth="2.1" opacity="0.92" />
+          {/* Crisp Studio Glass Specular Highlight */}
+          <ellipse cx="25" cy="22.5" rx="7.2" ry="3.8" transform="rotate(-24 25 22.5)" fill="url(#nqBeadGloss)" />
+          <circle cx="20.5" cy="27.5" r="1.6" fill="rgba(255,255,255,0.65)" />
+        </svg>
+      );
+    }
+
+    return (
+      <svg
+        viewBox="0 0 64 64"
+        className="w-[54px] h-[54px] max-w-none shrink-0 select-none overflow-visible"
+        style={{
+          filter: isCenter
+            ? 'drop-shadow(0 9px 15px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 13px rgba(251, 191, 36, 0.52))'
+            : 'drop-shadow(0 5px 9px rgba(0, 0, 0, 0.48))',
+        }}
+      >
+        {/* Sculpted 24k Satin-Gold Cord Ferrules */}
+        <rect x="3.5" y="25.5" width="6.5" height="13" rx="3" fill="url(#nqBeadGoldCap)" stroke="#5c3906" strokeWidth="0.65" />
+        <rect x="54" y="25.5" width="6.5" height="13" rx="3" fill="url(#nqBeadGoldCap)" stroke="#5c3906" strokeWidth="0.65" />
+
+        {/* Polished Warm Royal Honey-Amber Spherical Gemstone */}
+        <circle cx="32" cy="32" r="22.5" fill="url(#nqBeadAmberBody)" />
+        {/* Delicate Warm Translucent Rim Depth */}
+        <circle cx="32" cy="32" r="22.1" fill="none" stroke="rgba(255, 241, 194, 0.35)" strokeWidth="0.9" />
+        {/* Warm Sub-Surface Translucent Amber Caustic Bounce (bottom-right) */}
+        <ellipse cx="37.5" cy="40.5" rx="13" ry="8.5" transform="rotate(-18 37.5 40.5)" fill="url(#nqBeadAmberCaustic)" />
+        {/* Subtle Satin-Gold Hairline Trim at Cord Poles */}
+        <path d="M 11.2 24.5 Q 13.5 32 11.2 39.5" fill="none" stroke="url(#nqBeadGoldCollar)" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+        <path d="M 52.8 24.5 Q 50.5 32 52.8 39.5" fill="none" stroke="url(#nqBeadGoldCollar)" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+        {/* Crisp Curved Studio Glass Specular Reflection */}
+        <ellipse cx="24" cy="21" rx="8.2" ry="4.4" transform="rotate(-28 24 21)" fill="url(#nqBeadGloss)" />
+        <circle cx="18.8" cy="27.2" r="1.9" fill="rgba(255, 253, 240, 0.72)" />
+      </svg>
+    );
+  }
+);
+TasbihGemBead.displayName = 'TasbihGemBead';
 
 const STATS_STORAGE_KEY = 'nq_tasbih_stats';
 
@@ -625,6 +693,48 @@ export const TasbihTab: React.FC = () => {
                 <stop offset="65%" stopColor="rgba(251, 191, 36, 0.09)" />
                 <stop offset="100%" stopColor="rgba(251, 191, 36, 0)" />
               </radialGradient>
+              {/* Shared Luxury 3D Gemstone Bead Gradients */}
+              <radialGradient id="nqBeadAmberBody" cx="34%" cy="28%" r="72%" fx="28%" fy="22%">
+                <stop offset="0%" stopColor="#fff2c2" />
+                <stop offset="22%" stopColor="#f8c85c" />
+                <stop offset="56%" stopColor="#d98218" />
+                <stop offset="84%" stopColor="#8f4007" />
+                <stop offset="100%" stopColor="#4a1d02" />
+              </radialGradient>
+              <radialGradient id="nqBeadAmberCaustic" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(255, 224, 130, 0.72)" />
+                <stop offset="55%" stopColor="rgba(245, 166, 35, 0.28)" />
+                <stop offset="100%" stopColor="rgba(245, 166, 35, 0)" />
+              </radialGradient>
+              <radialGradient id="nqBeadJadeBody" cx="34%" cy="28%" r="72%" fx="28%" fy="22%">
+                <stop offset="0%" stopColor="#a7f3d0" />
+                <stop offset="24%" stopColor="#34d399" />
+                <stop offset="58%" stopColor="#059669" />
+                <stop offset="85%" stopColor="#065f46" />
+                <stop offset="100%" stopColor="#022c22" />
+              </radialGradient>
+              <radialGradient id="nqBeadJadeCaustic" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(167, 243, 208, 0.65)" />
+                <stop offset="60%" stopColor="rgba(16, 185, 129, 0.22)" />
+                <stop offset="100%" stopColor="rgba(16, 185, 129, 0)" />
+              </radialGradient>
+              <linearGradient id="nqBeadGoldCap" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#8c5a12" />
+                <stop offset="28%" stopColor="#fde68a" />
+                <stop offset="50%" stopColor="#fff7d6" />
+                <stop offset="74%" stopColor="#d49b2a" />
+                <stop offset="100%" stopColor="#5c3605" />
+              </linearGradient>
+              <linearGradient id="nqBeadGoldCollar" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#7a4c0b" />
+                <stop offset="30%" stopColor="#fef08a" />
+                <stop offset="55%" stopColor="#eab308" />
+                <stop offset="100%" stopColor="#663c05" />
+              </linearGradient>
+              <linearGradient id="nqBeadGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgba(255, 255, 255, 0.88)" />
+                <stop offset="100%" stopColor="rgba(255, 255, 255, 0.04)" />
+              </linearGradient>
             </defs>
 
             {/* Subtle warm spotlight behind active center bead */}
@@ -720,19 +830,7 @@ export const TasbihTab: React.FC = () => {
                   zIndex: Math.round(12 - Math.min(10, clampedAbs)),
                 }}
               >
-                <img
-                  src={isDividerBead ? amberBeadImg : pearlBeadImg}
-                  alt=""
-                  draggable={false}
-                  className={`${
-                    isDividerBead ? 'w-11 h-11' : 'w-[52px] h-[52px]'
-                  } max-w-none shrink-0 object-contain select-none`}
-                  style={{
-                    filter: isCenter
-                      ? 'drop-shadow(0 8px 14px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 10px rgba(251, 191, 36, 0.45))'
-                      : 'drop-shadow(0 5px 8px rgba(0, 0, 0, 0.52))',
-                  }}
-                />
+                <TasbihGemBead isDivider={isDividerBead} isCenter={isCenter} />
               </div>
             );
           })}

@@ -6,6 +6,15 @@ import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { LanguageProvider, LANGUAGE_OPTIONS, useLanguage } from './contexts/LanguageContext';
 import { HomeTab } from './components/tabs/HomeTab';
+import { QuranTab } from './components/tabs/QuranTab';
+import { PrayerTab } from './components/tabs/PrayerTab';
+import { QiblaTab } from './components/tabs/QiblaTab';
+import { TasbihTab } from './components/tabs/TasbihTab';
+import { AzkarTab, type HubSection } from './components/tabs/AzkarTab';
+import { NamesTab } from './components/tabs/NamesTab';
+import { ProfileTab } from './components/tabs/ProfileTab';
+import { CitySelectorModal } from './components/CitySelectorModal';
+import { QuranMiniPlayer } from './components/QuranMiniPlayer';
 import { useDayKey } from './components/LivePrayerClock';
 import {
   hasNativeQuranAudioBridge,
@@ -22,7 +31,6 @@ import {
   getWebAudioDownloadSnapshot,
   subscribeWebAudioDownloads,
 } from './utils/webOfflineAudio';
-import type { HubSection } from './components/tabs/AzkarTab';
 import { AppLanguage, AsrMethod, Bookmark, CalcMethod, Coordinates, TranslationId } from './types';
 import {
   DEFAULT_CITY,
@@ -34,8 +42,13 @@ import {
   resolveRegionFromCoords,
 } from './utils/prayerTimes';
 import {
+  DEFAULT_ALERT_PREFS,
   PrayerAlertPrefs,
+  checkNativeNotificationPermission,
+  isNativeAndroidBridgeAvailable,
   loadAlertPrefs,
+  playPrayerChimePreview,
+  requestNativeNotificationPermission,
   saveAlertPrefs,
   syncNativeAlertsAndWidget
 } from './utils/nativePrayerBridge';
@@ -53,12 +66,6 @@ import { HOME_PAGE2_LEARNED_EVENT, sendAnonymousHeartbeat } from './utils/teleme
 import { addQuranListenSeconds, resetUserActivity } from './utils/userActivity';
 import { modalLoaders, scheduleIdleTabPrefetch, tabLoaders } from './utils/tabLoaders';
 
-const QuranTab = lazy(tabLoaders.quran);
-const PrayerTab = lazy(tabLoaders.prayer);
-const QiblaTab = lazy(tabLoaders.qibla);
-const TasbihTab = lazy(tabLoaders.tasbih);
-const AzkarTab = lazy(tabLoaders.azkar);
-const NamesTab = lazy(tabLoaders.names);
 const ZakatTab = lazy(tabLoaders.zakat);
 const QazoTab = lazy(tabLoaders.qazo);
 const RamadanTab = lazy(tabLoaders.ramadan);
@@ -73,10 +80,25 @@ const FiqhTab = lazy(tabLoaders.fiqh);
 const TajweedTab = lazy(tabLoaders.tajweed);
 const SeerahTab = lazy(tabLoaders.seerah);
 const WisdomTab = lazy(tabLoaders.wisdom);
-const ProfileTab = lazy(tabLoaders.profile);
-const CitySelectorModal = lazy(modalLoaders.citySelector);
 const OnboardingModal = lazy(modalLoaders.onboarding);
-const QuranMiniPlayer = lazy(modalLoaders.miniPlayer);
+
+/**
+ * Only reveals a subtle spinner if a secondary remote Web chunk takes >240ms.
+ * Prevents distracting spinner flashes on local APK / Desktop / cached chunks.
+ */
+function DelayedTabFallback() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setVisible(true), 240);
+    return () => window.clearTimeout(id);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-6 h-6 rounded-full border-2 border-[#158509]/30 border-t-[#158509] animate-spin" />
+    </div>
+  );
+}
 
 const VALID_WEB_TABS = new Set([
   'home',
@@ -205,6 +227,7 @@ function AppContent() {
   const [namesInitialMode, setNamesInitialMode] = useState<'list' | 'quiz'>(initialRoute.namesMode);
   const [selectedSurahNumber, setSelectedSurahNumber] = useState<number | null>(initialRoute.surahNumber);
   const [selectedAyahNumber, setSelectedAyahNumber] = useState<number | null>(initialRoute.ayahNumber);
+  const [surahReturnTab, setSurahReturnTab] = useState<string | null>(null);
   const [isReadingSurah, setIsReadingSurah] = useState(Boolean(initialRoute.surahNumber));
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
@@ -252,6 +275,7 @@ function AppContent() {
   );
   const userSelectedCityRef = useRef<boolean>(false);
   const tabHistoryRef = useRef<string[]>([]);
+  const surahReturnTabRef = useRef<string | null>(null);
   const updateStatusRef = useRef<UpdateDownloadStatus>('idle');
   const updateReleaseRef = useRef<RemoteAppRelease | null>(null);
   const showOnboardingRef = useRef<boolean>(showOnboarding);
@@ -484,8 +508,11 @@ function AppContent() {
         tabHistoryRef.current = [...tabHistoryRef.current.slice(-19), activeTab];
         setActiveTab(nextTab);
       }
+      surahReturnTabRef.current = null;
+      setSurahReturnTab(null);
       if (nextTab !== 'quran') {
         setSelectedSurahNumber(null);
+        setSelectedAyahNumber(null);
         setIsReadingSurah(false);
       }
       pushWebHash({
@@ -623,11 +650,14 @@ function AppContent() {
   });
 
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
-    const saved = localStorage.getItem('nq_bookmarks');
-    return saved ? JSON.parse(saved) : [
-      { id: '1-1', surahNumber: 1, surahName: 'Al-Fatihah', ayahNumber: 1, timestamp: Date.now() },
-      { id: '24-35', surahNumber: 24, surahName: 'An-Nur', ayahNumber: 35, timestamp: Date.now() }
-    ];
+    try {
+      const saved = localStorage.getItem('nq_bookmarks');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
 
   const handleSelectCity = useCallback((nextCity: Coordinates) => {
@@ -903,9 +933,15 @@ function AppContent() {
     (surahNumber: number, ayahNumber?: number) => {
       setSelectedSurahNumber(surahNumber);
       setSelectedAyahNumber(ayahNumber ?? null);
+      setIsReadingSurah(true);
       if (activeTab !== 'quran') {
+        surahReturnTabRef.current = activeTab;
+        setSurahReturnTab(activeTab);
         tabHistoryRef.current = [...tabHistoryRef.current.slice(-19), activeTab];
         setActiveTab('quran');
+      } else {
+        surahReturnTabRef.current = null;
+        setSurahReturnTab(null);
       }
       pushWebHash({
         tab: 'quran',
@@ -917,6 +953,71 @@ function AppContent() {
     },
     [activeTab, pushWebHash]
   );
+
+  const handleCloseSurahDetail = useCallback(() => {
+    const returnTab = surahReturnTabRef.current;
+    surahReturnTabRef.current = null;
+    setSurahReturnTab(null);
+    setSelectedSurahNumber(null);
+    setSelectedAyahNumber(null);
+    setIsReadingSurah(false);
+
+    if (returnTab && returnTab !== 'quran') {
+      if (tabHistoryRef.current[tabHistoryRef.current.length - 1] === returnTab) {
+        tabHistoryRef.current = tabHistoryRef.current.slice(0, -1);
+      }
+      setActiveTab(returnTab);
+      pushWebHash({
+        tab: returnTab,
+        azkarSection: returnTab === 'azkar' ? azkarInitialSection : 'hub',
+        namesMode: returnTab === 'names' ? namesInitialMode : 'list',
+        surahNumber: null,
+        ayahNumber: null,
+      });
+      return;
+    }
+
+    pushWebHash({
+      tab: 'quran',
+      azkarSection: 'hub',
+      namesMode: 'list',
+      surahNumber: null,
+      ayahNumber: null,
+    });
+  }, [azkarInitialSection, namesInitialMode, pushWebHash]);
+
+  const handleTogglePrayerAlerts = useCallback(() => {
+    const nextEnabled = !alertPrefs.enabled;
+    if (!nextEnabled) {
+      setAlertPrefs({ ...DEFAULT_ALERT_PREFS, enabled: false });
+      return;
+    }
+
+    const enableNow = () => {
+      setAlertPrefs({ ...DEFAULT_ALERT_PREFS, enabled: true });
+      playPrayerChimePreview();
+    };
+
+    if (isNativeAndroidBridgeAvailable() && !checkNativeNotificationPermission()) {
+      requestNativeNotificationPermission((granted) => {
+        if (granted) enableNow();
+      });
+      return;
+    }
+
+    if (
+      !isNativeAndroidBridgeAvailable() &&
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'default'
+    ) {
+      requestNativeNotificationPermission(() => {
+        enableNow();
+      });
+      return;
+    }
+
+    enableNow();
+  }, [alertPrefs.enabled]);
 
   // Sync global Quran audio state (Native Android QuranAudioService + persistent Web/Desktop webQuranPlayer)
   useEffect(() => {
@@ -1141,13 +1242,11 @@ function AppContent() {
                 </div>
               )}
               {showMiniPlayer && (
-                <Suspense fallback={null}>
-                  <QuranMiniPlayer
-                    audioState={nativeAudioState}
-                    showBottomSafePadding={isSecondaryFooterTab}
-                    onOpenSurah={handleOpenSurah}
-                  />
-                </Suspense>
+                <QuranMiniPlayer
+                  audioState={nativeAudioState}
+                  showBottomSafePadding={isSecondaryFooterTab}
+                  onOpenSurah={handleOpenSurah}
+                />
               )}
             </>
           ) : undefined
@@ -1168,6 +1267,8 @@ function AppContent() {
               selectedTranslation={selectedTranslation}
               onOpenCitySelector={() => setIsCityModalOpen(true)}
               isOnboardingOpen={showOnboarding}
+              alertsEnabled={alertPrefs.enabled}
+              onToggleAlerts={handleTogglePrayerAlerts}
             />
           )}
 
@@ -1181,36 +1282,56 @@ function AppContent() {
                 : undefined
             }
           >
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center py-16">
-                  <div className="w-7 h-7 rounded-full border-2 border-[#158509]/30 border-t-[#158509] animate-spin" />
-                </div>
-              }
-            >
-              {activeTab === 'quran' && (
-                <QuranTab
-                  initialSurahNumber={selectedSurahNumber}
-                  initialAyahNumber={selectedAyahNumber}
-                  onCloseSurahDetail={() => {
-                    setSelectedSurahNumber(null);
-                    setSelectedAyahNumber(null);
-                    pushWebHash({
-                      tab: 'quran',
-                      azkarSection: 'hub',
-                      namesMode: 'list',
-                      surahNumber: null,
-                      ayahNumber: null,
-                    });
-                  }}
-                  onSurahDetailActiveChange={setIsReadingSurah}
-                  selectedTranslation={selectedTranslation}
-                  onChangeTranslation={setSelectedTranslation}
-                  bookmarks={bookmarks}
-                  onToggleBookmark={handleToggleBookmark}
-                />
-              )}
+            {activeTab === 'quran' && (
+              <QuranTab
+                initialSurahNumber={selectedSurahNumber}
+                initialAyahNumber={selectedAyahNumber}
+                backButtonLabel={surahReturnTab ? t.backLabel : undefined}
+                onCloseSurahDetail={handleCloseSurahDetail}
+                onSurahDetailActiveChange={setIsReadingSurah}
+                selectedTranslation={selectedTranslation}
+                onChangeTranslation={setSelectedTranslation}
+                bookmarks={bookmarks}
+                onToggleBookmark={handleToggleBookmark}
+              />
+            )}
 
+            {activeTab === 'prayer' && (
+              <PrayerTab
+                currentCity={currentCity}
+                onSelectCity={setCurrentCity}
+                calcMethod={calcMethod}
+                onChangeCalcMethod={setCalcMethod}
+                asrMethod={asrMethod}
+                onDetectGPS={handleDetectGPS}
+                onOpenCitySelector={() => setIsCityModalOpen(true)}
+                alertPrefs={alertPrefs}
+                onChangeAlertPrefs={setAlertPrefs}
+              />
+            )}
+
+            {activeTab === 'qibla' && (
+              <QiblaTab
+                currentCity={currentCity}
+                onOpenCitySelector={() => setIsCityModalOpen(true)}
+              />
+            )}
+
+            {activeTab === 'tasbih' && <TasbihTab />}
+
+            {activeTab === 'azkar' && (
+              <AzkarTab
+                onOpenSurah={handleOpenSurah}
+                onNavigateTab={navigateToTab}
+                initialSection={azkarInitialSection}
+              />
+            )}
+
+            {activeTab === 'names' && (
+              <NamesTab initialMode={namesInitialMode} />
+            )}
+
+            <Suspense fallback={<DelayedTabFallback />}>
               {activeTab === 'ramadan' && (
                 <RamadanTab
                   currentCity={currentCity}
@@ -1218,43 +1339,6 @@ function AppContent() {
                   selectedTranslation={selectedTranslation}
                   onOpenCitySelector={() => setIsCityModalOpen(true)}
                 />
-              )}
-
-              {activeTab === 'prayer' && (
-                <PrayerTab
-                  currentCity={currentCity}
-                  onSelectCity={setCurrentCity}
-                  calcMethod={calcMethod}
-                  onChangeCalcMethod={setCalcMethod}
-                  asrMethod={asrMethod}
-                  onDetectGPS={handleDetectGPS}
-                  onOpenCitySelector={() => setIsCityModalOpen(true)}
-                  alertPrefs={alertPrefs}
-                  onChangeAlertPrefs={setAlertPrefs}
-                />
-              )}
-
-              {activeTab === 'qibla' && (
-                <QiblaTab
-                  currentCity={currentCity}
-                  onOpenCitySelector={() => setIsCityModalOpen(true)}
-                />
-              )}
-
-              {activeTab === 'tasbih' && (
-                <TasbihTab />
-              )}
-
-              {activeTab === 'azkar' && (
-                <AzkarTab
-                  onOpenSurah={handleOpenSurah}
-                  onNavigateTab={navigateToTab}
-                  initialSection={azkarInitialSection}
-                />
-              )}
-
-              {activeTab === 'names' && (
-                <NamesTab initialMode={namesInitialMode} />
               )}
 
               {activeTab === 'zakat' && (
@@ -1311,39 +1395,31 @@ function AppContent() {
         )}
 
         {activeTab === 'profile' && (
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-16">
-                <div className="w-7 h-7 rounded-full border-2 border-[#158509]/30 border-t-[#158509] animate-spin" />
-              </div>
-            }
-          >
-            <ProfileTab
-              currentCity={currentCity}
-              onOpenCitySelector={() => setIsCityModalOpen(true)}
-              onDetectGPS={handleDetectGPS}
-              calcMethod={calcMethod}
-              onChangeCalcMethod={setCalcMethod}
-              selectedTranslation={selectedTranslation}
-              onChangeTranslation={setSelectedTranslation}
-              onSelectLanguage={handleSelectLanguage}
-              alertPrefs={alertPrefs}
-              onChangeAlertPrefs={setAlertPrefs}
-              todayFajrTime={prayerTimes.fajr}
-              updateRelease={updateRelease}
-              updateStatus={updateStatus}
-              updateProgress={updateProgress}
-              onCheckUpdate={() => handleCheckUpdate(false)}
-              onStartUpdate={handleStartUpdate}
-              bookmarks={bookmarks}
-              onRemoveBookmark={handleRemoveBookmark}
-              onClearBookmarks={handleClearBookmarks}
-              onResetPreferences={handleResetPreferences}
-              onOpenSurah={handleOpenSurah}
-              onNavigateTab={navigateToTab}
-              onOpenNamesQuiz={() => navigateToTab('names:quiz')}
-            />
-          </Suspense>
+          <ProfileTab
+            currentCity={currentCity}
+            onOpenCitySelector={() => setIsCityModalOpen(true)}
+            onDetectGPS={handleDetectGPS}
+            calcMethod={calcMethod}
+            onChangeCalcMethod={setCalcMethod}
+            selectedTranslation={selectedTranslation}
+            onChangeTranslation={setSelectedTranslation}
+            onSelectLanguage={handleSelectLanguage}
+            alertPrefs={alertPrefs}
+            onChangeAlertPrefs={setAlertPrefs}
+            todayFajrTime={prayerTimes.fajr}
+            updateRelease={updateRelease}
+            updateStatus={updateStatus}
+            updateProgress={updateProgress}
+            onCheckUpdate={() => handleCheckUpdate(false)}
+            onStartUpdate={handleStartUpdate}
+            bookmarks={bookmarks}
+            onRemoveBookmark={handleRemoveBookmark}
+            onClearBookmarks={handleClearBookmarks}
+            onResetPreferences={handleResetPreferences}
+            onOpenSurah={handleOpenSurah}
+            onNavigateTab={navigateToTab}
+            onOpenNamesQuiz={() => navigateToTab('names:quiz')}
+          />
         )}
         </AppErrorBoundary>
       </AndroidShell>
@@ -1373,17 +1449,15 @@ function AppContent() {
         </Suspense>
       )}
 
-      {/* City Selector Modal (lazy-loaded on demand / hover prefetch) */}
+      {/* City Selector Modal (statically bundled for instant 0ms open) */}
       {isCityModalOpen && (
-        <Suspense fallback={null}>
-          <CitySelectorModal
-            isOpen={isCityModalOpen}
-            onClose={() => setIsCityModalOpen(false)}
-            currentCity={currentCity}
-            onSelectCity={handleSelectCity}
-            onDetectGPS={handleDetectGPS}
-          />
-        </Suspense>
+        <CitySelectorModal
+          isOpen={isCityModalOpen}
+          onClose={() => setIsCityModalOpen(false)}
+          currentCity={currentCity}
+          onSelectCity={handleSelectCity}
+          onDetectGPS={handleDetectGPS}
+        />
       )}
 
       {/* In-App Self-Update Modal */}

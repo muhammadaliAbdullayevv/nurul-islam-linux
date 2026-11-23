@@ -1,14 +1,14 @@
 {
-  "versionCode": 87,
-  "versionName": "1.8.68",
+  "versionCode": 88,
+  "versionName": "1.8.69",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 87,
+  "minSupportedVersionCode": 88,
   "notes": {
-    "uz_lat": "Profil va Sozlamalar sahifasi to'liq yangilandi va soddalashtirildi: yashil profil bannerining o'ng yuqori burchagida Sozlamalar (⚙) tugmasi, zamonaviy yoqish/o'chirish tugmachalari, Saqlangan oyatlar bevosita Profilda va ortiqcha texnik bo'limlarsiz toza dizayn.",
-    "uz_cyr": "Профил ва Созламалар саҳифаси тўлиқ янгиланди ва соддалаштирилди: яшил профил баннерининг ўнг юқори бурчагида Созламалар (⚙) тугмаси, замонавий ёқиш/ўчириш тугмачалари, Сақланган оятлар бевосита Профилда ва ортиқча техник бўлимларсиз тоза дизайн.",
-    "en": "Redesigned Profile & Settings for maximum clarity: moved Settings to a sleek top-right gear icon on the green Profile hero card, relocated Saved Ayahs directly onto Profile, added a modern collapsible notification toggle switch, and removed unnecessary technical clutter.",
-    "ru": "Полностью обновлён дизайн Профиля и Настроек: кнопка настроек (⚙) перенесена в правый верхний угол зелёной карточки профиля, сохранённые аяты теперь прямо в профиле, добавлен современный переключатель уведомлений и убраны лишние технические пункты."
+    "uz_lat": "Katta qulaylik va tezlik yangilanishi: Bosh sahifadagi namoz kartasida 1 bosishda bildirishnomani yoqish/o'chirish qo'ng'iroqchasi (Nurul Islam ovozi bilan), 0ms tezkor sahifalar (Tasbeh, Qur'on va Profil kutishsiz ochiladi), yangi zargarona qahrabo-zumrad tasbeh donachalari, Saqlangan oyatlarni sariq ajratish hamda Orqaga tugmasi to'g'ridan-to'g'ri Profilga qaytishi, kattaroq logotip va yil davomida foydali Xatm ko'rsatkichi.",
+    "uz_cyr": "Катта қулайлик ва тезлик янгиланиши: Бош саҳифадаги намоз картасида 1 босишда билдиришномани ёқиш/ўчириш қўнғироқчаси (Нурул Ислам овози билан), 0мс тезкор саҳифалар (Тасбеҳ, Қуръон ва Профил кутишсиз очилади), янги заргарона қаҳрабо-зумрад тасбеҳ доначалари, Сақланган оятларни ажратиш ҳамда Орқага тугмаси тўғридан-тўғри Профилга қайтиши, каттароқ логотип ва Хатм кўрсаткичи.",
+    "en": "Major UX & speed upgrade: 1-tap Prayer Notification bell icon directly on the Home Prayer card (locked to our signature Nurul Islam chime, no clutter menus), instant 0ms local tabs (Tasbih, Quran, Profile, Prayer open without loading spinners), handcrafted royal honey-amber & emerald-jade Tasbih beads, clear Saved Ayah highlighting with direct Back navigation to Profile, larger top-bar logo, and year-round Khatm progress on Profile.",
+    "ru": "Крупное обновление удобства и скорости: кнопка колокольчика в 1 касание прямо на карточке намаза на Главной (с фирменным звуком Nurul Islam без лишних подменю), мгновенное открытие локальных вкладок без экранов загрузки (Тасбих, Коран, Профиль), новые янтарно-изумрудные бусины тасбиха, подсветка сохранённых аятов с прямым возвратом в Профиль, увеличенный логотип и индикатор Хатма."
   }
 }

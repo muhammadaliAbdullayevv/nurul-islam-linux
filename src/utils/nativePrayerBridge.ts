@@ -16,7 +16,7 @@ const ALERT_PREFS_KEY = 'nq_prayer_alert_prefs';
 
 export const DEFAULT_ALERT_PREFS: PrayerAlertPrefs = {
   enabled: false,
-  preReminderMins: 10,
+  preReminderMins: 0,
   soundMode: 'chime',
   prayers: {
     imsak: false,
@@ -33,19 +33,17 @@ export function loadAlertPrefs(): PrayerAlertPrefs {
     const raw = localStorage.getItem(ALERT_PREFS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PrayerAlertPrefs>;
-      const soundMode: PrayerAlertSoundMode =
-        parsed.soundMode === 'default' || parsed.soundMode === 'silent' ? parsed.soundMode : 'chime';
       return {
         enabled: Boolean(parsed.enabled),
-        preReminderMins: parsed.preReminderMins === 15 || parsed.preReminderMins === 0 ? parsed.preReminderMins : 10,
-        soundMode,
+        preReminderMins: 0,
+        soundMode: 'chime',
         prayers: {
-          imsak: Boolean(parsed.prayers?.imsak),
-          fajr: parsed.prayers?.fajr !== false,
-          dhuhr: parsed.prayers?.dhuhr !== false,
-          asr: parsed.prayers?.asr !== false,
-          maghrib: parsed.prayers?.maghrib !== false,
-          isha: parsed.prayers?.isha !== false,
+          imsak: false,
+          fajr: true,
+          dhuhr: true,
+          asr: true,
+          maghrib: true,
+          isha: true,
         },
       };
     }

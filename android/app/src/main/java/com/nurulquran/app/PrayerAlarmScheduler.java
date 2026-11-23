@@ -16,7 +16,7 @@ public final class PrayerAlarmScheduler {
     public static final String ACTION_PRAYER_ALERT = "com.nurulquran.app.ACTION_PRAYER_ALERT";
     public static final String ACTION_WIDGET_TICK = "com.nurulquran.app.ACTION_WIDGET_TICK";
 
-    private static final String[] ALERT_KEYS = {"imsak", "fajr", "dhuhr", "asr", "maghrib", "isha"};
+    private static final String[] ALERT_KEYS = {"fajr", "dhuhr", "asr", "maghrib", "isha"};
     private static final String[] WIDGET_KEYS = {"imsak", "fajr", "dhuhr", "asr", "maghrib", "isha"};
     private static final int MAX_ALARM_SLOTS = 96;
     private static final int MAX_TICK_SLOTS = 24;
@@ -54,8 +54,6 @@ public final class PrayerAlarmScheduler {
         JSONObject labels = payload.optJSONObject("labels");
         String city = payload.optString("city", "Nurul Islam");
         boolean enabled = alerts != null && alerts.optBoolean("enabled", false);
-        int preReminderMins = alerts != null ? Math.max(0, alerts.optInt("preReminderMins", 0)) : 0;
-        JSONObject prayerToggles = alerts != null ? alerts.optJSONObject("prayers") : null;
 
         long nowMs = System.currentTimeMillis();
         SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -93,8 +91,6 @@ public final class PrayerAlarmScheduler {
 
             for (String key : ALERT_KEYS) {
                 if (alarmSlot >= MAX_ALARM_SLOTS) break;
-                boolean keyEnabled = prayerToggles == null || prayerToggles.optBoolean(key, !"imsak".equals(key));
-                if (!keyEnabled) continue;
 
                 String timeStr = dayObj.optString(key, "");
                 long prayerMs = computeTriggerMillis(parsedDate, timeStr);
@@ -102,18 +98,7 @@ public final class PrayerAlarmScheduler {
 
                 String prayerLabel = labels != null ? labels.optString(key, key) : key;
 
-                // Optional pre-prayer reminder
-                if (preReminderMins > 0 && !"imsak".equals(key) && alarmSlot < MAX_ALARM_SLOTS) {
-                    long preMs = prayerMs - preReminderMins * 60_000L;
-                    if (preMs > nowMs + 2000L) {
-                        PendingIntent pi = buildAlertPendingIntent(
-                            context, alarmSlot++, prayerLabel, timeStr, city, preReminderMins, PendingIntent.FLAG_UPDATE_CURRENT
-                        );
-                        scheduleTrigger(am, preMs, pi);
-                    }
-                }
-
-                // Exact prayer time alert
+                // Exact prayer time alert only (no pre-prayer reminders)
                 if (prayerMs > nowMs + 2000L && alarmSlot < MAX_ALARM_SLOTS) {
                     PendingIntent pi = buildAlertPendingIntent(
                         context, alarmSlot++, prayerLabel, timeStr, city, 0, PendingIntent.FLAG_UPDATE_CURRENT

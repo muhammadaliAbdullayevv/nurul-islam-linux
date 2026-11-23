@@ -2,6 +2,8 @@ import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import { Capacitor } from '@capacitor/core';
 import {
   MapPin,
+  Bell,
+  BellOff,
   ChevronDown,
   ChevronRight,
   GraduationCap,
@@ -60,6 +62,8 @@ interface HomeTabProps {
   selectedTranslation: TranslationId;
   onOpenCitySelector: () => void;
   isOnboardingOpen?: boolean;
+  alertsEnabled?: boolean;
+  onToggleAlerts?: () => void;
 }
 
 interface HomeFeatureDef {
@@ -136,10 +140,69 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onNavigateTab,
   onOpenCitySelector,
   isOnboardingOpen = false,
+  alertsEnabled = false,
+  onToggleAlerts,
 }) => {
   const { isDay } = useTheme();
   const { language, t } = useLanguage();
   const currentTime = useMinuteDate();
+  const [alertToast, setAlertToast] = useState<'on' | 'off' | null>(null);
+  const alertToastTimerRef = useRef<number | null>(null);
+  const prevAlertsEnabledRef = useRef<boolean>(alertsEnabled);
+
+  useEffect(() => {
+    if (prevAlertsEnabledRef.current !== alertsEnabled) {
+      prevAlertsEnabledRef.current = alertsEnabled;
+      setAlertToast(alertsEnabled ? 'on' : 'off');
+      if (alertToastTimerRef.current !== null) {
+        window.clearTimeout(alertToastTimerRef.current);
+      }
+      alertToastTimerRef.current = window.setTimeout(() => {
+        setAlertToast(null);
+      }, 2200);
+    }
+  }, [alertsEnabled]);
+
+  useEffect(() => {
+    return () => {
+      if (alertToastTimerRef.current !== null) {
+        window.clearTimeout(alertToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const alertCopy = useMemo(() => {
+    if (language === 'uz_cyr') {
+      return {
+        onToast: 'Намоз билдиришномаси ёқилди',
+        offToast: 'Намоз билдиришномаси ўчирилди',
+        ariaOn: 'Намоз билдиришномасини ўчириш',
+        ariaOff: 'Намоз билдиришномасини ёқиш',
+      };
+    }
+    if (language === 'ru') {
+      return {
+        onToast: 'Уведомления о намазе включены',
+        offToast: 'Уведомления о намазе выключены',
+        ariaOn: 'Выключить уведомления о намазе',
+        ariaOff: 'Включить уведомления о намазе',
+      };
+    }
+    if (language === 'en') {
+      return {
+        onToast: 'Prayer notifications enabled',
+        offToast: 'Prayer notifications muted',
+        ariaOn: 'Disable prayer notifications',
+        ariaOff: 'Enable prayer notifications',
+      };
+    }
+    return {
+      onToast: 'Namoz bildirishnomasi yoqildi',
+      offToast: "Namoz bildirishnomasi o'chirildi",
+      ariaOn: "Namoz bildirishnomasini o'chirish",
+      ariaOff: 'Namoz bildirishnomasini yoqish',
+    };
+  }, [language]);
   const [homePage, setHomePage] = useState<number>(() => persistedHomePage);
   const [hasLearnedPage2, setHasLearnedPage2] = useState<boolean>(() => hasLearnedHomePage2());
   const [peekTrackPct, setPeekTrackPct] = useState<number>(0);
@@ -792,21 +855,55 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   </button>
                 )}
               </div>
-              <button
-                type="button"
-                onMouseEnter={prefetchCityModal}
-                onFocus={prefetchCityModal}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenCitySelector();
-                }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 hover:bg-black/35 border border-white/20 text-xs font-semibold text-white transition shrink-0"
-              >
-                <MapPin className="w-3.5 h-3.5 text-[#d0f39f]" />
-                <span>{regionOnlyLabel}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-white/80" />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onMouseEnter={prefetchCityModal}
+                  onFocus={prefetchCityModal}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenCitySelector();
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 hover:bg-black/35 border border-white/20 text-xs font-semibold text-white transition shrink-0"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[#d0f39f]" />
+                  <span>{regionOnlyLabel}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-white/80" />
+                </button>
+                {onToggleAlerts && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleAlerts();
+                    }}
+                    aria-label={alertsEnabled ? alertCopy.ariaOn : alertCopy.ariaOff}
+                    aria-pressed={alertsEnabled}
+                    title={alertsEnabled ? alertCopy.ariaOn : alertCopy.ariaOff}
+                    className={`w-7 h-7 rounded-full border flex items-center justify-center transition active:scale-90 shrink-0 ${
+                      alertsEnabled
+                        ? isDay
+                          ? 'bg-[#d0f39f] border-[#d0f39f] text-[#0c4703] shadow-sm'
+                          : 'bg-amber-400 border-amber-300 text-slate-950 shadow-sm'
+                        : 'bg-black/25 hover:bg-black/35 border-white/20 text-white/80'
+                    }`}
+                  >
+                    {alertsEnabled ? (
+                      <Bell className="w-3.5 h-3.5 fill-current" />
+                    ) : (
+                      <BellOff className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
+
+            {alertToast && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/35 border border-white/20 text-[11px] font-semibold text-[#d0f39f] animate-in fade-in">
+                {alertToast === 'on' ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3 text-white/75" />}
+                <span>{alertToast === 'on' ? alertCopy.onToast : alertCopy.offToast}</span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-4 pt-1">
               <div>
@@ -1043,22 +1140,57 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             )}
           </div>
 
-          <button
-            type="button"
-            onTouchStart={prefetchCityModal}
-            onMouseEnter={prefetchCityModal}
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenCitySelector();
-            }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/22 hover:bg-black/32 border border-white/20 text-[11px] font-medium text-white transition active:scale-95 max-w-[46%] shrink-0"
-            title={t.home.changeLocation}
-          >
-            <MapPin className="w-3 h-3 text-[#d0f39f] shrink-0" />
-            <span className="truncate">{regionOnlyLabel}</span>
-            <ChevronDown className="w-3 h-3 text-white/80 shrink-0" />
-          </button>
+          <div className="flex items-center gap-1.5 max-w-[54%] shrink-0">
+            <button
+              type="button"
+              onTouchStart={prefetchCityModal}
+              onMouseEnter={prefetchCityModal}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenCitySelector();
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/22 hover:bg-black/32 border border-white/20 text-[11px] font-medium text-white transition active:scale-95 min-w-0"
+              title={t.home.changeLocation}
+            >
+              <MapPin className="w-3 h-3 text-[#d0f39f] shrink-0" />
+              <span className="truncate">{regionOnlyLabel}</span>
+              <ChevronDown className="w-3 h-3 text-white/80 shrink-0" />
+            </button>
+
+            {onToggleAlerts && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleAlerts();
+                }}
+                aria-label={alertsEnabled ? alertCopy.ariaOn : alertCopy.ariaOff}
+                aria-pressed={alertsEnabled}
+                title={alertsEnabled ? alertCopy.ariaOn : alertCopy.ariaOff}
+                className={`w-7 h-7 rounded-full border flex items-center justify-center transition active:scale-90 shrink-0 ${
+                  alertsEnabled
+                    ? isDay
+                      ? 'bg-[#d0f39f] border-[#d0f39f] text-[#0c4703] shadow-sm'
+                      : 'bg-amber-400 border-amber-300 text-slate-950 shadow-sm'
+                    : 'bg-black/22 hover:bg-black/32 border-white/20 text-white/80'
+                }`}
+              >
+                {alertsEnabled ? (
+                  <Bell className="w-3.5 h-3.5 fill-current" />
+                ) : (
+                  <BellOff className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
+          </div>
         </div>
+
+        {alertToast && (
+          <div className="mb-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/35 border border-white/20 text-[10.5px] font-semibold text-[#d0f39f] animate-in fade-in">
+            {alertToast === 'on' ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3 text-white/75" />}
+            <span>{alertToast === 'on' ? alertCopy.onToast : alertCopy.offToast}</span>
+          </div>
+        )}
 
         {/* Main Prayer Row: Upcoming Prayer + Countdown */}
         <div className="flex items-center justify-between gap-3">

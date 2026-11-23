@@ -1,16 +1,15 @@
+import { Capacitor } from '@capacitor/core';
+
 /**
- * Centralized dynamic chunk loaders for all lazy tabs & modals.
- * Sharing the exact loader functions between React.lazy() and hover/idle
- * prefetching guarantees zero-spinner instant navigation without duplicate chunks.
+ * Centralized dynamic chunk loaders for secondary lazy tabs & modals.
+ * Core daily tabs (Home, Quran, Prayer, Qibla, Tasbih, Azkar, Names, Profile)
+ * are statically bundled in App.tsx so they open in 0ms with zero spinner.
+ * Secondary local tabs are eagerly preloaded right after first paint on native
+ * Android APK & Linux Desktop (local disk, 0 network cost), and gently warmed
+ * during idle time on public Web.
  */
 
 export const tabLoaders = {
-  quran: () => import('../components/tabs/QuranTab').then((m) => ({ default: m.QuranTab })),
-  prayer: () => import('../components/tabs/PrayerTab').then((m) => ({ default: m.PrayerTab })),
-  qibla: () => import('../components/tabs/QiblaTab').then((m) => ({ default: m.QiblaTab })),
-  tasbih: () => import('../components/tabs/TasbihTab').then((m) => ({ default: m.TasbihTab })),
-  azkar: () => import('../components/tabs/AzkarTab').then((m) => ({ default: m.AzkarTab })),
-  names: () => import('../components/tabs/NamesTab').then((m) => ({ default: m.NamesTab })),
   zakat: () => import('../components/tabs/ZakatTab').then((m) => ({ default: m.ZakatTab })),
   qazo: () => import('../components/tabs/QazoTab').then((m) => ({ default: m.QazoTab })),
   ramadan: () => import('../components/tabs/RamadanTab').then((m) => ({ default: m.RamadanTab })),
@@ -25,16 +24,30 @@ export const tabLoaders = {
   tajweed: () => import('../components/tabs/TajweedTab').then((m) => ({ default: m.TajweedTab })),
   seerah: () => import('../components/tabs/SeerahTab').then((m) => ({ default: m.SeerahTab })),
   wisdom: () => import('../components/tabs/WisdomTab').then((m) => ({ default: m.WisdomTab })),
-  profile: () => import('../components/tabs/ProfileTab').then((m) => ({ default: m.ProfileTab })),
 } as const;
 
 export const modalLoaders = {
-  citySelector: () => import('../components/CitySelectorModal').then((m) => ({ default: m.CitySelectorModal })),
   onboarding: () => import('../components/OnboardingModal').then((m) => ({ default: m.OnboardingModal })),
-  miniPlayer: () => import('../components/QuranMiniPlayer').then((m) => ({ default: m.QuranMiniPlayer })),
 } as const;
 
 export type LazyTabKey = keyof typeof tabLoaders;
+
+const ALL_LAZY_TAB_KEYS: LazyTabKey[] = [
+  'ramadan',
+  'wisdom',
+  'guide',
+  'masjids',
+  'juma',
+  'zakat',
+  'qazo',
+  'ehson',
+  'quiz',
+  'hifz',
+  'life',
+  'fiqh',
+  'tajweed',
+  'seerah',
+];
 
 const prefetchedKeys = new Set<string>();
 
@@ -52,6 +65,15 @@ export function isConstrainedNetwork(): boolean {
   return false;
 }
 
+function isLocalNativeApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (Capacitor.isNativePlatform()) return true;
+  const isDesktop =
+    new URLSearchParams(window.location.search).get('desktop') === '1' ||
+    Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__);
+  return isDesktop;
+}
+
 function normalizeTabKey(rawTabId: string): LazyTabKey | null {
   const base = rawTabId.includes(':') ? rawTabId.split(':')[0] : rawTabId;
   if (base in tabLoaders) {
@@ -61,7 +83,7 @@ function normalizeTabKey(rawTabId: string): LazyTabKey | null {
 }
 
 /**
- * Prefetch a single tab chunk silently (idempotent).
+ * Prefetch a single secondary tab chunk silently (idempotent).
  * Safe to invoke on pointer/touch/hover before click completes.
  */
 export function prefetchTab(rawTabId: string): void {
@@ -69,77 +91,50 @@ export function prefetchTab(rawTabId: string): void {
   if (!key || prefetchedKeys.has(key)) return;
   prefetchedKeys.add(key);
   tabLoaders[key]().catch(() => {
-    // Allow retry later if offline/transient network hiccup
     prefetchedKeys.delete(key);
   });
 }
 
+/** No-op retained for callers now that CitySelectorModal is statically bundled (0ms open). */
 export function prefetchCityModal(): void {
-  if (prefetchedKeys.has('modal:city')) return;
-  prefetchedKeys.add('modal:city');
-  modalLoaders.citySelector().catch(() => {
-    prefetchedKeys.delete('modal:city');
-  });
+  // CitySelectorModal is statically imported in App.tsx for instant 0ms launch.
 }
 
 /**
- * Warms the top most-visited tabs during browser idle time in gentle staggered waves
- * so opening Quran, Prayer, Tasbih, Azkar, or Profile feels instant (0ms spinner).
- * Returns a cleanup callback to cancel pending idle handles on unmount.
+ * Warms all secondary tab chunks in small non-blocking waves right after first paint.
+ * On native Android APK & Linux Desktop (all assets are local on disk), every tab is
+ * warmed within ~600ms so switching anywhere in the app is 100% instant with zero spinner.
  */
 export function scheduleIdleTabPrefetch(): () => void {
-  if (typeof window === 'undefined' || isConstrainedNetwork()) {
+  if (typeof window === 'undefined') return () => {};
+  const localApp = isLocalNativeApp();
+  if (!localApp && isConstrainedNetwork()) {
     return () => {};
   }
 
-  type IdleWin = Window & {
-    requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
-    cancelIdleCallback?: (id: number) => void;
-  };
-  const win = window as IdleWin;
   let cancelled = false;
-  let idleId1: number | null = null;
-  let idleId2: number | null = null;
-  let timer1: number | null = null;
-  let timer2: number | null = null;
+  const timers: number[] = [];
 
-  const runWave1 = () => {
-    if (cancelled) return;
-    prefetchTab('quran');
-    prefetchTab('prayer');
+  const batchSize = localApp ? 4 : 3;
+  const baseDelayMs = localApp ? 120 : 600;
+  const stepDelayMs = localApp ? 140 : 550;
 
-    const scheduleWave2 = () => {
+  for (let i = 0; i < ALL_LAZY_TAB_KEYS.length; i += batchSize) {
+    const batch = ALL_LAZY_TAB_KEYS.slice(i, i + batchSize);
+    const waveIdx = Math.floor(i / batchSize);
+    const id = window.setTimeout(() => {
       if (cancelled) return;
-      if (win.requestIdleCallback) {
-        idleId2 = win.requestIdleCallback(
-          () => {
-            if (cancelled) return;
-            prefetchTab('tasbih');
-            prefetchTab('azkar');
-            prefetchTab('profile');
-          },
-          { timeout: 3000 }
-        );
-      } else {
-        prefetchTab('tasbih');
-        prefetchTab('azkar');
-        prefetchTab('profile');
+      for (const key of batch) {
+        prefetchTab(key);
       }
-    };
-    timer2 = window.setTimeout(scheduleWave2, 900);
-  };
-
-  if (win.requestIdleCallback) {
-    idleId1 = win.requestIdleCallback(runWave1, { timeout: 2200 });
-  } else {
-    timer1 = window.setTimeout(runWave1, 1200);
+    }, baseDelayMs + waveIdx * stepDelayMs);
+    timers.push(id);
   }
 
   return () => {
     cancelled = true;
-    if (idleId1 !== null && win.cancelIdleCallback) win.cancelIdleCallback(idleId1);
-    if (idleId2 !== null && win.cancelIdleCallback) win.cancelIdleCallback(idleId2);
-    if (timer1 !== null) window.clearTimeout(timer1);
-    if (timer2 !== null) window.clearTimeout(timer2);
+    for (const id of timers) {
+      window.clearTimeout(id);
+    }
   };
 }

@@ -282,17 +282,17 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
                 : 'bg-gradient-to-r from-[#041710] via-[#092b1d] to-[#051a12] border-emerald-900/70 text-white'
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <img
                 src="/pwa-192x192.png"
                 alt={t.appTitle}
-                className="w-8 h-8 rounded-xl border border-[#fde68a]/60 object-cover shrink-0 shadow-xs"
+                className="w-10 h-10 rounded-xl border border-[#fde68a]/65 object-cover shrink-0 shadow-sm"
               />
               <div className="min-w-0">
-                <div className="font-display text-base font-extrabold tracking-tight leading-none text-white truncate">
+                <div className="font-display text-[17px] font-extrabold tracking-tight leading-none text-white truncate">
                   {t.appTitle}
                 </div>
-                <div className="text-[9.5px] font-bold text-[#fde68a] mt-0.5 truncate">
+                <div className="text-[10px] font-bold text-[#fde68a] mt-0.5 truncate">
                   {editionSubtitle}
                 </div>
               </div>
@@ -540,7 +540,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               ? 'calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 16px)'
               : 'calc(env(safe-area-inset-top, 0px) + 12px)',
           }}
-          className={`w-full px-4 pb-3 flex items-center justify-between gap-2 shrink-0 z-30 border-b ${
+          className={`w-full px-3 pb-2.5 flex items-center justify-between gap-1.5 shrink-0 z-30 border-b ${
             isDay
               ? 'bg-[#0c4703] border-[#1a6810] text-white shadow-sm'
               : 'bg-[#051f05] border-emerald-950 text-white'
@@ -562,20 +562,20 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
               <img
                 src="/pwa-192x192.png"
                 alt={t.appTitle}
-                className="w-7 h-7 rounded-xl border border-white/20 object-cover shrink-0 shadow-xs"
+                className="w-9 h-9 rounded-xl border border-[#fde68a]/45 object-cover shrink-0 shadow-sm"
               />
-              <span className="font-display text-[17px] font-semibold tracking-tight text-white truncate">
+              <span className="font-display text-[16.5px] font-bold tracking-tight text-white whitespace-nowrap">
                 {t.appTitle}
               </span>
             </div>
           )}
 
           {!isSecondaryFeature && !hideBottomNav && (
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <PWAInstallButton compact onDarkBar />
 
               {/* Compact App Language Switcher */}
@@ -583,7 +583,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsLangMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/14 hover:bg-white/22 border border-white/20 text-white text-xs font-semibold transition active:scale-95"
+                  className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/14 hover:bg-white/22 border border-white/20 text-white text-[11px] font-semibold transition active:scale-95"
                   aria-label="Change App Language"
                 >
                   <Globe className="w-3.5 h-3.5 text-[#d0f39f]" />
@@ -639,7 +639,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
 
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/14 hover:bg-white/22 border border-white/20 text-white text-xs font-medium transition active:scale-95 shrink-0"
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/14 hover:bg-white/22 border border-white/20 text-white text-[11px] font-medium transition active:scale-95 shrink-0"
                 aria-label="Toggle Day and Night theme"
               >
                 {isDay ? (
