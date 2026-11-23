@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.78
+Version:        1.8.79
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.79-1
+- Add 24/7 Ad-Free HD Live Makkah (Al-Masjid al-Haram / Kaaba) and Madinah (Al-Masjid an-Nabawi) watching module with automatic failover, widescreen Dual View, live Saudi clock & Haramain prayer times, authentic Kaaba dua & Salawat counter, and Owner Panel remote stream controls
 * Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.78-1
 - Add privacy-safe Region (Viloyat) + City/District/Village analytics and opt-in Prayer Accuracy Diagnostics in the Feedback modal (zero GPS coordinates transmitted)
 * Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.77-1

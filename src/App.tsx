@@ -98,6 +98,7 @@ const SeerahTab = lazy(tabLoaders.seerah);
 const WisdomTab = lazy(tabLoaders.wisdom);
 const LibraryTab = lazy(tabLoaders.library);
 const RadioTab = lazy(tabLoaders.radio);
+const HaramainLiveTab = lazy(tabLoaders.haramain);
 const OnboardingModal = lazy(modalLoaders.onboarding);
 
 /**
@@ -142,6 +143,7 @@ const VALID_WEB_TABS = new Set([
   'wisdom',
   'library',
   'radio',
+  'haramain',
   'profile',
 ]);
 
@@ -1513,6 +1515,8 @@ function AppContent() {
               )}
 
               {activeTab === 'radio' && <RadioTab />}
+
+              {activeTab === 'haramain' && <HaramainLiveTab />}
             </Suspense>
           </div>
         )}

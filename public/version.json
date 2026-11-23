@@ -1,14 +1,14 @@
 {
-  "versionCode": 97,
-  "versionName": "1.8.78",
+  "versionCode": 98,
+  "versionName": "1.8.79",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": false,
   "minSupportedVersionCode": 95,
   "notes": {
-    "uz_lat": "Namoz vaqtlari bo‘yicha murojaat yuborishda shahar va hisoblash usulini ixtiyoriy ilova qilish imkoniyati hamda hududlar bo‘yicha takomillashtirilgan anonim statistika qo‘shildi.",
-    "uz_cyr": "Намоз вақтлари бўйича мурожаат юборишда шаҳар ва ҳисоблаш усулини ихтиёрий илова қилиш имконияти ҳамда ҳудудлар бўйича такомиллаштирилган аноним статистика қўшилди.",
-    "en": "Added opt-in prayer city and calculation method diagnostics when reporting prayer-time feedback, plus enhanced privacy-safe regional analytics.",
-    "ru": "Добавлена добровольная отправка города и метода расчёта намаза при сообщении об ошибке времени намаза, а также улучшенная анонимная региональная аналитика."
+    "uz_lat": "Yangi bo‘lim: Makka (Ka’ba · Masjidul Harom) va Madina (Masjidun Nabaviy) 24/7 reklamasiz HD jonli efir! Mahalliy Saudiya vaqti, Haramayn namoz vaqtlari, Ka’ba duosi, Salavot hisoblagichi va katta ekranlarda ikkala efirni yonma-yon ko‘rish imkoniyati qo‘shildi.",
+    "uz_cyr": "Янги бўлим: Макка (Каъба · Масжидул Ҳаром) ва Мадина (Масжидун Набавий) 24/7 рекламасиз HD жонли эфир! Маҳаллий Саудия вақти, Ҳарамайн намоз вақтлари, Каъба дуоси, Салавот ҳисоблагичи ва катта экранларда иккала эфирни ёнма-ён кўриш имконияти қўшилди.",
+    "en": "New feature: 24/7 Ad-Free HD Live Streaming of Makkah (Kaaba · Al-Masjid al-Haram) & Madinah (Al-Masjid an-Nabawi), featuring automatic backup failover, live Saudi local clock & Haramain prayer schedule, authentic Kaaba dua & Salawat counter, and widescreen Dual View.",
+    "ru": "Новый раздел: прямой HD-эфир 24/7 без рекламы из Мекки (Кааба · Аль-Харам) и Медины (Мечеть Пророка ﷺ) с автопереключением резервного сервера, местным временем и расписанием намазов Харамайна, дуа при виде Каабы, счётчиком салаватов и режимом двух экранов."
   }
 }

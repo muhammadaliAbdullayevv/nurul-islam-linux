@@ -77,6 +77,7 @@ export interface TranslationStrings {
     wisdom: string;
     library: string;
     radio: string;
+    haramain: string;
   };
   home: {
     nextPrayer: string;
@@ -117,6 +118,7 @@ export interface TranslationStrings {
     wisdom: string;
     library: string;
     radio: string;
+    haramain: string;
   };
   cityModal: {
     title: string;
@@ -479,6 +481,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Allomalar va Hikmatlar',
       library: 'Islom Kutubxonasi',
       radio: "Qur'on Radiosi",
+      haramain: 'Makka & Madina Jonli',
     },
     home: {
       nextPrayer: 'Keyingi namoz',
@@ -519,6 +522,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Allomalar & Hikmat',
       library: 'Kutubxona',
       radio: "Qur'on Radiosi",
+      haramain: 'Makka & Madina',
     },
     cityModal: {
       title: 'Shahar, tuman yoki qishloq',
@@ -880,6 +884,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Алломалар ва Ҳикматлар',
       library: 'Ислом Кутубхонаси',
       radio: 'Қуръон Радиоси',
+      haramain: 'Макка & Мадина Жонли',
     },
     home: {
       nextPrayer: 'Кейинги намоз',
@@ -920,6 +925,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Алломалар & Ҳикмат',
       library: 'Кутубхона',
       radio: 'Қуръон Радиоси',
+      haramain: 'Макка & Мадина',
     },
     cityModal: {
       title: 'Шаҳар, туман ёки қишлоқ',
@@ -1281,6 +1287,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Scholars & Wisdom',
       library: 'Islamic Library',
       radio: 'Quran Radio Live',
+      haramain: 'Makkah & Madinah Live',
     },
     home: {
       nextPrayer: 'Next Prayer',
@@ -1321,6 +1328,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Scholars & Wisdom',
       library: 'Library',
       radio: 'Quran Radio',
+      haramain: 'Makkah & Madinah',
     },
     cityModal: {
       title: 'Select Location',
@@ -1682,6 +1690,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Учёные и Мудрости',
       library: 'Исламская Библиотека',
       radio: 'Коран Радио 24/7',
+      haramain: 'Мекка и Медина Live',
     },
     home: {
       nextPrayer: 'Следующая молитва',
@@ -1722,6 +1731,7 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       wisdom: 'Учёные & Хикматы',
       library: 'Библиотека',
       radio: 'Коран Радио',
+      haramain: 'Мекка и Медина',
     },
     cityModal: {
       title: 'Выберите местоположение',

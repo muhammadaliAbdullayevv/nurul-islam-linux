@@ -26,6 +26,7 @@ export const tabLoaders = {
   wisdom: () => import('../components/tabs/WisdomTab').then((m) => ({ default: m.WisdomTab })),
   library: () => import('../components/tabs/LibraryTab').then((m) => ({ default: m.LibraryTab })),
   radio: () => import('../components/tabs/RadioTab').then((m) => ({ default: m.RadioTab })),
+  haramain: () => import('../components/tabs/HaramainLiveTab').then((m) => ({ default: m.HaramainLiveTab })),
 } as const;
 
 export const modalLoaders = {
@@ -35,6 +36,7 @@ export const modalLoaders = {
 export type LazyTabKey = keyof typeof tabLoaders;
 
 const ALL_LAZY_TAB_KEYS: LazyTabKey[] = [
+  'haramain',
   'library',
   'radio',
   'ramadan',

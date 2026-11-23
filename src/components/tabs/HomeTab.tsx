@@ -91,8 +91,9 @@ const HOME_ORDER_STORAGE_KEY = 'nq_home_feature_order_v1';
 const TILES_PER_PAGE = 12;
 
 const DEFAULT_FEATURE_ORDER: string[] = [
-  // Page 1 (12 core tiles — Quran, Live Radio, Classical Library front-and-center!)
+  // Page 1 (12 core tiles — Quran, Makkah & Madinah Live, Live Radio, Classical Library front-and-center!)
   'quran',
+  'haramain',
   'radio',
   'library',
   'ramadan',
@@ -103,8 +104,8 @@ const DEFAULT_FEATURE_ORDER: string[] = [
   'masjids',
   'juma',
   'names',
-  'zakat',
   // Page 2 (12 tiles)
+  'zakat',
   'qazo',
   'azkar:duas',
   'azkar:zikr',
@@ -138,9 +139,9 @@ function loadSavedFeatureOrder(): string[] {
           return true;
         });
         const missing = DEFAULT_FEATURE_ORDER.filter((id) => !cleaned.includes(id));
-        // Place newly launched flagship tiles ('radio', 'library') right after 'quran' for existing users
-        const flagshipNew = missing.filter((id) => id === 'radio' || id === 'library');
-        const otherMissing = missing.filter((id) => id !== 'radio' && id !== 'library');
+        // Place newly launched flagship tiles ('haramain', 'radio', 'library') right after 'quran' for existing users
+        const flagshipNew = missing.filter((id) => id === 'haramain' || id === 'radio' || id === 'library');
+        const otherMissing = missing.filter((id) => id !== 'haramain' && id !== 'radio' && id !== 'library');
         if (flagshipNew.length > 0) {
           const qIdx = cleaned.indexOf('quran');
           const insertAt = qIdx >= 0 ? qIdx + 1 : 0;
@@ -379,6 +380,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const allFeaturesMap = useMemo(() => {
     const list: HomeFeatureDef[] = [
       { id: 'quran', label: t.features.quran, icon: MushafIcon, imageSrc: '/icons/home/quran.webp', badge: '114' },
+      { id: 'haramain', label: t.features.haramain, icon: QiblaKaabaIcon, imageSrc: '/icons/home/haramain.webp', badge: 'LIVE' },
       { id: 'radio', label: t.features.radio, icon: Radio, imageSrc: '/icons/home/radio.webp', badge: 'LIVE' },
       { id: 'library', label: t.features.library, icon: HadithBookIcon, imageSrc: '/icons/home/library.webp', badge: '31' },
       { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
@@ -521,6 +523,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     const isEnabled = (id: string) => {
       if (devDisabled.has(id)) return false;
       if (id === 'ehson' && remoteConfig.features.ehson === false) return false;
+      if (id === 'haramain' && remoteConfig.features.haramain === false) return false;
       if (id === 'radio' && remoteConfig.features.radio === false) return false;
       if (id === 'library' && remoteConfig.features.library === false) return false;
       if (id === 'masjids' && remoteConfig.features.masjids === false) return false;

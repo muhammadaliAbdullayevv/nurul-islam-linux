@@ -21,12 +21,17 @@ export interface RemoteAppConfig {
   features: {
     ehson: boolean;
     radio: boolean;
+    haramain: boolean;
     library: boolean;
     namesBattle: boolean;
     masjids: boolean;
     broadcasts: boolean;
     zakat: boolean;
     ramadan: boolean;
+  };
+  haramainLive: {
+    makkahUrl: string;
+    madinahUrl: string;
   };
   maintenance: {
     enabled: boolean;
@@ -93,12 +98,17 @@ export const DEFAULT_REMOTE_APP_CONFIG: RemoteAppConfig = {
   features: {
     ehson: true,
     radio: true,
+    haramain: true,
     library: true,
     namesBattle: true,
     masjids: true,
     broadcasts: true,
     zakat: true,
     ramadan: true,
+  },
+  haramainLive: {
+    makkahUrl: '',
+    madinahUrl: '',
   },
   maintenance: {
     enabled: false,
@@ -171,6 +181,10 @@ function mergeConfig(raw: unknown): RemoteAppConfig {
     features: {
       ...DEFAULT_REMOTE_APP_CONFIG.features,
       ...(r.features && typeof r.features === 'object' ? r.features : {}),
+    },
+    haramainLive: {
+      makkahUrl: typeof r.haramainLive?.makkahUrl === 'string' ? r.haramainLive.makkahUrl.trim() : '',
+      madinahUrl: typeof r.haramainLive?.madinahUrl === 'string' ? r.haramainLive.madinahUrl.trim() : '',
     },
     maintenance: {
       ...DEFAULT_REMOTE_APP_CONFIG.maintenance,

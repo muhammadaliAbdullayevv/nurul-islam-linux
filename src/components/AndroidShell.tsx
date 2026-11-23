@@ -106,19 +106,19 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
   const useWidescreenShell = isDesktopApp || (!isCapacitorNative && isWideViewport);
   const editionSubtitle = isDesktopApp
     ? language === 'ru'
-      ? '✦ Desktop · 26 разделов'
+      ? '✦ Desktop · 27 разделов'
       : language === 'en'
-      ? '✦ Desktop Edition · 26 modules'
+      ? '✦ Desktop Edition · 27 modules'
       : language === 'uz_cyr'
-      ? '✦ Desktop · 26 бўлим'
-      : "✦ Desktop Edition · 26 bo'lim"
+      ? '✦ Desktop · 27 бўлим'
+      : "✦ Desktop Edition · 27 bo'lim"
     : language === 'ru'
-    ? '✦ Веб-версия · 26 разделов'
+    ? '✦ Веб-версия · 27 разделов'
     : language === 'en'
-    ? '✦ Web Edition · 26 modules'
+    ? '✦ Web Edition · 27 modules'
     : language === 'uz_cyr'
-    ? '✦ Веб-илова · 26 бўлим'
-    : "✦ Veb-ilova · 26 bo'lim";
+    ? '✦ Веб-илова · 27 бўлим'
+    : "✦ Veb-ilova · 27 bo'lim";
   const currentTimeStr = new Date().toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -137,10 +137,11 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
     { id: 'profile', label: t.nav.profile, icon: User, badge: '' },
   ];
 
-  // Desktop Left Sidebar Navigation Items (2-Column Grid — All 29 items visible at once)
+  // Desktop Left Sidebar Navigation Items (2-Column Grid — All 30 items visible at once)
   const desktopSidebarItems = [
-    { id: 'home', label: t.nav.home, icon: Home, imageSrc: '', badge: '26' },
+    { id: 'home', label: t.nav.home, icon: Home, imageSrc: '', badge: '27' },
     { id: 'quran', label: t.features.quran, icon: MushafIcon, imageSrc: '/icons/home/quran.webp', badge: '114' },
+    { id: 'haramain', label: t.features.haramain, icon: QiblaKaabaIcon, imageSrc: '/icons/home/haramain.webp', badge: 'LIVE' },
     { id: 'radio', label: t.features.radio, icon: Sparkles, imageSrc: '/icons/home/radio.webp', badge: 'LIVE' },
     { id: 'library', label: t.features.library, icon: MushafIcon, imageSrc: '/icons/home/library.webp', badge: '31' },
     { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
