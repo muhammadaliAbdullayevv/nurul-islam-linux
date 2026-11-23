@@ -15,6 +15,8 @@ import { NamesTab } from './components/tabs/NamesTab';
 import { ProfileTab } from './components/tabs/ProfileTab';
 import { CitySelectorModal } from './components/CitySelectorModal';
 import { QuranMiniPlayer } from './components/QuranMiniPlayer';
+import { RadioMiniPlayer } from './components/RadioMiniPlayer';
+import { QuranRadioState, quranRadioPlayer } from './utils/quranRadioPlayer';
 import { useDayKey } from './components/LivePrayerClock';
 import {
   hasNativeQuranAudioBridge,
@@ -80,6 +82,8 @@ const FiqhTab = lazy(tabLoaders.fiqh);
 const TajweedTab = lazy(tabLoaders.tajweed);
 const SeerahTab = lazy(tabLoaders.seerah);
 const WisdomTab = lazy(tabLoaders.wisdom);
+const LibraryTab = lazy(tabLoaders.library);
+const RadioTab = lazy(tabLoaders.radio);
 const OnboardingModal = lazy(modalLoaders.onboarding);
 
 /**
@@ -122,6 +126,8 @@ const VALID_WEB_TABS = new Set([
   'tajweed',
   'seerah',
   'wisdom',
+  'library',
+  'radio',
   'profile',
 ]);
 
@@ -261,6 +267,7 @@ function AppContent() {
   const [nativeAudioState, setNativeAudioState] = useState<NativeQuranAudioState>(() =>
     hasNativeQuranAudioBridge() ? getNativeAudioState() : webQuranPlayer.getState()
   );
+  const [radioState, setRadioState] = useState<QuranRadioState>(() => quranRadioPlayer.getState());
   const [downloadMap, setDownloadMap] = useState<Record<number, AudioDownloadProgress>>(() =>
     hasNativeQuranAudioBridge() ? getAllDownloadProgress() : getWebAudioDownloadSnapshot()
   );
@@ -1065,6 +1072,17 @@ function AppContent() {
     return subscribeAllAudioDownloads((map) => setDownloadMap(map));
   }, []);
 
+  // Subscribe to persistent global Live Quran Radio player & prevent audio overlap with Surah audio
+  useEffect(() => {
+    return quranRadioPlayer.subscribe((st) => setRadioState(st));
+  }, []);
+
+  useEffect(() => {
+    if (nativeAudioState.isPlaying && quranRadioPlayer.getState().active) {
+      quranRadioPlayer.stop();
+    }
+  }, [nativeAudioState.isPlaying]);
+
   const [adjVersion, setAdjVersion] = useState(0);
 
   useEffect(() => {
@@ -1163,6 +1181,9 @@ function AppContent() {
   const showMiniPlayer = Boolean(
     nativeAudioState.active && !(activeTab === 'quran' && isReadingSurah)
   );
+  const showRadioMiniPlayer = Boolean(
+    radioState.active && !showMiniPlayer && activeTab !== 'radio'
+  );
   const isSecondaryFooterTab = !['home', 'tasbih', 'quran', 'profile'].includes(activeTab);
 
   return (
@@ -1202,12 +1223,12 @@ function AppContent() {
           ) : undefined
         }
         miniPlayer={
-          showGlobalDownloadBanner || showMiniPlayer ? (
+          showGlobalDownloadBanner || showMiniPlayer || showRadioMiniPlayer ? (
             <>
               {showGlobalDownloadBanner && activeDownloading && (
                 <div
                   className={`shrink-0 px-3 ${
-                    !showMiniPlayer && isSecondaryFooterTab ? 'pb-2 pt-1' : 'pt-1.5 pb-1'
+                    !showMiniPlayer && !showRadioMiniPlayer && isSecondaryFooterTab ? 'pb-2 pt-1' : 'pt-1.5 pb-1'
                   } z-30`}
                 >
                   <button
@@ -1246,6 +1267,13 @@ function AppContent() {
                   audioState={nativeAudioState}
                   showBottomSafePadding={isSecondaryFooterTab}
                   onOpenSurah={handleOpenSurah}
+                />
+              )}
+              {showRadioMiniPlayer && (
+                <RadioMiniPlayer
+                  radioState={radioState}
+                  showBottomSafePadding={isSecondaryFooterTab}
+                  onOpenRadio={() => navigateToTab('radio')}
                 />
               )}
             </>
@@ -1390,6 +1418,10 @@ function AppContent() {
               {activeTab === 'seerah' && <SeerahTab />}
 
               {activeTab === 'wisdom' && <WisdomTab />}
+
+              {activeTab === 'library' && <LibraryTab />}
+
+              {activeTab === 'radio' && <RadioTab />}
             </Suspense>
           </div>
         )}

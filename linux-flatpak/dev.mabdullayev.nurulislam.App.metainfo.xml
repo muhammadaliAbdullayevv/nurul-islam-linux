@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.70" date="2026-11-23">
+      <description>
+        <p>Added two major sections: 24/7 Live Quran Radio with 16 verified streaming channels, automatic failover, favorites, and a persistent background mini-player; and the Classical Islamic Library (Kutubxona) featuring 13 curated public-domain Hanafi and Movarounnahr classics with a distraction-free offline e-reader, Sepia paper mode, reading progress tracker, and PNG quote cards.</p>
+      </description>
+    </release>
     <release version="1.8.69" date="2026-11-23">
       <description>
         <p>Added 1-tap Prayer Notification bell toggle on the Home prayer banner using the signature Nurul Islam chime, eliminated loading spinners on local tabs for instant navigation, redesigned the Tasbih with royal honey-amber and emerald-jade gemstone beads, highlighted saved Quran ayahs with direct Back return to Profile, enlarged the header app logo, and replaced the off-season Ramadan counter with year-round Khatm progress.</p>

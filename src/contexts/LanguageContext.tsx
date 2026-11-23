@@ -75,6 +75,8 @@ export interface TranslationStrings {
     tajweed: string;
     seerah: string;
     wisdom: string;
+    library: string;
+    radio: string;
   };
   home: {
     nextPrayer: string;
@@ -113,6 +115,8 @@ export interface TranslationStrings {
     tajweed: string;
     seerah: string;
     wisdom: string;
+    library: string;
+    radio: string;
   };
   cityModal: {
     title: string;
@@ -473,6 +477,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Arab Alifbosi va Tajvid',
       seerah: "Siyrat va Payg'ambarlar",
       wisdom: 'Allomalar va Hikmatlar',
+      library: 'Islom Kutubxonasi',
+      radio: "Qur'on Radiosi",
     },
     home: {
       nextPrayer: 'Keyingi namoz',
@@ -511,6 +517,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Arab Alifbosi va Tajvid',
       seerah: "Siyrat va Payg'ambarlar",
       wisdom: 'Allomalar & Hikmat',
+      library: 'Kutubxona',
+      radio: "Qur'on Radiosi",
     },
     cityModal: {
       title: 'Shahar, tuman yoki qishloq',
@@ -870,6 +878,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Араб Алифбоси ва Тажвид',
       seerah: 'Сийрат ва Пайғамбарлар',
       wisdom: 'Алломалар ва Ҳикматлар',
+      library: 'Ислом Кутубхонаси',
+      radio: 'Қуръон Радиоси',
     },
     home: {
       nextPrayer: 'Кейинги намоз',
@@ -908,6 +918,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Алифбо & Тажвид',
       seerah: 'Сийрат & Қиссалар',
       wisdom: 'Алломалар & Ҳикмат',
+      library: 'Кутубхона',
+      radio: 'Қуръон Радиоси',
     },
     cityModal: {
       title: 'Шаҳар, туман ёки қишлоқ',
@@ -1267,6 +1279,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Arabic & Tajweed',
       seerah: 'Seerah & 25 Prophets',
       wisdom: 'Scholars & Wisdom',
+      library: 'Islamic Library',
+      radio: 'Quran Radio Live',
     },
     home: {
       nextPrayer: 'Next Prayer',
@@ -1305,6 +1319,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Alphabet & Tajweed',
       seerah: 'Seerah & Prophets',
       wisdom: 'Scholars & Wisdom',
+      library: 'Library',
+      radio: 'Quran Radio',
     },
     cityModal: {
       title: 'Select Location',
@@ -1664,6 +1680,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Арабский и Таджвид',
       seerah: 'Сира и 25 Пророков',
       wisdom: 'Учёные и Мудрости',
+      library: 'Исламская Библиотека',
+      radio: 'Коран Радио 24/7',
     },
     home: {
       nextPrayer: 'Следующая молитва',
@@ -1702,6 +1720,8 @@ const DICTIONARY: Record<AppLanguage, TranslationStrings> = {
       tajweed: 'Алифба & Таджвид',
       seerah: 'Сира & Пророки',
       wisdom: 'Учёные & Хикматы',
+      library: 'Библиотека',
+      radio: 'Коран Радио',
     },
     cityModal: {
       title: 'Выберите местоположение',

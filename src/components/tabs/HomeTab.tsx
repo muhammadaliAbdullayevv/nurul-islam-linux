@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Megaphone,
   Moon,
+  Radio,
   Sun,
   Sunrise,
   Sunset,
@@ -79,8 +80,10 @@ const HOME_ORDER_STORAGE_KEY = 'nq_home_feature_order_v1';
 const TILES_PER_PAGE = 12;
 
 const DEFAULT_FEATURE_ORDER: string[] = [
-  // Page 1 (12 tiles — Tasbih lives in bottom nav bar, replaced here by Scholars & Wisdom)
+  // Page 1 (12 core tiles — Quran, Live Radio, Classical Library front-and-center!)
   'quran',
+  'radio',
+  'library',
   'ramadan',
   'prayer',
   'qibla',
@@ -90,9 +93,9 @@ const DEFAULT_FEATURE_ORDER: string[] = [
   'juma',
   'names',
   'zakat',
+  // Page 2 (12 tiles)
   'qazo',
   'azkar:duas',
-  // Page 2 (12 tiles)
   'azkar:zikr',
   'azkar:hadith',
   'azkar:ayats',
@@ -103,6 +106,7 @@ const DEFAULT_FEATURE_ORDER: string[] = [
   'hifz',
   'life',
   'fiqh',
+  // Page 3
   'tajweed',
   'seerah',
 ];
@@ -123,6 +127,16 @@ function loadSavedFeatureOrder(): string[] {
           return true;
         });
         const missing = DEFAULT_FEATURE_ORDER.filter((id) => !cleaned.includes(id));
+        // Place newly launched flagship tiles ('radio', 'library') right after 'quran' for existing users
+        const flagshipNew = missing.filter((id) => id === 'radio' || id === 'library');
+        const otherMissing = missing.filter((id) => id !== 'radio' && id !== 'library');
+        if (flagshipNew.length > 0) {
+          const qIdx = cleaned.indexOf('quran');
+          const insertAt = qIdx >= 0 ? qIdx + 1 : 0;
+          const next = [...cleaned];
+          next.splice(insertAt, 0, ...flagshipNew);
+          return [...next, ...otherMissing];
+        }
         return [...cleaned, ...missing];
       }
     }
@@ -338,6 +352,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const allFeaturesMap = useMemo(() => {
     const list: HomeFeatureDef[] = [
       { id: 'quran', label: t.features.quran, icon: MushafIcon, imageSrc: '/icons/home/quran.webp', badge: '114' },
+      { id: 'radio', label: t.features.radio, icon: Radio, imageSrc: '/icons/home/radio.webp', badge: 'LIVE' },
+      { id: 'library', label: t.features.library, icon: HadithBookIcon, imageSrc: '/icons/home/library.webp', badge: '13' },
       { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
       { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
       { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },
@@ -1371,9 +1387,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   : 'bg-emerald-950/90 border-amber-400/60 text-amber-200'
               }`}
             >
-              {/* Page 1 / Page 2 Drop & Switch Pills */}
+              {/* Dynamic Page 1 / Page 2 / Page 3 Drop & Switch Pills */}
               <div className="flex items-center gap-1">
-                {[0, 1].map((pIdx) => {
+                {featurePages.map((_, pIdx) => {
                   const active = homePage === pIdx;
                   return (
                     <button
@@ -1391,7 +1407,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                           : 'bg-slate-900 text-slate-300 border border-emerald-800'
                       }`}
                     >
-                      {pIdx === 0 ? reorderCopy.page1 : reorderCopy.page2}
+                      {pIdx === 0 ? reorderCopy.page1 : pIdx === 1 ? reorderCopy.page2 : `${pIdx + 1}`}
                     </button>
                   );
                 })}
@@ -1519,7 +1535,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   const IconComp = feat.icon;
                   const isHighlighted = Boolean(feat.highlight);
                   const isBeingDragged = draggingId === feat.id;
-                  const targetOtherPage = pageIdx === 0 ? 1 : 0;
+                  const targetOtherPage = (pageIdx + 1) % totalPages;
 
                   return (
                     <div

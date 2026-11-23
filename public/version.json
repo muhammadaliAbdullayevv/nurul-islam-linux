@@ -1,14 +1,14 @@
 {
-  "versionCode": 88,
-  "versionName": "1.8.69",
+  "versionCode": 89,
+  "versionName": "1.8.70",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 88,
+  "minSupportedVersionCode": 89,
   "notes": {
-    "uz_lat": "Katta qulaylik va tezlik yangilanishi: Bosh sahifadagi namoz kartasida 1 bosishda bildirishnomani yoqish/o'chirish qo'ng'iroqchasi (Nurul Islam ovozi bilan), 0ms tezkor sahifalar (Tasbeh, Qur'on va Profil kutishsiz ochiladi), yangi zargarona qahrabo-zumrad tasbeh donachalari, Saqlangan oyatlarni sariq ajratish hamda Orqaga tugmasi to'g'ridan-to'g'ri Profilga qaytishi, kattaroq logotip va yil davomida foydali Xatm ko'rsatkichi.",
-    "uz_cyr": "Катта қулайлик ва тезлик янгиланиши: Бош саҳифадаги намоз картасида 1 босишда билдиришномани ёқиш/ўчириш қўнғироқчаси (Нурул Ислам овози билан), 0мс тезкор саҳифалар (Тасбеҳ, Қуръон ва Профил кутишсиз очилади), янги заргарона қаҳрабо-зумрад тасбеҳ доначалари, Сақланган оятларни ажратиш ҳамда Орқага тугмаси тўғридан-тўғри Профилга қайтиши, каттароқ логотип ва Хатм кўрсаткичи.",
-    "en": "Major UX & speed upgrade: 1-tap Prayer Notification bell icon directly on the Home Prayer card (locked to our signature Nurul Islam chime, no clutter menus), instant 0ms local tabs (Tasbih, Quran, Profile, Prayer open without loading spinners), handcrafted royal honey-amber & emerald-jade Tasbih beads, clear Saved Ayah highlighting with direct Back navigation to Profile, larger top-bar logo, and year-round Khatm progress on Profile.",
-    "ru": "Крупное обновление удобства и скорости: кнопка колокольчика в 1 касание прямо на карточке намаза на Главной (с фирменным звуком Nurul Islam без лишних подменю), мгновенное открытие локальных вкладок без экранов загрузки (Тасбих, Коран, Профиль), новые янтарно-изумрудные бусины тасбиха, подсветка сохранённых аятов с прямым возвратом в Профиль, увеличенный логотип и индикатор Хатма."
+    "uz_lat": "Ikki yangi yirik bo'lim qo'shildi: 1) Qur'on Radiosi (24/7) — Makka Harami, Mishari Al-Afasiy, Yosir Ad-Dosariy, Mohir Al-Muayqiliy, Abdulbosit, Husariy va Ruqiya kabi 16 ta jonli kanal, fon ijrosi va mini-pleyer bilan. 2) Klassik Islom Kutubxonasi — 13 ta mo'tabar klassik asar (40 bob), oflayn o'quvchi, qog'oz rejimi va ulashish kartalari bilan!",
+    "uz_cyr": "Икки янги йирик бўлим қўшилди: 1) Қуръон Радиоси (24/7) — Макка Ҳарами, Мишари Ал-Афасий, Ёсир Ад-Досарий, Моҳир Ал-Муайқилий, Абдулбосит, Ҳусарий ва Руқия каби 16 та жонли канал, фон ижроси ва мини-плеер билан. 2) Классик Ислом Кутубхонаси — 13 та мўътабар классик асар (40 боб), офлайн ўқувчи, қоғоз режими ва улашиш карталари билан!",
+    "en": "Two major new sections launched: 1) 24/7 Live Quran Radio with 16 verified channels (Makkah Haram, Mishary Al-Afasy, Yasser Al-Dosari, Maher Al-Muaiqly, Al-Sudais, Abdulbasit, Husary, Minshawi, Ruqyah & Calm recitations), automatic failover, background mini-player & Media Session controls. 2) Classical Islamic Library (Kutubxona) with 13 curated public-domain classics (40 chapters), offline e-reader, Sepia paper mode, font sizing, progress tracking, and PNG quote cards!",
+    "ru": "Добавлены два крупных раздела: 1) Коран Радио 24/7 — 16 проверенных прямых эфиров (Мекка, Аль-Афаси, Ад-Досари, Аль-Муайкли, Ас-Судайс, Абдуль-Басит, Аль-Хусари, Рукья и др.) с фоновым мини-плеером. 2) Классическая Исламская Библиотека — 13 великих классических трудов (40 глав) офлайн с оглавлением, режимом бумаги, прогрессом чтения и карточками-цитатами!"
   }
 }

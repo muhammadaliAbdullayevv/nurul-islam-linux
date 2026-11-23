@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.69
+Version:        1.8.70
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.70-1
+- Add 24/7 Live Quran Radio (16 verified streams with auto-failover, favorites & persistent background mini-player) and Classical Islamic Library (13 public-domain Hanafi & Central Asian classics with offline chapter e-reader, Sepia paper mode, progress tracking & PNG quote cards)
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.69-1
 - Add 1-tap Prayer Notification bell icon on Home prayer banner, simplify Settings, eliminate loading spinners on local tabs, redesign luxury honey-amber and jade Tasbih beads, highlight saved Quran ayahs with direct Back navigation to Profile, enlarge app header logo, and replace off-season Ramadan indicator with year-round Khatm progress
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.68-1

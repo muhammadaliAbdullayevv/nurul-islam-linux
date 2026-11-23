@@ -106,19 +106,19 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
   const useWidescreenShell = isDesktopApp || (!isCapacitorNative && isWideViewport);
   const editionSubtitle = isDesktopApp
     ? language === 'ru'
-      ? '✦ Desktop · 24 раздела'
+      ? '✦ Desktop · 26 разделов'
       : language === 'en'
-      ? '✦ Desktop Edition · 24 modules'
+      ? '✦ Desktop Edition · 26 modules'
       : language === 'uz_cyr'
-      ? '✦ Desktop · 24 бўлим'
-      : "✦ Desktop Edition · 24 bo'lim"
+      ? '✦ Desktop · 26 бўлим'
+      : "✦ Desktop Edition · 26 bo'lim"
     : language === 'ru'
-    ? '✦ Веб-версия · 24 раздела'
+    ? '✦ Веб-версия · 26 разделов'
     : language === 'en'
-    ? '✦ Web Edition · 24 modules'
+    ? '✦ Web Edition · 26 modules'
     : language === 'uz_cyr'
-    ? '✦ Веб-илова · 24 бўлим'
-    : "✦ Veb-ilova · 24 bo'lim";
+    ? '✦ Веб-илова · 26 бўлим'
+    : "✦ Veb-ilova · 26 bo'lim";
   const currentTimeStr = new Date().toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -137,10 +137,12 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
     { id: 'profile', label: t.nav.profile, icon: User, badge: '' },
   ];
 
-  // Desktop Left Sidebar Navigation Items (2-Column Grid — All 26 items visible at once)
+  // Desktop Left Sidebar Navigation Items (2-Column Grid — All 29 items visible at once)
   const desktopSidebarItems = [
-    { id: 'home', label: t.nav.home, icon: Home, imageSrc: '', badge: '24' },
+    { id: 'home', label: t.nav.home, icon: Home, imageSrc: '', badge: '26' },
     { id: 'quran', label: t.features.quran, icon: MushafIcon, imageSrc: '/icons/home/quran.webp', badge: '114' },
+    { id: 'radio', label: t.features.radio, icon: Sparkles, imageSrc: '/icons/home/radio.webp', badge: 'LIVE' },
+    { id: 'library', label: t.features.library, icon: MushafIcon, imageSrc: '/icons/home/library.webp', badge: '13' },
     { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
     { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
     { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },
@@ -299,8 +301,8 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
             </div>
           </button>
 
-          {/* 2-Column × 14-Row Grid — All 27 Items Fit on Screen simultaneously */}
-          <div className="flex-1 min-h-0 p-2 grid grid-cols-2 grid-rows-[repeat(14,minmax(0,1fr))] gap-1.5 overflow-y-auto">
+          {/* 2-Column × 15-Row Grid — All 29 Items Fit on Screen simultaneously */}
+          <div className="flex-1 min-h-0 p-2 grid grid-cols-2 grid-rows-[repeat(15,minmax(0,1fr))] gap-1.5 overflow-y-auto">
             {desktopSidebarItems.map((item) => {
               const effectiveTab = activeSubTab || activeTab;
               const isActive =

@@ -24,6 +24,8 @@ export const tabLoaders = {
   tajweed: () => import('../components/tabs/TajweedTab').then((m) => ({ default: m.TajweedTab })),
   seerah: () => import('../components/tabs/SeerahTab').then((m) => ({ default: m.SeerahTab })),
   wisdom: () => import('../components/tabs/WisdomTab').then((m) => ({ default: m.WisdomTab })),
+  library: () => import('../components/tabs/LibraryTab').then((m) => ({ default: m.LibraryTab })),
+  radio: () => import('../components/tabs/RadioTab').then((m) => ({ default: m.RadioTab })),
 } as const;
 
 export const modalLoaders = {
@@ -33,6 +35,8 @@ export const modalLoaders = {
 export type LazyTabKey = keyof typeof tabLoaders;
 
 const ALL_LAZY_TAB_KEYS: LazyTabKey[] = [
+  'library',
+  'radio',
   'ramadan',
   'wisdom',
   'guide',
