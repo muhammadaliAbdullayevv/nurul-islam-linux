@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.68" date="2026-11-23">
+      <description>
+        <p>Redesigned the Profile and Settings screens for clarity: moved Settings to a dedicated top-right gear button inside the green Profile banner, placed Saved Ayahs directly on Profile, upgraded Prayer Alerts with a modern collapsible sliding toggle switch, and removed unnecessary technical clutter.</p>
+      </description>
+    </release>
     <release version="1.8.67" date="2026-11-23">
       <description>
         <p>Added a dedicated, calm Nurul Islam prayer notification chime across Android notification channels and Desktop alerts, with Chime, System, and Silent modes plus instant sound preview in Settings.</p>

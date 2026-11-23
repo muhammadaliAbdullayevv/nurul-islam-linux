@@ -1,14 +1,14 @@
 {
-  "versionCode": 86,
-  "versionName": "1.8.67",
+  "versionCode": 87,
+  "versionName": "1.8.68",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": true,
-  "minSupportedVersionCode": 86,
+  "minSupportedVersionCode": 87,
   "notes": {
-    "uz_lat": "Namoz vaqtlari bildirishnomalari uchun maxsus sokin va yoqimli Nurul Islam ovozi (Chime) qo'shildi! Endi Sozlamalarda maxsus ovoz, tizim ovozi yoki ovozsiz rejimni tanlash va darhol tinglab ko'rish mumkin.",
-    "uz_cyr": "Намоз вақтлари билдиришномалари учун махсус сокин ва ёқимли Nurul Islam овози (Chime) қўшилди! Энди Созламаларда махсус овоз, тизим овози ёки овозсиз режимни танлаш ва дарҳол тинглаб кўриш мумкин.",
-    "en": "Added a custom calm Nurul Islam signature prayer notification chime! You can now choose between Prayer Chime, System sound, or Silent mode with instant preview in Settings.",
-    "ru": "Добавлен особый спокойный звук уведомлений о времени намаза Nurul Islam! В настройках можно выбрать особый звук, системный или беззвучный режим с мгновенным прослушиванием."
+    "uz_lat": "Profil va Sozlamalar sahifasi to'liq yangilandi va soddalashtirildi: yashil profil bannerining o'ng yuqori burchagida Sozlamalar (⚙) tugmasi, zamonaviy yoqish/o'chirish tugmachalari, Saqlangan oyatlar bevosita Profilda va ortiqcha texnik bo'limlarsiz toza dizayn.",
+    "uz_cyr": "Профил ва Созламалар саҳифаси тўлиқ янгиланди ва соддалаштирилди: яшил профил баннерининг ўнг юқори бурчагида Созламалар (⚙) тугмаси, замонавий ёқиш/ўчириш тугмачалари, Сақланган оятлар бевосита Профилда ва ортиқча техник бўлимларсиз тоза дизайн.",
+    "en": "Redesigned Profile & Settings for maximum clarity: moved Settings to a sleek top-right gear icon on the green Profile hero card, relocated Saved Ayahs directly onto Profile, added a modern collapsible notification toggle switch, and removed unnecessary technical clutter.",
+    "ru": "Полностью обновлён дизайн Профиля и Настроек: кнопка настроек (⚙) перенесена в правый верхний угол зелёной карточки профиля, сохранённые аяты теперь прямо в профиле, добавлен современный переключатель уведомлений и убраны лишние технические пункты."
   }
 }

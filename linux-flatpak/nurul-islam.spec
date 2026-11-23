@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.67
+Version:        1.8.68
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.68-1
+- Redesign Profile and Settings: top-right Settings gear button on the green Profile hero banner, Saved Ayahs directly on Profile, modern sliding notification switch, and removal of technical clutter
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.67-1
 - Add custom Nurul Islam prayer notification chime sound with Chime/System/Silent selector and instant preview in Settings
 * Sun Nov 22 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.66-1
