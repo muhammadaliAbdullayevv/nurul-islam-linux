@@ -353,7 +353,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     const list: HomeFeatureDef[] = [
       { id: 'quran', label: t.features.quran, icon: MushafIcon, imageSrc: '/icons/home/quran.webp', badge: '114' },
       { id: 'radio', label: t.features.radio, icon: Radio, imageSrc: '/icons/home/radio.webp', badge: 'LIVE' },
-      { id: 'library', label: t.features.library, icon: HadithBookIcon, imageSrc: '/icons/home/library.webp', badge: '13' },
+      { id: 'library', label: t.features.library, icon: HadithBookIcon, imageSrc: '/icons/home/library.webp', badge: '41' },
       { id: 'ramadan', label: t.features.ramadan, icon: RamadanLanternIcon, imageSrc: '/icons/home/ramadan.webp', badge: '' },
       { id: 'prayer', label: t.features.prayer, icon: PrayerTimeIcon, imageSrc: '/icons/home/prayer.webp', badge: '' },
       { id: 'qibla', label: t.features.qibla, icon: QiblaKaabaIcon, imageSrc: '/icons/home/qibla.webp', badge: '' },

@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.74" date="2026-11-23">
+      <description>
+        <p>Upgraded the Islamic Library into a 41-book Hybrid Full-Length Library (700+ chapters, 3,800+ pages): 16 core classics bundled 100% offline plus 25 full-length cloud volumes (Sahih al-Bukhari, Sahih Muslim, Tirmidhi, Abu Dawud, Muwatta, Alchemy of Happiness, Gulistan, Al-Hidayah, Kitab al-Tawhid, and more) that automatically cache offline on first open, powered by instant per-chapter swipe pagination.</p>
+      </description>
+    </release>
     <release version="1.8.73" date="2026-11-23">
       <description>
         <p>Cleaned up generated PNG share cards for Quran Ayahs, Hadiths, Duas, Wisdom, and Library book passages by removing all background star watermarks and sparkle glyphs.</p>

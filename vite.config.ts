@@ -53,7 +53,21 @@ export default defineConfig(() => {
               options: {
                 cacheName: 'nurul-islam-static-data-cache',
                 expiration: {
-                  maxEntries: 160,
+                  maxEntries: 200,
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              urlPattern: /\/books\/.+\.json$/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'nurul-islam-cloud-books-cache',
+                expiration: {
+                  maxEntries: 120,
                   maxAgeSeconds: 60 * 60 * 24 * 365,
                 },
                 cacheableResponse: {

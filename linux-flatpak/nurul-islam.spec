@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.73
+Version:        1.8.74
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.74-1
+- Expand Islamic Library into a 41-book Hybrid Full-Length Library (700+ chapters, 3,800+ pages): 16 full-length offline bundled books + 25 cloud volumes auto-cached permanently in IndexedDB, with instant per-chapter swipe pagination and lightweight lazy catalog
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.73-1
 - Remove background star watermarks and sparkle glyphs from generated PNG share cards across Quran Ayahs, Hadiths, Duas, Wisdom, and Library book passages
 * Mon Nov 23 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.72-1
