@@ -39,6 +39,7 @@ import {
   calculatePrayerTimes,
   cleanModernUzPlaceName,
   findNearestCity,
+  getLocalizedCityLabel,
   isLocationKnownInCatalog,
   loadFullLocationCatalog,
   resolveRegionFromCoords,
@@ -877,9 +878,18 @@ function AppContent() {
 
   useEffect(() => {
     const send = () => {
+      const locInfo = getLocalizedCityLabel(
+        currentCity.cityName,
+        currentCity.countryName,
+        'uz_lat',
+        currentCity.region
+      );
       void sendAnonymousHeartbeat({
         language,
         city: currentCity.cityName,
+        region: locInfo.region || '',
+        district: currentCity.subtitle || '',
+        country: currentCity.countryName || '',
         theme: isDay ? 'day' : 'night',
       });
     };
@@ -889,7 +899,7 @@ function AppContent() {
       window.clearTimeout(timer);
       window.removeEventListener(HOME_PAGE2_LEARNED_EVENT, send);
     };
-  }, [language, currentCity.cityName, isDay]);
+  }, [language, currentCity.cityName, currentCity.countryName, currentCity.region, currentCity.subtitle, isDay]);
 
   // Auto-resolve any previously saved generic GPS label to an actual region name
   useEffect(() => {

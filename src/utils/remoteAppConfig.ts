@@ -683,6 +683,9 @@ export async function submitUserFeedback(params: {
   contact?: string;
   language: AppLanguage;
   city: string;
+  region?: string;
+  country?: string;
+  prayerDiagnostics?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const local = getLocalAppVersion();
   const payload = JSON.stringify({
@@ -695,6 +698,9 @@ export async function submitUserFeedback(params: {
     versionCode: local.versionCode,
     language: params.language,
     city: params.city,
+    region: params.region || '',
+    country: params.country || '',
+    prayerDiagnostics: (params.prayerDiagnostics || '').trim(),
   });
 
   for (const baseUrl of API_BASE_URLS) {

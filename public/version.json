@@ -1,14 +1,14 @@
 {
-  "versionCode": 96,
-  "versionName": "1.8.77",
+  "versionCode": 97,
+  "versionName": "1.8.78",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": false,
   "minSupportedVersionCode": 95,
   "notes": {
-    "uz_lat": "Tezkor jonli sinxronizatsiya (keshni tozalamasdan yangilik va bildirishnomalarni darhol ko‘rsatish), shaxsiy xabarlar, avtomatik xatoliklarni aniqlash hamda Google Play uchun aqlli baholash tizimi qo‘shildi.",
-    "uz_cyr": "Тезкор жонли синхронизация (кешни тозаламасдан янгилик ва билдиришномаларни дарҳол кўрсатиш), шахсий хабарлар, автоматик хатоликларни аниқлаш ҳамда Google Play учун ақлли баҳолаш тизими қўшилди.",
-    "en": "Added instant zero-cache Live Sync for announcements and remote settings, direct support messages, automatic stability diagnostics, and a smooth Play Store rating prompt.",
-    "ru": "Добавлена мгновенная синхронизация без очистки кэша для объявлений и настроек, личные сообщения от поддержки, автоматическая диагностика сбоев и удобная оценка приложения."
+    "uz_lat": "Namoz vaqtlari bo‘yicha murojaat yuborishda shahar va hisoblash usulini ixtiyoriy ilova qilish imkoniyati hamda hududlar bo‘yicha takomillashtirilgan anonim statistika qo‘shildi.",
+    "uz_cyr": "Намоз вақтлари бўйича мурожаат юборишда шаҳар ва ҳисоблаш усулини ихтиёрий илова қилиш имконияти ҳамда ҳудудлар бўйича такомиллаштирилган аноним статистика қўшилди.",
+    "en": "Added opt-in prayer city and calculation method diagnostics when reporting prayer-time feedback, plus enhanced privacy-safe regional analytics.",
+    "ru": "Добавлена добровольная отправка города и метода расчёта намаза при сообщении об ошибке времени намаза, а также улучшенная анонимная региональная аналитика."
   }
 }

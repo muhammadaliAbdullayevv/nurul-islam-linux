@@ -392,6 +392,7 @@ function LevelCrest({ level, pct }: { level: number; pct: number }) {
 export const ProfileTab: React.FC<ProfileTabProps> = ({
   currentCity,
   onOpenCitySelector,
+  calcMethod,
   onSelectLanguage,
   alertPrefs,
   onChangeAlertPrefs,
@@ -435,6 +436,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [fbCategory, setFbCategory] = useState<FeedbackCategory>('suggestion');
   const [fbMessage, setFbMessage] = useState('');
   const [fbContact, setFbContact] = useState('');
+  const [fbIncludePrayerDiag, setFbIncludePrayerDiag] = useState(false);
   const [fbSending, setFbSending] = useState(false);
   const [fbResult, setFbResult] = useState<'idle' | 'ok' | 'err'>('idle');
 
@@ -546,18 +548,38 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
     if (fbMessage.trim().length < 4 || fbSending) return;
     setFbSending(true);
     setFbResult('idle');
+    const uzLoc = getLocalizedCityLabel(
+      currentCity.cityName,
+      currentCity.countryName,
+      'uz_lat',
+      currentCity.region
+    );
+    const prayerDiag = fbIncludePrayerDiag
+      ? [
+          `Usul: ${calcMethod || 'Uzbekistan'}`,
+          uzLoc.region || currentCity.countryName,
+          currentCity.subtitle || '',
+          currentCity.cityName,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : '';
     const res = await submitUserFeedback({
       category: fbCategory,
       message: fbMessage,
       contact: fbContact,
       language,
       city: currentCity.cityName,
+      region: uzLoc.region || '',
+      country: currentCity.countryName || '',
+      prayerDiagnostics: prayerDiag,
     });
     setFbSending(false);
     if (res.ok) {
       setFbResult('ok');
       setFbMessage('');
       setFbContact('');
+      setFbIncludePrayerDiag(false);
       window.setTimeout(() => {
         setIsFeedbackOpen(false);
         setFbResult('idle');
@@ -1233,7 +1255,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => setFbCategory(cat)}
+                    onClick={() => {
+                      setFbCategory(cat);
+                      if (cat === 'prayer_time') setFbIncludePrayerDiag(true);
+                    }}
                     className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition ${
                       fbCategory === cat
                         ? isDay
@@ -1276,6 +1301,30 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     : 'bg-slate-950 border-emerald-900/70 text-white focus:border-amber-400'
                 }`}
               />
+
+              <label
+                className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-[11px] cursor-pointer ${
+                  isDay
+                    ? 'bg-[#f6faf5] border-[#dce9d9] text-slate-700'
+                    : 'bg-slate-950/70 border-emerald-900/50 text-slate-300'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={fbIncludePrayerDiag}
+                  onChange={(e) => setFbIncludePrayerDiag(e.target.checked)}
+                  className="mt-0.5 accent-[#158509]"
+                />
+                <span>
+                  {language === 'ru'
+                    ? `Приложить город и метод расчёта намаза (${locationDisplay} · ${calcMethod || 'Uzbekistan'})`
+                    : language === 'en'
+                    ? `Attach prayer city & calculation method (${locationDisplay} · ${calcMethod || 'Uzbekistan'})`
+                    : language === 'uz_cyr'
+                    ? `Намоз ҳисоблаш шаҳри ва усулини илова қилиш (${locationDisplay} · ${calcMethod || 'Uzbekistan'})`
+                    : `Namoz hisoblash shahri va usulini ilova qilish (${locationDisplay} · ${calcMethod || 'Uzbekistan'})`}
+                </span>
+              </label>
 
               {fbResult === 'ok' && (
                 <p className={`text-xs font-bold ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`}>

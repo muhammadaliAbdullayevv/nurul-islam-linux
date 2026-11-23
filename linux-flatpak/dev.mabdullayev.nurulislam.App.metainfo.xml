@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.78" date="2026-11-24">
+      <description>
+        <p>Added privacy-safe Region (Viloyat) and City/District/Village analytics alongside opt-in Prayer Time Accuracy Diagnostics in the Feedback modal while keeping exact GPS coordinates strictly on-device.</p>
+      </description>
+    </release>
     <release version="1.8.77" date="2026-11-24">
       <description>
         <p>Added instant zero-cache Live Sync (15-second foreground sync + instant tab-focus updates with ETag 304), full Owner Device Management (live online presence, custom device labels/roles, tester maintenance bypass, direct personal messages with read receipts, per-device feature restrictions, remote reload/cache-clear/update commands, and soft-blocking), city/version broadcast targeting, smart Play Store rating funnel, automatic crash reporting, and Owner Telegram admin alerts.</p>

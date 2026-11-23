@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.77
+Version:        1.8.78
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.78-1
+- Add privacy-safe Region (Viloyat) + City/District/Village analytics and opt-in Prayer Accuracy Diagnostics in the Feedback modal (zero GPS coordinates transmitted)
 * Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.77-1
 - Add instant zero-cache Live Sync (ETag 304 + 15s foreground refresh + immediate focus/visibility updates), per-device Owner Controls (direct messages with seen receipts, remote commands, feature mute, tester maintenance bypass, soft-block), city/version broadcast targeting, smart 5-star Play Store rating funnel, automatic crash reporting, and Owner Telegram alerts
 * Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.76-1

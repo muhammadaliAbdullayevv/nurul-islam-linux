@@ -62,13 +62,16 @@ export function markHomePage2Opened(): boolean {
 export async function sendAnonymousHeartbeat(params: {
   language: AppLanguage;
   city: string;
+  region?: string;
+  district?: string;
+  country?: string;
   theme: 'day' | 'night';
   openedPage2?: boolean;
 }): Promise<void> {
   const local = getLocalAppVersion();
   const platform = detectClientPlatform();
   const openedPage2 = params.openedPage2 ?? hasLearnedHomePage2();
-  const sig = `${local.versionCode}|${params.language}|${params.city}|${params.theme}|p2:${openedPage2 ? 1 : 0}`;
+  const sig = `${local.versionCode}|${params.language}|${params.country || ''}|${params.region || ''}|${params.district || ''}|${params.city}|${params.theme}|p2:${openedPage2 ? 1 : 0}`;
 
   try {
     const raw = localStorage.getItem(LAST_PING_KEY);
@@ -90,6 +93,9 @@ export async function sendAnonymousHeartbeat(params: {
     versionName: local.versionName,
     language: params.language,
     city: params.city,
+    region: params.region || '',
+    district: params.district || '',
+    country: params.country || '',
     theme: params.theme,
     openedPage2,
   });
