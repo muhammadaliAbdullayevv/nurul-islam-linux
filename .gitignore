@@ -31,3 +31,4 @@ graphify-out/
 scripts/deploy-update.sh
 server/
 server-assets/
+play-store-assets/
