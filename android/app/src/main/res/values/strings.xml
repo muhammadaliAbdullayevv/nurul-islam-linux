@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">Nurul Islam</string>
     <string name="title_activity_main">Nurul Islam</string>
-    <string name="package_name">dev.mabdullayev.nurulislam</string>
-    <string name="custom_url_scheme">dev.mabdullayev.nurulislam</string>
+    <string name="package_name">app.nurul.islam</string>
+    <string name="custom_url_scheme">app.nurul.islam</string>
     <string name="widget_prayer_rich_name">Nurul Islam · Namoz (To‘liq)</string>
     <string name="widget_prayer_strip_name">Nurul Islam · 5 Vaqt Namoz</string>
     <string name="widget_ramadan_name">Nurul Islam · Ramazon</string>

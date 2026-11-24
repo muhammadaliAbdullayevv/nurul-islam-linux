@@ -13,7 +13,7 @@ android {
         buildConfig = true
     }
     defaultConfig {
-        applicationId "dev.mabdullayev.nurulislam"
+        applicationId "app.nurul.islam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 98
