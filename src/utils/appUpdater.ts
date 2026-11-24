@@ -1,7 +1,7 @@
 import { AppLanguage } from '../types';
 
 export const UPDATE_SITE_URL = 'https://nurulislam.mabdullayev.dev';
-export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.nurulquran.app';
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=dev.mabdullayev.nurulislam';
 export const DEFAULT_LINUX_RPM_URL = `${UPDATE_SITE_URL}/linux/nurul-islam-latest.rpm`;
 export const UPDATE_MANIFEST_URL = `${UPDATE_SITE_URL}/version.json`;
 export const API_BASE_URLS = [UPDATE_SITE_URL];

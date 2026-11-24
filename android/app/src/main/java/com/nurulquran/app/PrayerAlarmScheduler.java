@@ -13,8 +13,8 @@ import java.util.Date;
 import java.util.Locale;
 
 public final class PrayerAlarmScheduler {
-    public static final String ACTION_PRAYER_ALERT = "com.nurulquran.app.ACTION_PRAYER_ALERT";
-    public static final String ACTION_WIDGET_TICK = "com.nurulquran.app.ACTION_WIDGET_TICK";
+    public static final String ACTION_PRAYER_ALERT = "dev.mabdullayev.nurulislam.ACTION_PRAYER_ALERT";
+    public static final String ACTION_WIDGET_TICK = "dev.mabdullayev.nurulislam.ACTION_WIDGET_TICK";
 
     private static final String[] ALERT_KEYS = {"fajr", "dhuhr", "asr", "maghrib", "isha"};
     private static final String[] WIDGET_KEYS = {"imsak", "fajr", "dhuhr", "asr", "maghrib", "isha"};

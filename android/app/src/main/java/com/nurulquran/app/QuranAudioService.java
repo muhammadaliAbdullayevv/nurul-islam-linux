@@ -42,15 +42,15 @@ public class QuranAudioService extends Service {
     public static final String CHANNEL_ID = "nq_quran_audio_v1";
     private static final int NOTIFICATION_ID = 4102;
 
-    public static final String ACTION_LOAD_PLAY = "com.nurulquran.app.QURAN_LOAD_PLAY";
-    public static final String ACTION_PLAY = "com.nurulquran.app.QURAN_PLAY";
-    public static final String ACTION_PAUSE = "com.nurulquran.app.QURAN_PAUSE";
-    public static final String ACTION_TOGGLE = "com.nurulquran.app.QURAN_TOGGLE";
-    public static final String ACTION_NEXT = "com.nurulquran.app.QURAN_NEXT";
-    public static final String ACTION_PREV = "com.nurulquran.app.QURAN_PREV";
-    public static final String ACTION_SEEK_MS = "com.nurulquran.app.QURAN_SEEK_MS";
-    public static final String ACTION_JUMP_AYAH = "com.nurulquran.app.QURAN_JUMP_AYAH";
-    public static final String ACTION_STOP = "com.nurulquran.app.QURAN_STOP";
+    public static final String ACTION_LOAD_PLAY = "dev.mabdullayev.nurulislam.QURAN_LOAD_PLAY";
+    public static final String ACTION_PLAY = "dev.mabdullayev.nurulislam.QURAN_PLAY";
+    public static final String ACTION_PAUSE = "dev.mabdullayev.nurulislam.QURAN_PAUSE";
+    public static final String ACTION_TOGGLE = "dev.mabdullayev.nurulislam.QURAN_TOGGLE";
+    public static final String ACTION_NEXT = "dev.mabdullayev.nurulislam.QURAN_NEXT";
+    public static final String ACTION_PREV = "dev.mabdullayev.nurulislam.QURAN_PREV";
+    public static final String ACTION_SEEK_MS = "dev.mabdullayev.nurulislam.QURAN_SEEK_MS";
+    public static final String ACTION_JUMP_AYAH = "dev.mabdullayev.nurulislam.QURAN_JUMP_AYAH";
+    public static final String ACTION_STOP = "dev.mabdullayev.nurulislam.QURAN_STOP";
 
     public static final String EXTRA_PAYLOAD = "payload";
     public static final String EXTRA_SEEK_MS = "seekMs";
