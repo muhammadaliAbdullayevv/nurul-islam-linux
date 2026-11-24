@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="uz">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Maxfiylik siyosati — Nurul Islam · Privacy Policy</title>
+  <title>Privacy Policy — Nurul Islam: Quran &amp; Prayer · Maxfiylik siyosati</title>
   <style>
     :root {
       --bg: #f6faf7;
@@ -23,7 +23,7 @@
       line-height: 1.65;
     }
     .wrap {
-      max-width: 820px;
+      max-width: 860px;
       margin: 0 auto;
       padding: 32px 20px 64px;
     }
@@ -36,7 +36,16 @@
       box-shadow: 0 12px 30px rgba(12, 71, 3, 0.14);
     }
     header h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: -0.02em; }
-    header p { margin: 0; opacity: 0.9; font-size: 14px; }
+    header p { margin: 0; opacity: 0.92; font-size: 13.5px; }
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin-top: 10px;
+      font-size: 12.5px;
+      opacity: 0.9;
+    }
+    .meta-bar a { color: #dcfce7; text-decoration: underline; }
     .langs { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
     .langs button {
       border: 1px solid rgba(255,255,255,0.3);
@@ -53,33 +62,56 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 26px;
+      padding: 28px;
       box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
     }
-    h2 { font-size: 17px; margin: 22px 0 8px; color: #0c4703; }
-    h2:first-child { margin-top: 0; }
+    h2 { font-size: 17px; margin: 24px 0 8px; color: #0c4703; }
+    h2:first-of-type { margin-top: 4px; }
     p, li { font-size: 14.5px; color: var(--muted); }
     ul { padding-left: 20px; margin: 8px 0; }
+    li { margin-bottom: 6px; }
     .pill {
       display: inline-block;
       background: var(--accent-soft);
       color: #0c4703;
-      padding: 4px 12px;
+      padding: 5px 13px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 700;
       margin-bottom: 14px;
     }
+    .contact-box {
+      margin-top: 14px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: var(--accent-soft);
+      border: 1px solid #c5e3c0;
+      color: #0f172a;
+      font-size: 14px;
+    }
+    .contact-box p { margin: 4px 0; color: #1e293b; }
     .hidden { display: none; }
     a { color: var(--accent); font-weight: 600; }
+    code {
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
     footer { text-align: center; margin-top: 26px; font-size: 12.5px; color: #64748b; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Nurul Islam — Privacy Policy / Maxfiylik siyosati</h1>
-      <p>Effective date: November 2026 · nurulislam.mabdullayev.dev</p>
+      <h1>Nurul Islam: Quran &amp; Prayer — Privacy Policy</h1>
+      <p>Developer: Muhammadali Abdullayev · Package ID: <strong style="color:#fff;">app.nurul.islam</strong></p>
+      <div class="meta-bar">
+        <span>Effective &amp; Last Updated: November 24, 2026</span>
+        <span>Website: <a href="https://nurulislam.mabdullayev.dev">nurulislam.mabdullayev.dev</a></span>
+        <span>Contact: <a href="mailto:MuhammadaliAbdullayevv@gmail.com">MuhammadaliAbdullayevv@gmail.com</a></span>
+      </div>
       <div class="langs">
         <button class="active" onclick="showLang('en', this)">English</button>
         <button onclick="showLang('uz', this)">O‘zbekcha</button>
@@ -87,73 +119,169 @@
       </div>
     </header>
 
+    <!-- ==================== ENGLISH ==================== -->
     <div id="sec-en" class="card">
-      <span class="pill">Zero Ads · Zero Tracking SDKs · Privacy First</span>
-      <h2>1. Overview</h2>
-      <p><strong>Nurul Islam</strong> is an Islamic companion application for Quran reading, authentic Hadith &amp; classical books, prayer times, Qibla direction, Tasbih, and community features. We respect your privacy and collect only the minimum technical data needed for app reliability.</p>
+      <span class="pill">Zero Ads · Zero Tracking SDKs · HTTPS Encrypted · Privacy First</span>
+
+      <h2>1. Introduction</h2>
+      <p>This Privacy Policy explains how <strong>Nurul Islam: Quran &amp; Prayer</strong> (Android package <code>app.nurul.islam</code>, web edition at <code>nurulislam.mabdullayev.dev</code>, and Linux Desktop edition), developed by <strong>Muhammadali Abdullayev</strong>, handles information. Nurul Islam is a free, ad-free Islamic companion app requiring no user account or sign-in.</p>
 
       <h2>2. Data Stored Locally on Your Device</h2>
-      <p>Your bookmarks, Quran reading progress, Tasbih count, Qazo records, Ramadan fasting log, selected city, language, and theme preferences are stored strictly on your device (localStorage / IndexedDB) and are never sold or shared with third-party advertisers.</p>
-
-      <h2>3. Location Permission</h2>
-      <p>If you choose to use GPS location detection, your coordinates are used solely to calculate accurate local prayer times, Qibla direction, and nearby masjids. You may also choose any city manually without granting location permission.</p>
-
-      <h2>4. Anonymous Usage Diagnostics</h2>
-      <p>The app sends a lightweight, anonymous heartbeat containing a randomly generated device identifier, app version, platform (Android / Desktop / Web), selected language, theme, and city name (never precise GPS coordinates, name, email, or phone number). This helps us maintain prayer accuracy and app stability.</p>
-
-      <h2>5. Optional User-Submitted Content</h2>
+      <p>The following personal preferences and worship records remain strictly on your device (<code>localStorage</code>, <code>IndexedDB</code>, and app-private storage) and are never uploaded to our servers:</p>
       <ul>
-        <li><strong>Feedback &amp; Bug Reports:</strong> If you submit feedback in Settings, we receive your message and optional contact handle solely to resolve your request.</li>
-        <li><strong>Masjid Ehson Pledges:</strong> If you voluntarily submit a supply pledge for a masjid campaign, the name/phone/note you enter is visible only to the campaign coordinator.</li>
+        <li>Quran bookmarks, Khatm progress, Hifz memorization progress, and offline downloaded Quran audio or library books.</li>
+        <li>Tasbih counts, daily Salawat counter, Qazo prayer tracker, Ramadan fasting log, and Zakat calculator inputs.</li>
+        <li>Selected city, prayer-time calculation method, minute adjustments, notification preferences, language, and Day/Night theme.</li>
       </ul>
 
-      <h2>6. Children’s Privacy</h2>
-      <p>Nurul Islam contains no advertisements, in-app purchases, or behavioral tracking and is safe for all ages.</p>
+      <h2>3. Device Permissions &amp; Location Privacy</h2>
+      <ul>
+        <li><strong>Location (Optional — Approximate &amp; Precise GPS):</strong> Requested only if you tap GPS detection or open Nearby Masjids. Exact GPS latitude and longitude are processed strictly on your device (and sent directly to OpenStreetMap Nominatim/Overpass only to identify your city name or nearby mosques). <strong>Exact GPS coordinates are never transmitted to or stored on Nurul Islam servers.</strong> You can select any city manually without granting location permission.</li>
+        <li><strong>Notifications &amp; Exact Alarms (Optional):</strong> Used solely to deliver accurate local prayer-time notifications on your device, including after device restart.</li>
+        <li><strong>Foreground Media Playback:</strong> Used solely to keep Quran audio recitation playing smoothly with lock-screen media controls while using other apps.</li>
+      </ul>
 
-      <h2>7. Contact &amp; Data Deletion</h2>
-      <p>You can clear all local app data at any time from <em>Settings → Reset</em> or by uninstalling the app. For privacy inquiries or removal of voluntarily submitted feedback/pledge entries, contact us at <a href="mailto:support@mabdullayev.dev">support@mabdullayev.dev</a>.</p>
+      <h2>4. Data Collected Over HTTPS (Encrypted in Transit)</h2>
+      <p>To keep prayer features accurate and fix technical issues quickly, the app transmits only minimal technical data over encrypted HTTPS connections to <code>nurulislam.mabdullayev.dev</code>:</p>
+      <ul>
+        <li><strong>Anonymous Device Identifier:</strong> A randomly generated app-specific UUID (not your hardware IMEI or Google Advertising ID) used for anonymous active-device statistics, remote configuration sync, and 1v1 quiz sessions.</li>
+        <li><strong>Approximate Location (Region &amp; City Name Only):</strong> The country, region/province, district, and city name you selected in the app — never precise GPS coordinates — used in aggregate to verify regional prayer-time coverage.</li>
+        <li><strong>Technical &amp; Crash Diagnostics:</strong> App version, platform (Android / Desktop / Web), selected language, theme, and automatic crash/error logs (error message, stack trace, and screen name) when an unexpected client error occurs.</li>
+      </ul>
+
+      <h2>5. Optional User-Submitted Information</h2>
+      <ul>
+        <li><strong>In-App Feedback &amp; Bug Reports:</strong> When you voluntarily submit feedback in Settings, we receive your message, category, optional contact handle, and — only if you enable the opt-in checkbox — your selected city and prayer calculation method to diagnose prayer-time accuracy.</li>
+        <li><strong>Masjid Ehson (Community Support):</strong> If you voluntarily RSVP to a masjid hashar or pledge supplies, the name, phone number, and note you enter are sent solely to the app administrator and verified masjid coordinator to coordinate your offer.</li>
+        <li><strong>99 Names 1v1 Live Quiz:</strong> Uses an optional display nickname and quiz answers during a match. There is no free-text user chat or photo sharing.</li>
+      </ul>
+
+      <h2>6. Live Media Streams &amp; Third-Party Content</h2>
+      <p>When you open <strong>Live Makkah &amp; Madinah TV</strong>, <strong>24/7 Quran Radio</strong>, stream/download Quran recitations, or view OpenStreetMap masjid maps, your device fetches media directly over HTTPS from the respective official broadcast CDN or public API. Nurul Islam does <strong>not</strong> embed third-party ad networks, Google Advertising ID (<code>AD_ID</code>), or cross-app trackers.</p>
+
+      <h2>7. Data Sharing, Security &amp; Retention</h2>
+      <p>We <strong>do not sell, rent, or share</strong> user data with advertisers, data brokers, or third-party marketing services. All communications with our server are encrypted in transit via HTTPS (TLS). Crash logs and anonymous diagnostic records are retained only as long as needed to maintain app reliability and are periodically pruned.</p>
+
+      <h2>8. Children’s Privacy</h2>
+      <p>Nurul Islam is designed for a general audience aged 13 and older and does not knowingly collect personal information from children under 13. If a parent or guardian believes personal information was submitted through an optional feedback or Masjid Ehson form, please email us for immediate deletion.</p>
+
+      <h2>9. Your Rights &amp; Data Deletion</h2>
+      <p>You may erase all local app data at any time via <em>Settings → Reset</em> or by uninstalling the app. Because Nurul Islam requires no account registration, no user account exists to delete. To request permanent deletion of any voluntarily submitted feedback report, Masjid Ehson pledge, or anonymous device record, email us and we will remove it within 7 days.</p>
+
+      <div class="contact-box">
+        <p><strong>Developer / Privacy Contact:</strong> Muhammadali Abdullayev</p>
+        <p><strong>Email:</strong> <a href="mailto:MuhammadaliAbdullayevv@gmail.com">MuhammadaliAbdullayevv@gmail.com</a></p>
+        <p><strong>Website:</strong> <a href="https://nurulislam.mabdullayev.dev">https://nurulislam.mabdullayev.dev</a></p>
+      </div>
     </div>
 
+    <!-- ==================== UZBEK ==================== -->
     <div id="sec-uz" class="card hidden">
-      <span class="pill">Reklamasiz · Kuzatuvsiz · Maxfiylik ustuvor</span>
+      <span class="pill">Reklamasiz · Kuzatuvsiz · HTTPS Shifrlangan · Maxfiylik ustuvor</span>
+
       <h2>1. Umumiy ma’lumot</h2>
-      <p><strong>Nurul Islam</strong> — Qur’oni Karim, ishonchli hadis va klassik kitoblar, namoz vaqtlari, Qibla, Tasbeh va masjidlar uchun mo‘ljallangan islomiy ilova. Biz foydalanuvchilar maxfiyligini qadrlaymiz va shaxsiy ma’lumotlarni uchinchi shaxslarga sotmaymiz.</p>
+      <p>Ushbu Maxfiylik siyosati <strong>Muhammadali Abdullayev</strong> tomonidan ishlab chiqilgan <strong>Nurul Islam: Quran &amp; Prayer</strong> (Android paketi <code>app.nurul.islam</code>, veb-ilova <code>nurulislam.mabdullayev.dev</code> va Linux Desktop) ilovasida ma’lumotlar qanday ishlatilishini tushuntiradi. Ilova 100% bepul, reklamasiz va ro‘yxatdan o‘tishni (akkauntni) talab qilmaydi.</p>
 
-      <h2>2. Qurilmangizda saqlanadigan ma’lumotlar</h2>
-      <p>Xatcho‘plar, Qur’on xatmi, Tasbeh sanog‘i, Qazo va Ramazon ro‘za qaydlari, tanlangan shahar, til va mavzu faqat sizning qurilmangizda saqlanadi.</p>
+      <h2>2. Faqat qurilmangizda saqlanadigan ma’lumotlar</h2>
+      <p>Quyidagi shaxsiy sozlama va ibodat qaydlari faqat sizning qurilmangizda (<code>localStorage</code> / <code>IndexedDB</code>) saqlanadi va serverga yuborilmaydi:</p>
+      <ul>
+        <li>Qur’on xatcho‘plari, xatm va hifz jarayoni hamda oflayn yuklab olingan qiroat va kitoblar.</li>
+        <li>Tasbeh va kunlik salavot sanog‘i, Qazo namozlari, Ramazon ro‘zasi va Zakot hisoblagichi qiymatlari.</li>
+        <li>Tanlangan shahar, namoz hisoblash usuli, daqiqa tuzatishlari, bildirishnomalar, til va Kunduz/Tun mavzusi.</li>
+      </ul>
 
-      <h2>3. Joylashuv (GPS) ruxsati</h2>
-      <p>GPS ruxsati faqat sizning roziligingiz bilan aniq namoz vaqtlari, Qibla yo‘nalishi va yaqin masjidlarni topish uchun ishlatiladi. Shaharni qo‘lda tanlab ham ruxsatsiz foydalanishingiz mumkin.</p>
+      <h2>3. Qurilma ruxsatlari va joylashuv (GPS) maxfiyligi</h2>
+      <ul>
+        <li><strong>Joylashuv (Ixtiyoriy — GPS):</strong> Faqat siz GPS tugmasini bossangiz yoki Yaqin masjidlarni ochsangiz so‘raladi. Aniq GPS koordinatalari faqat qurilmangizning o‘zida namoz vaqti, Qibla va yaqin masjidlarni (OpenStreetMap orqali) aniqlash uchun ishlatiladi. <strong>Aniq GPS koordinatalaringiz hech qachon Nurul Islam serveriga yuborilmaydi va saqlanmaydi.</strong> Shaharni qo‘lda tanlab ham ruxsatsiz foydalanishingiz mumkin.</li>
+        <li><strong>Bildirishnomalar va aniq uyg‘otkichlar (Ixtiyoriy):</strong> Faqat namoz vaqti kirganda qurilmangizda o‘z vaqtida eslatma berish uchun ishlatiladi.</li>
+        <li><strong>Fon audio xizmati:</strong> Qur’on qiroatini ekran o‘chiq yoki boshqa ilovada bo‘lganingizda uzluksiz tinglash uchun ishlatiladi.</li>
+      </ul>
 
-      <h2>4. Anonim texnik statistika</h2>
-      <p>Ilova barqarorligini ta’minlash uchun faqat anonim texnik ma’lumotlar (tasodifiy qurilma kodi, ilova versiyasi, platforma, til va shahar nomi) yuboriladi. Ismingiz, telefon raqamingiz yoki aniq GPS koordinatalaringiz yig‘ilmaydi.</p>
+      <h2>4. HTTPS orqali uzatiladigan texnik ma’lumotlar</h2>
+      <p>Ilova barqarorligini ta’minlash uchun faqat minimal texnik ma’lumotlar shifrlangan HTTPS aloqasi orqali <code>nurulislam.mabdullayev.dev</code> serveriga yuboriladi:</p>
+      <ul>
+        <li><strong>Anonim qurilma identifikatori:</strong> Ilova tomonidan tasodifiy yaratilgan kod (IMEI yoki reklama ID emas) — umumiy faollik, masofaviy sozlamalar va 99 Ism 1v1 viktorinasi uchun.</li>
+        <li><strong>Taxminiy hudud (faqat viloyat va shahar nomi):</strong> Siz tanlagan davlat, viloyat, tuman va shahar nomi (aniq koordinatasiz) — hududiy namoz vaqtlari sifatini yaxshilash uchun.</li>
+        <li><strong>Texnik xatoliklar (Crash logs):</strong> Ilova versiyasi, platforma, til, mavzu va kutilmagan texnik xatolik yuz berganda xatolik matni.</li>
+      </ul>
 
-      <h2>5. Ixtiyoriy yuborilgan ma’lumotlar</h2>
-      <p>Sozlamalardan taklif/xatolik yuborsangiz yoki Masjidga Ehson bo‘limida yordam va’dasini qoldirsangiz, siz o‘zingiz kiritgan xabar faqat mas’ul administratorga yetkaziladi.</p>
+      <h2>5. Ixtiyoriy yuboriladigan ma’lumotlar</h2>
+      <ul>
+        <li><strong>Murojaat va xatolik yuborish:</strong> Sozlamalardan taklif yoki xatolik yuborganingizda matningiz, ixtiyoriy aloqa manzilingiz hamda (faqat siz belgilasangiz) tanlangan shahar va hisoblash usuli yuboriladi.</li>
+        <li><strong>Masjidga Ehson:</strong> Hashar yoki jihoz yordamini o‘z xohishingiz bilan bildirsangiz, siz kiritgan ism, telefon raqami va izoh faqat mas’ul administrator va masjid mutavallisiga yetkaziladi.</li>
+        <li><strong>99 Ism 1v1 Bellashuv:</strong> Faqat ixtiyoriy taxallus va savol javoblari; erkin yozishma (chat) mavjud emas.</li>
+      </ul>
 
-      <h2>6. Bog‘lanish va ma’lumotlarni o‘chirish</h2>
-      <p>Mahalliy ma’lumotlarni istalgan vaqtda <em>Sozlamalar → Tozalash</em> orqali o‘chirishingiz mumkin. Savollar uchun: <a href="mailto:support@mabdullayev.dev">support@mabdullayev.dev</a>.</p>
+      <h2>6. Jonli efirlar va uchinchi tomon oqimlari</h2>
+      <p><strong>Makka va Madina Jonli TV</strong>, <strong>Qur’on Radio 24/7</strong>, Qur’on qiroatlari va OpenStreetMap xaritasidan foydalanganda qurilmangiz tegishli rasmiy oqim serverlariga HTTPS orqali to‘g‘ridan-to‘g‘ri ulanadi. Ilovada reklama tarmoqlari va <code>AD_ID</code> reklama kuzatuvchilari umuman yo‘q.</p>
+
+      <h2>7. Ma’lumotlar xavfsizligi va uchinchi shaxslarga bermaslik</h2>
+      <p>Biz foydalanuvchi ma’lumotlarini <strong>hech qachon sotmaymiz va reklama kompaniyalariga bermaymiz</strong>. Barcha server aloqalari HTTPS (TLS) orqali shifrlangan.</p>
+
+      <h2>8. Bolalar maxfiyligi</h2>
+      <p>Ilova 13 yosh va undan kattalar uchun mo‘ljallangan bo‘lib, 13 yoshdan kichik bolalardan ongli ravishda shaxsiy ma’lumot yig‘maydi. Agar shunday ma’lumot ixtiyoriy shakl orqali yuborilgan bo‘lsa, darhol o‘chirish uchun elektron pochtamizga yozing.</p>
+
+      <h2>9. Ma’lumotlarni o‘chirish va bog‘lanish</h2>
+      <p>Qurilmangizdagi barcha ma’lumotlarni istalgan vaqtda <em>Sozlamalar → Tozalash</em> orqali yoki ilovani o‘chirib tashlab yo‘q qilishingiz mumkin. Serverga ixtiyoriy yuborilgan murojaat, Masjidga Ehson qaydi yoki anonim qurilma yozuvini o‘chirtirish uchun quyidagi pochtaga yozing — so‘rovingiz 7 kun ichida bajariladi.</p>
+
+      <div class="contact-box">
+        <p><strong>Dasturchi / Mas’ul shaxs:</strong> Muhammadali Abdullayev</p>
+        <p><strong>Email:</strong> <a href="mailto:MuhammadaliAbdullayevv@gmail.com">MuhammadaliAbdullayevv@gmail.com</a></p>
+        <p><strong>Veb-sayt:</strong> <a href="https://nurulislam.mabdullayev.dev">https://nurulislam.mabdullayev.dev</a></p>
+      </div>
     </div>
 
+    <!-- ==================== RUSSIAN ==================== -->
     <div id="sec-ru" class="card hidden">
-      <span class="pill">Без рекламы · Без рекламных трекеров</span>
+      <span class="pill">Без рекламы · Без рекламных трекеров · HTTPS шифрование</span>
+
       <h2>1. Общие положения</h2>
-      <p><strong>Nurul Islam</strong> — исламское приложение для чтения Корана, достоверных хадисов и книг, расписания намазов, Киблы и Тасбиха. Мы не используем рекламные сети и не продаём данные пользователей.</p>
+      <p>Настоящая Политика конфиденциальности описывает, как приложение <strong>Nurul Islam: Quran &amp; Prayer</strong> (идентификатор Android <code>app.nurul.islam</code>, веб-версия <code>nurulislam.mabdullayev.dev</code> и Linux Desktop), разработанное <strong>Мухаммадали Абдуллаевым</strong>, обрабатывает данные. Приложение полностью бесплатно, не содержит рекламы и не требует регистрации аккаунта.</p>
 
-      <h2>2. Локальное хранение данных</h2>
-      <p>Закладки, прогресс чтения, счётчик Тасбиха, заметки Каза и Рамадана, выбранный город, язык и тема хранятся исключительно на вашем устройстве.</p>
+      <h2>2. Данные, хранящиеся локально на устройстве</h2>
+      <p>Ваши закладки Корана, прогресс хатма и хифза, счётчик Тасбиха и салаватов, учёт Каза, посты Рамадана, расчёты Закята, скачанные аудио и книги, выбранный город, язык и тема хранятся исключительно на вашем устройстве (<code>localStorage</code> / <code>IndexedDB</code>).</p>
 
-      <h2>3. Геолокация (GPS)</h2>
-      <p>Координаты запрашиваются только по вашему выбору для расчёта времени намаза, направления Киблы и поиска ближайших мечетей. Вы всегда можете выбрать город вручную.</p>
+      <h2>3. Разрешения устройства и геолокация (GPS)</h2>
+      <ul>
+        <li><strong>Геолокация (Необязательно):</strong> Запрашивается только при нажатии кнопки GPS или открытии карты ближайших мечетей. Точные координаты используются только локально на устройстве (и для поиска города/мечетей через OpenStreetMap) и <strong>никогда не передаются и не сохраняются на серверах Nurul Islam</strong>. Вы всегда можете выбрать город вручную.</li>
+        <li><strong>Уведомления и точные будильники (Необязательно):</strong> Используются исключительно для своевременных локальных напоминаний о времени намаза.</li>
+        <li><strong>Фоновое воспроизведение медиа:</strong> Используется только для плавного прослушивания чтения Корана с управлением на экране блокировки.</li>
+      </ul>
 
-      <h2>4. Анонимная диагностика</h2>
-      <p>Для поддержания стабильности приложение отправляет анонимный технический сигнал: случайный идентификатор устройства, версию приложения, платформу, язык и название города (без персональных данных и точных координат).</p>
+      <h2>4. Технические данные, передаваемые по HTTPS</h2>
+      <ul>
+        <li><strong>Анонимный идентификатор устройства:</strong> Случайный UUID приложения (не IMEI и не рекламный ID) для анонимной статистики, синхронизации настроек и викторины 1v1.</li>
+        <li><strong>Приблизительное местоположение:</strong> Только выбранное название страны, области, района и города (без точных GPS-координат).</li>
+        <li><strong>Отчёты о сбоях (Crash logs):</strong> Версия приложения, платформа, язык, тема и текст технической ошибки при непредвиденном сбое.</li>
+      </ul>
 
-      <h2>5. Контакты</h2>
-      <p>По вопросам конфиденциальности или удаления добровольно отправленных обращений пишите на <a href="mailto:support@mabdullayev.dev">support@mabdullayev.dev</a>.</p>
+      <h2>5. Добровольно отправляемые данные</h2>
+      <ul>
+        <li><strong>Обратная связь:</strong> Текст сообщения, категория, необязательный контакт и (только при установке галочки пользователем) выбранный город и метод расчёта намаза.</li>
+        <li><strong>Помощь мечетям (Эхсон):</strong> Если вы добровольно оставляете заявку на помощь, указанные имя, телефон и комментарий передаются только администратору и координатору мечети.</li>
+        <li><strong>Викторина 99 Имён 1v1:</strong> Необязательный псевдоним и ответы раунда; свободный чат отсутствует.</li>
+      </ul>
+
+      <h2>6. Прямые трансляции и сторонние потоки</h2>
+      <p>При просмотре <strong>прямого эфира Мекки и Медины</strong>, прослушивании <strong>Коран Радио 24/7</strong> и аудио Корана устройство подключается напрямую по HTTPS к официальным серверам вещания. Рекламные SDK и рекламный идентификатор <code>AD_ID</code> в приложении отсутствуют.</p>
+
+      <h2>7. Защита и передача данных</h2>
+      <p>Мы <strong>не продаём и не передаём</strong> пользовательские данные рекламным сетям или брокерам данных. Вся передача данных защищена шифрованием HTTPS (TLS).</p>
+
+      <h2>8. Конфиденциальность детей</h2>
+      <p>Приложение предназначено для аудитории 13+ и не собирает сознательно персональные данные детей младше 13 лет. Для удаления случайно отправленных данных напишите на контактный email.</p>
+
+      <h2>9. Удаление данных и контакты</h2>
+      <p>Вы можете очистить все локальные данные в разделе <em>Настройки → Сброс</em> или удалив приложение. Для удаления добровольно отправленных обращений, заявок Эхсон или анонимной записи устройства напишите на почту — запрос выполняется в течение 7 дней.</p>
+
+      <div class="contact-box">
+        <p><strong>Разработчик / Контакт по конфиденциальности:</strong> Muhammadali Abdullayev</p>
+        <p><strong>Email:</strong> <a href="mailto:MuhammadaliAbdullayevv@gmail.com">MuhammadaliAbdullayevv@gmail.com</a></p>
+        <p><strong>Веб-сайт:</strong> <a href="https://nurulislam.mabdullayev.dev">https://nurulislam.mabdullayev.dev</a></p>
+      </div>
     </div>
 
-    <footer>© Nurul Islam · <a href="https://nurulislam.mabdullayev.dev">nurulislam.mabdullayev.dev</a></footer>
+    <footer>© 2026 Nurul Islam (app.nurul.islam) · <a href="https://nurulislam.mabdullayev.dev">nurulislam.mabdullayev.dev</a></footer>
   </div>
   <script>
     function showLang(lang, btn) {

@@ -123,7 +123,7 @@ export const DEFAULT_REMOTE_APP_CONFIG: RemoteAppConfig = {
   links: {
     playStoreUrl: 'https://play.google.com/store/apps/details?id=app.nurul.islam',
     telegramUrl: 'https://t.me/nurulislam_uz',
-    supportEmail: 'support@mabdullayev.dev',
+    supportEmail: 'MuhammadaliAbdullayevv@gmail.com',
     privacyPolicyUrl: 'https://nurulislam.mabdullayev.dev/privacy.html',
     websiteUrl: 'https://nurulislam.mabdullayev.dev',
   },
