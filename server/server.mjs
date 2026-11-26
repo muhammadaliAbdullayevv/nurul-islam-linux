@@ -640,7 +640,9 @@ function findProgressRecord({ hardwareId = '', deviceId = '', codeOrKey = '', de
     const cutoffMs = Date.now() - 30 * 86400_000;
     let bestFpRec = null;
     for (const rec of records) {
-      if (!rec || rec.deviceFp !== deviceFp || (rec.score || 0) <= 0) continue;
+      if (!rec || rec.deviceFp !== deviceFp) continue;
+      const hasData = (rec.score || 0) > 0 || Boolean(rec.summary?.city || rec.summary?.handle);
+      if (!hasData) continue;
       const updatedMs = Date.parse(rec.updatedAt || '') || 0;
       if (updatedMs < cutoffMs) continue;
       if (!bestFpRec || (rec.score || 0) > (bestFpRec.score || 0)) {
@@ -1902,22 +1904,18 @@ const server = http.createServer(async (req, res) => {
         allowFpMatch: incomingScore === 0,
       });
 
-      // If fresh empty install and we found an existing backup via hardwareId/deviceId/same-phone fingerprint, return it for auto-restore!
-      if (existing && (existing.score || 0) > 0 && incomingScore === 0) {
-        if (validDeviceId(deviceId) && !existing.deviceIds.includes(deviceId)) {
-          existing.deviceIds = [deviceId, ...existing.deviceIds].slice(0, 8);
-        }
-        if (validDeviceId(hardwareId) && !existing.hardwareId) {
-          existing.hardwareId = hardwareId;
-        }
-        progressState.dirty = true;
+      // If fresh empty install and we found an existing backup via hardwareId/deviceId/same-phone fingerprint,
+      // DO NOT overwrite it — return `promptRestore: true` (or `autoRestored: true`) with the snapshot so the app can ask the user with a 1-tap restore dialog!
+      const existingHasData =
+        existing && ((existing.score || 0) > 0 || Boolean(existing.summary?.city || existing.summary?.handle));
+      if (existingHasData && incomingScore === 0 && body.confirmOverwrite !== true) {
         sendJson(res, 200, {
           ok: true,
-          autoRestored: true,
+          promptRestore: true,
           matchedBy,
           recoveryCode: existing.recoveryCode,
           recoveryKeyHint: existing.recoveryKeyHint || '',
-          score: existing.score,
+          score: existing.score || 0,
           summary: existing.summary,
           updatedAt: existing.updatedAt,
           snapshot: existing.snapshot,

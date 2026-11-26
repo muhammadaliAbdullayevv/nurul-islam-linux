@@ -82,6 +82,11 @@ import {
 import { addQuranListenSeconds, ACTIVITY_UPDATED_EVENT, resetUserActivity } from './utils/userActivity';
 import {
   PROGRESS_RESTORED_EVENT,
+  PendingRestoreCandidate,
+  acceptPendingRestoreCandidate,
+  dismissPendingRestoreCandidate,
+  getPendingRestoreCandidate,
+  subscribeRestorePrompt,
   syncOrAutoRestoreProgress,
 } from './utils/progressSync';
 import { modalLoaders, scheduleIdleTabPrefetch, tabLoaders } from './utils/tabLoaders';
@@ -288,6 +293,9 @@ function AppContent() {
   const [remoteConfig, setRemoteConfig] = useState<RemoteAppConfig>(() => getCachedRemoteAppConfig());
   const [deviceDirective, setDeviceDirective] = useState<DeviceDirective>(() => getCachedDeviceDirective());
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const [restoreCandidate, setRestoreCandidate] = useState<PendingRestoreCandidate | null>(() =>
+    getPendingRestoreCandidate()
+  );
   const [nativeAudioState, setNativeAudioState] = useState<NativeQuranAudioState>(() =>
     hasNativeQuranAudioBridge() ? getNativeAudioState() : webQuranPlayer.getState()
   );
@@ -856,6 +864,7 @@ function AppContent() {
     };
 
     window.addEventListener(PROGRESS_RESTORED_EVENT, hydrateFromRestoredStorage);
+    const unsubPrompt = subscribeRestorePrompt((cand) => setRestoreCandidate(cand));
     void syncOrAutoRestoreProgress({ force: true });
 
     let debounceTimer: number | undefined;
@@ -881,6 +890,7 @@ function AppContent() {
     }, 20_000);
 
     return () => {
+      unsubPrompt();
       window.removeEventListener(PROGRESS_RESTORED_EVENT, hydrateFromRestoredStorage);
       window.removeEventListener(ACTIVITY_UPDATED_EVENT, scheduleProgressSync);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -1965,6 +1975,160 @@ function AppContent() {
                   : updateStatus === 'installing'
                   ? t.updates.installing
                   : t.updates.updateNowBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1-Tap Launch Auto-Restore Modal when previous data is detected on a wiped/reinstalled app */}
+      {restoreCandidate && (
+        <div className="fixed inset-0 z-[120] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div
+            className={`w-full max-w-sm rounded-3xl border p-5 space-y-4 shadow-2xl ${
+              isDay
+                ? 'bg-white border-[#dde3ea] text-slate-900'
+                : 'bg-slate-900 border-emerald-700/70 text-slate-100'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={`p-2.5 rounded-2xl shrink-0 ${
+                  isDay ? 'bg-[#eef9ea] text-[#158509]' : 'bg-emerald-950 text-amber-400'
+                }`}
+              >
+                <CloudDownload className="w-6 h-6" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-extrabold">
+                  {language === 'ru'
+                    ? 'Восстановить ваши прежние данные?'
+                    : language === 'en'
+                    ? 'Restore your previous data?'
+                    : language === 'uz_cyr'
+                    ? 'Аввалги маълумотларингизни тиклаймизми?'
+                    : "Avvalgi ma'lumotlaringizni tiklaymizmi?"}
+                </h3>
+                <p className={`text-xs mt-1 leading-relaxed ${isDay ? 'text-slate-600' : 'text-slate-300'}`}>
+                  {language === 'ru'
+                    ? 'Похоже, вы удалили и заново установили приложение — поэтому ваши зикры в тасбихе, результаты тестов и викторин, закладки Корана и книги сейчас могут не отображаться. Хотите восстановить их?'
+                    : language === 'en'
+                    ? 'You might have deleted and reinstalled this app, so your Tasbih counts, quiz test results, Quran bookmarks, and books may not be shown here yet. Do you want to restore them?'
+                    : language === 'uz_cyr'
+                    ? 'Сиз иловани ўчириб қайта ўрнатган кўринасиз — шу сабабли тасбеҳ зикрларингиз, тест ва викторина натижаларингиз, Қуръон хатчўпларингиз ҳамда китобларингиз ҳозир кўринмаслиги мумкин. Уларни қайта тиклашни хоҳлайсизми?'
+                    : "Siz ilovani o'chirib qayta o'rnatgan ko'rinasiz — shu sababli tasbeh zikrlaringiz, test va viktorina natijalaringiz, Qur'on xatcho'plaringiz hamda kitoblaringiz hozir ko'rinmasligi mumkin. Ularni qayta tiklashni xohlaysizmi?"}
+                </p>
+              </div>
+            </div>
+
+            {/* Summary of detected backup */}
+            <div
+              className={`p-3 rounded-2xl border space-y-1.5 text-xs ${
+                isDay
+                  ? 'bg-[#f6faf5] border-[#dce9d9] text-slate-800'
+                  : 'bg-slate-950/90 border-emerald-900/60 text-slate-200'
+              }`}
+            >
+              {(restoreCandidate.summary.handle || restoreCandidate.summary.city) && (
+                <div className="font-bold flex items-center justify-between gap-2">
+                  <span>{restoreCandidate.summary.handle || restoreCandidate.recoveryCode}</span>
+                  {restoreCandidate.summary.city && (
+                    <span className={isDay ? 'text-[#0c4703]' : 'text-amber-300'}>
+                      {restoreCandidate.summary.city}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {restoreCandidate.summary.completedSurahs > 0 && (
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                      isDay ? 'bg-white border border-[#c5e8bc] text-[#0c4703]' : 'bg-emerald-950 text-emerald-300'
+                    }`}
+                  >
+                    {restoreCandidate.summary.completedSurahs} sura
+                  </span>
+                )}
+                {restoreCandidate.summary.bookmarks > 0 && (
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                      isDay ? 'bg-white border border-[#c5e8bc] text-[#0c4703]' : 'bg-emerald-950 text-emerald-300'
+                    }`}
+                  >
+                    {restoreCandidate.summary.bookmarks}{' '}
+                    {language === 'ru' ? 'закл.' : language === 'en' ? 'bookmarks' : "xatcho'p"}
+                  </span>
+                )}
+                {restoreCandidate.summary.tasbihBeads > 0 && (
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                      isDay ? 'bg-white border border-[#c5e8bc] text-[#0c4703]' : 'bg-emerald-950 text-emerald-300'
+                    }`}
+                  >
+                    {restoreCandidate.summary.tasbihBeads.toLocaleString()} tasbeh
+                  </span>
+                )}
+                {restoreCandidate.summary.namesMastered > 0 && (
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                      isDay ? 'bg-white border border-[#c5e8bc] text-[#0c4703]' : 'bg-emerald-950 text-emerald-300'
+                    }`}
+                  >
+                    {restoreCandidate.summary.namesMastered}/99 Asma
+                  </span>
+                )}
+                {restoreCandidate.summary.booksStarted > 0 && (
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                      isDay ? 'bg-white border border-[#c5e8bc] text-[#0c4703]' : 'bg-emerald-950 text-emerald-300'
+                    }`}
+                  >
+                    {restoreCandidate.summary.booksStarted}{' '}
+                    {language === 'ru' ? 'кн.' : language === 'en' ? 'books' : 'kitob'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  acceptPendingRestoreCandidate();
+                }}
+                className={`w-full py-2.5 rounded-xl text-xs font-extrabold transition shadow-sm ${
+                  isDay
+                    ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                }`}
+              >
+                ✓{' '}
+                {language === 'ru'
+                  ? 'Да, восстановить всё'
+                  : language === 'en'
+                  ? 'Yes, Restore My Progress'
+                  : language === 'uz_cyr'
+                  ? 'Ҳа, барчасини тиклаш'
+                  : 'Ha, barchasini tiklash'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dismissPendingRestoreCandidate();
+                }}
+                className={`w-full py-2 rounded-xl border text-xs font-semibold transition ${
+                  isDay
+                    ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {language === 'ru'
+                  ? 'Нет, начать заново'
+                  : language === 'en'
+                  ? 'No, Start Fresh'
+                  : language === 'uz_cyr'
+                  ? 'Йўқ, янгидан бошлаш'
+                  : "Yo'q, yangidan boshlash"}
               </button>
             </div>
           </div>

@@ -9,8 +9,72 @@ import { ACTIVITY_UPDATED_EVENT } from './userActivity';
 
 export const PROGRESS_RESTORED_EVENT = 'nq:progress-restored';
 export const PROGRESS_SYNC_STATE_EVENT = 'nq:progress-sync-state';
+export const PROGRESS_PROMPT_EVENT = 'nq:progress-restore-prompt';
 
 const SYNC_META_STORAGE_KEY = 'nq_cloud_backup_meta_v1';
+const RESTORE_PROMPT_DECISION_KEY = 'nq_restore_prompt_decided_v1';
+
+export interface PendingRestoreCandidate {
+  matchedBy: string;
+  recoveryCode: string;
+  score: number;
+  summary: CloudBackupSummary;
+  updatedAt: string | null;
+  snapshot: Record<string, string>;
+}
+
+let pendingRestoreCandidate: PendingRestoreCandidate | null = null;
+
+export function getPendingRestoreCandidate(): PendingRestoreCandidate | null {
+  return pendingRestoreCandidate;
+}
+
+export function subscribeRestorePrompt(
+  listener: (candidate: PendingRestoreCandidate | null) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => listener(pendingRestoreCandidate);
+  window.addEventListener(PROGRESS_PROMPT_EVENT, handler);
+  return () => window.removeEventListener(PROGRESS_PROMPT_EVENT, handler);
+}
+
+function setPendingRestoreCandidate(next: PendingRestoreCandidate | null): void {
+  pendingRestoreCandidate = next;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(PROGRESS_PROMPT_EVENT));
+  }
+}
+
+export function acceptPendingRestoreCandidate(): boolean {
+  if (!pendingRestoreCandidate) return false;
+  const cand = pendingRestoreCandidate;
+  try {
+    localStorage.setItem(RESTORE_PROMPT_DECISION_KEY, 'accepted');
+  } catch {
+    // ignore
+  }
+  applyProgressSnapshotToLocal(cand.snapshot, true);
+  saveCloudBackupMeta({
+    recoveryCode: cand.recoveryCode || getCachedCloudBackupMeta().recoveryCode,
+    lastSyncedAt: cand.updatedAt || new Date().toISOString(),
+    score: cand.score,
+    summary: cand.summary,
+    lastRestoredBy: cand.matchedBy,
+  });
+  setPendingRestoreCandidate(null);
+  void syncOrAutoRestoreProgress({ force: true });
+  return true;
+}
+
+export function dismissPendingRestoreCandidate(): void {
+  try {
+    localStorage.setItem(RESTORE_PROMPT_DECISION_KEY, 'declined');
+  } catch {
+    // ignore
+  }
+  setPendingRestoreCandidate(null);
+  void syncOrAutoRestoreProgress({ force: true, confirmOverwrite: true });
+}
 
 export const USER_PROGRESS_KEYS = [
   'nq_user_handle',
@@ -369,21 +433,55 @@ export async function syncOrAutoRestoreProgress(options?: {
   force?: boolean;
   recoveryKey?: string;
   clearRecoveryKey?: boolean;
+  confirmOverwrite?: boolean;
 }): Promise<CloudBackupMeta> {
-  if (syncInFlight && !options?.recoveryKey && !options?.clearRecoveryKey) {
+  if (syncInFlight && !options?.recoveryKey && !options?.clearRecoveryKey && !options?.confirmOverwrite) {
     return syncInFlight;
   }
 
   const run = (async (): Promise<CloudBackupMeta> => {
-    // Step 1: On Android, check if native SharedPreferences has a richer backup than localStorage
+    const promptDecided =
+      typeof localStorage !== 'undefined' && Boolean(localStorage.getItem(RESTORE_PROMPT_DECISION_KEY));
+
+    // Step 1: On Android, check if native SharedPreferences has a backup when localStorage was wiped
     const localSnapBefore = collectLocalProgressSnapshot();
     const localScoreBefore = computeSnapshotScore(localSnapBefore);
     const nativeRaw = loadNativeProgressBackup();
-    if (nativeRaw) {
+    if (nativeRaw && localScoreBefore === 0 && !promptDecided) {
       const nativeSnap = safeParse<Record<string, string>>(nativeRaw, {});
       const nativeScore = computeSnapshotScore(nativeSnap);
-      if (nativeScore > localScoreBefore) {
-        applyProgressSnapshotToLocal(nativeSnap, localScoreBefore === 0);
+      if (nativeScore > 0) {
+        const completedArr = safeParse<unknown[]>(nativeSnap.nq_quran_completed_surahs, []);
+        const bmArr = safeParse<unknown[]>(nativeSnap.nq_bookmarks, []);
+        const tasbihObj = safeParse<{ totalBeads?: number }>(nativeSnap.nq_tasbih_stats, {});
+        const actObj = safeParse<{
+          masteredNameNumbers?: number[];
+          masteredKnowledgeIds?: number[];
+        }>(nativeSnap.nq_user_activity_v1, {});
+        const libObj = safeParse<Record<string, unknown>>(nativeSnap.nq_library_progress_v2, {});
+        const cityObj = safeParse<{ cityName?: string }>(nativeSnap.nq_city, {});
+        setPendingRestoreCandidate({
+          matchedBy: 'nativeBackup',
+          recoveryCode: nativeSnap.nq_user_handle || '',
+          score: nativeScore,
+          summary: {
+            completedSurahs: Array.isArray(completedArr) ? completedArr.length : 0,
+            bookmarks: Array.isArray(bmArr) ? bmArr.length : 0,
+            tasbihBeads: Math.max(0, Number(tasbihObj?.totalBeads) || 0),
+            namesMastered: Array.isArray(actObj?.masteredNameNumbers)
+              ? actObj.masteredNameNumbers.length
+              : 0,
+            knowledgeMastered: Array.isArray(actObj?.masteredKnowledgeIds)
+              ? actObj.masteredKnowledgeIds.length
+              : 0,
+            booksStarted: libObj && typeof libObj === 'object' ? Object.keys(libObj).length : 0,
+            fastedDays: 0,
+            handle: nativeSnap.nq_user_handle || '',
+            city: cityObj?.cityName || '',
+          },
+          updatedAt: new Date().toISOString(),
+          snapshot: nativeSnap,
+        });
       }
     }
 
@@ -407,6 +505,7 @@ export async function syncOrAutoRestoreProgress(options?: {
       !options?.force &&
       !options?.recoveryKey &&
       !options?.clearRecoveryKey &&
+      !options?.confirmOverwrite &&
       sig === lastUploadedSig &&
       getCachedCloudBackupMeta().lastSyncedAt
     ) {
@@ -422,6 +521,7 @@ export async function syncOrAutoRestoreProgress(options?: {
       snapshot,
       ...(options?.recoveryKey !== undefined ? { recoveryKey: options.recoveryKey } : {}),
       ...(options?.clearRecoveryKey ? { clearRecoveryKey: true } : {}),
+      ...(options?.confirmOverwrite || promptDecided ? { confirmOverwrite: true } : {}),
     });
 
     for (const baseUrl of API_BASE_URLS) {
@@ -437,6 +537,7 @@ export async function syncOrAutoRestoreProgress(options?: {
         if (!res.ok) continue;
         const data = (await res.json()) as {
           ok?: boolean;
+          promptRestore?: boolean;
           autoRestored?: boolean;
           matchedBy?: string;
           recoveryCode?: string;
@@ -447,6 +548,24 @@ export async function syncOrAutoRestoreProgress(options?: {
           snapshot?: Record<string, string>;
         };
         if (!data?.ok) continue;
+
+        if (
+          data.promptRestore &&
+          !promptDecided &&
+          data.snapshot &&
+          Object.keys(data.snapshot).length > 0 &&
+          data.summary
+        ) {
+          setPendingRestoreCandidate({
+            matchedBy: data.matchedBy || 'cloud',
+            recoveryCode: data.recoveryCode || '',
+            score: Number(data.score) || 0,
+            summary: data.summary,
+            updatedAt: data.updatedAt || null,
+            snapshot: data.snapshot,
+          });
+          return getCachedCloudBackupMeta();
+        }
 
         if (data.autoRestored && data.snapshot && Object.keys(data.snapshot).length > 0) {
           applyProgressSnapshotToLocal(data.snapshot, score === 0);
