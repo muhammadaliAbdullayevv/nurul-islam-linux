@@ -389,6 +389,42 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
         }
 
         @JavascriptInterface
+        public String getHardwareId() {
+            try {
+                String rawId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                if (rawId == null || rawId.trim().length() < 6) {
+                    return "";
+                }
+                java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+                byte[] hash = digest.digest(("nurul_islam_hw_v1:" + rawId.trim().toLowerCase()).getBytes("UTF-8"));
+                StringBuilder sb = new StringBuilder("nq_hw_");
+                for (int i = 0; i < 12 && i < hash.length; i++) {
+                    sb.append(String.format("%02x", hash[i]));
+                }
+                return sb.toString();
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public void saveProgressBackup(String snapshotJson) {
+            try {
+                PrayerStorage.saveProgressSnapshot(MainActivity.this, snapshotJson);
+            } catch (Exception ignored) {
+            }
+        }
+
+        @JavascriptInterface
+        public String loadProgressBackup() {
+            try {
+                return PrayerStorage.loadProgressSnapshot(MainActivity.this);
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
         public boolean openExternalUrl(String url) {
             if (url == null) return false;
             String trimmed = url.trim();

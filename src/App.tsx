@@ -79,7 +79,11 @@ import {
   subscribeRemoteAppConfig,
   syncAppLive,
 } from './utils/remoteAppConfig';
-import { addQuranListenSeconds, resetUserActivity } from './utils/userActivity';
+import { addQuranListenSeconds, ACTIVITY_UPDATED_EVENT, resetUserActivity } from './utils/userActivity';
+import {
+  PROGRESS_RESTORED_EVENT,
+  syncOrAutoRestoreProgress,
+} from './utils/progressSync';
 import { modalLoaders, scheduleIdleTabPrefetch, tabLoaders } from './utils/tabLoaders';
 
 const ZakatTab = lazy(tabLoaders.zakat);
@@ -238,7 +242,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const { isDay } = useTheme();
+  const { isDay, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const initialRoute = useMemo(
     () => (typeof window !== 'undefined' ? parseHashRoute(window.location.hash) : parseHashRoute('')),
@@ -812,6 +816,86 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem('nq_bookmarks', JSON.stringify(bookmarks));
   }, [bookmarks]);
+
+  // Automatic Zero-Login Cloud Progress Backup & Reinstall Auto-Restore
+  useEffect(() => {
+    const hydrateFromRestoredStorage = () => {
+      try {
+        if (localStorage.getItem('nq_onboarding_done') === '1') {
+          setShowOnboarding(false);
+        }
+        const savedLang = localStorage.getItem('nq_language') as AppLanguage | null;
+        if (savedLang && ['uz_lat', 'uz_cyr', 'ru', 'en'].includes(savedLang)) {
+          setLanguage(savedLang);
+        }
+        const savedTheme = localStorage.getItem('nq_theme');
+        if (savedTheme === 'day' || savedTheme === 'night') {
+          setTheme(savedTheme);
+        }
+        const savedCity = localStorage.getItem('nq_city');
+        if (savedCity) {
+          const parsedCity = JSON.parse(savedCity) as Coordinates;
+          if (parsedCity && typeof parsedCity.cityName === 'string') {
+            userSelectedCityRef.current = true;
+            setCurrentCity(parsedCity);
+          }
+        }
+        const savedCalc = localStorage.getItem('nq_calcmethod') as CalcMethod | null;
+        if (savedCalc) setCalcMethod(savedCalc);
+        const savedTr = localStorage.getItem('nq_translation') as TranslationId | null;
+        if (savedTr) setSelectedTranslation(savedTr);
+        const savedBm = localStorage.getItem('nq_bookmarks');
+        if (savedBm) {
+          const parsedBm = JSON.parse(savedBm);
+          if (Array.isArray(parsedBm)) setBookmarks(parsedBm);
+        }
+        setAlertPrefs(loadAlertPrefs());
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    window.addEventListener(PROGRESS_RESTORED_EVENT, hydrateFromRestoredStorage);
+    void syncOrAutoRestoreProgress({ force: true });
+
+    let debounceTimer: number | undefined;
+    const scheduleProgressSync = () => {
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => {
+        void syncOrAutoRestoreProgress();
+      }, 2500);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        void syncOrAutoRestoreProgress();
+      }
+    };
+
+    window.addEventListener(ACTIVITY_UPDATED_EVENT, scheduleProgressSync);
+    document.addEventListener('visibilitychange', onVisibility);
+    const periodicId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void syncOrAutoRestoreProgress();
+      }
+    }, 20_000);
+
+    return () => {
+      window.removeEventListener(PROGRESS_RESTORED_EVENT, hydrateFromRestoredStorage);
+      window.removeEventListener(ACTIVITY_UPDATED_EVENT, scheduleProgressSync);
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      window.clearInterval(periodicId);
+    };
+  }, [setLanguage, setTheme]);
+
+  useEffect(() => {
+    if (showOnboarding) return;
+    const timer = window.setTimeout(() => {
+      void syncOrAutoRestoreProgress();
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [bookmarks, currentCity.cityName, calcMethod, selectedTranslation, language, isDay, alertPrefs.enabled, showOnboarding]);
 
   // Track cumulative Quran listening duration while native Android audio plays (webQuranPlayer tracks its own)
   useEffect(() => {

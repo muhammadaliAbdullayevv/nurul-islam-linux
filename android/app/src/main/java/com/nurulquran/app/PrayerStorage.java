@@ -11,8 +11,22 @@ import java.util.Locale;
 public final class PrayerStorage {
     private static final String PREFS_NAME = "nq_widget_alerts";
     private static final String KEY_PAYLOAD = "payload_json";
+    private static final String BACKUP_PREFS_NAME = "nq_user_progress_backup";
+    private static final String KEY_PROGRESS_JSON = "progress_snapshot_json";
 
     private PrayerStorage() {}
+
+    public static void saveProgressSnapshot(Context context, String jsonSnapshot) {
+        if (jsonSnapshot == null || jsonSnapshot.isEmpty()) return;
+        SharedPreferences prefs = context.getSharedPreferences(BACKUP_PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putString(KEY_PROGRESS_JSON, jsonSnapshot).apply();
+    }
+
+    public static String loadProgressSnapshot(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(BACKUP_PREFS_NAME, Context.MODE_PRIVATE);
+        String raw = prefs.getString(KEY_PROGRESS_JSON, "");
+        return raw != null ? raw : "";
+    }
 
     public static void savePayload(Context context, String jsonPayload) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);

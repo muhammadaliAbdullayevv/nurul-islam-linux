@@ -68,6 +68,13 @@ import {
   getUserHandle,
   setUserHandle,
 } from '../../utils/userActivity';
+import {
+  CloudBackupMeta,
+  getCachedCloudBackupMeta,
+  restoreProgressByCodeOrKey,
+  subscribeCloudBackupMeta,
+  syncOrAutoRestoreProgress,
+} from '../../utils/progressSync';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LANGUAGE_OPTIONS, useLanguage } from '../../contexts/LanguageContext';
 
@@ -440,6 +447,22 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   const [fbSending, setFbSending] = useState(false);
   const [fbResult, setFbResult] = useState<'idle' | 'ok' | 'err'>('idle');
 
+  const [backupMeta, setBackupMeta] = useState<CloudBackupMeta>(() => getCachedCloudBackupMeta());
+  const [backupSyncing, setBackupSyncing] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [linkKeyInput, setLinkKeyInput] = useState('');
+  const [linkKeySaving, setLinkKeySaving] = useState(false);
+  const [linkKeySavedOk, setLinkKeySavedOk] = useState(false);
+  const [restoreInput, setRestoreInput] = useState('');
+  const [restoring, setRestoring] = useState(false);
+  const [restoreFeedback, setRestoreFeedback] = useState<'idle' | 'ok' | 'not_found' | 'err'>('idle');
+
+  useEffect(() => {
+    const unsubBackup = subscribeCloudBackupMeta((m) => setBackupMeta(m));
+    void syncOrAutoRestoreProgress();
+    return () => unsubBackup();
+  }, []);
+
   useEffect(() => {
     const unsub = subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
     const onOpenFeedback = () => {
@@ -542,6 +565,157 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       sentErr: 'Yuborib bo‘lmadi. Internetni tekshirib qayta urining.',
     };
   }, [language]);
+
+  const backupCopy = useMemo(() => {
+    if (language === 'ru') {
+      return {
+        groupTitle: 'Облачное сохранение и восстановление',
+        cardTitle: 'Автосохранение прогресса',
+        cardSub: 'Коран, закладки, тасбих, каза и книги привязаны к вашему устройству',
+        activeBadge: 'Сохранено ✓',
+        syncNowBtn: 'Сохранить сейчас',
+        codeLabel: 'Ваш код восстановления',
+        copyBtn: 'Копировать',
+        copiedBtn: 'Скопировано ✓',
+        linkTitle: 'Привязать телефон или секретное слово (по желанию)',
+        linkSub: 'Чтобы легко вернуть прогресс на новом телефоне без кода',
+        linkedHint: (h: string) => `Привязано: ${h}`,
+        linkPlaceholder: '+998 90 123 45 67 или секретное слово',
+        linkSaveBtn: 'Привязать',
+        linkSavedMsg: '✓ Номер/слово успешно привязаны к вашему прогрессу!',
+        restoreTitle: 'Восстановить прогресс',
+        restorePlaceholder: 'Введите код (NI-XXXXXX) или привязанный телефон',
+        restoreBtn: 'Восстановить',
+        restoringBtn: 'Проверка...',
+        restoreOk: '✓ Весь ваш прогресс и настройки успешно восстановлены!',
+        restoreNotFound: 'Резервная копия с таким кодом или номером не найдена.',
+        restoreErr: 'Ошибка соединения. Проверьте интернет и повторите.',
+      };
+    }
+    if (language === 'en') {
+      return {
+        groupTitle: 'Cloud Backup & Progress Recovery',
+        cardTitle: 'Automatic Progress Backup',
+        cardSub: 'Quran progress, bookmarks, tasbih, qaza & books stay safe even if reinstalled',
+        activeBadge: 'Backed up ✓',
+        syncNowBtn: 'Sync Now',
+        codeLabel: 'Your Recovery Code',
+        copyBtn: 'Copy',
+        copiedBtn: 'Copied ✓',
+        linkTitle: 'Link phone number or secret word (optional)',
+        linkSub: 'Restore your progress on any new phone using your phone number',
+        linkedHint: (h: string) => `Linked: ${h}`,
+        linkPlaceholder: '+998 90 123 45 67 or secret word',
+        linkSaveBtn: 'Save',
+        linkSavedMsg: '✓ Linked to your cloud backup!',
+        restoreTitle: 'Restore Progress from Backup',
+        restorePlaceholder: 'Enter code (NI-XXXXXX) or linked phone number',
+        restoreBtn: 'Restore',
+        restoringBtn: 'Restoring...',
+        restoreOk: '✓ All your progress, bookmarks, and settings have been restored!',
+        restoreNotFound: 'No backup found for that code or phone number.',
+        restoreErr: 'Connection error. Please check your internet and try again.',
+      };
+    }
+    if (language === 'uz_cyr') {
+      return {
+        groupTitle: 'Булутли захира ва тиклаш',
+        cardTitle: 'Маълумотларни автоматик сақлаш',
+        cardSub: 'Илова ўчиб кетса ҳам Қуръон, хатчўплар, тасбеҳ, қазо ва китоблар йўқолмайди',
+        activeBadge: 'Сақланган ✓',
+        syncNowBtn: 'Янгилаш',
+        codeLabel: 'Сизнинг тиклаш кодингиз',
+        copyBtn: 'Нусхалаш',
+        copiedBtn: 'Нусхаланди ✓',
+        linkTitle: 'Телефон рақам ёки махфий сўз улаш (ихтиёрий)',
+        linkSub: 'Янги телефон олганда кодсиз рақамингиз орқали бир зумда тиклаш учун',
+        linkedHint: (h: string) => `Уланган: ${h}`,
+        linkPlaceholder: '+998 90 123 45 67 ёки махфий сўз',
+        linkSaveBtn: 'Сақлаш',
+        linkSavedMsg: '✓ Рақам/махфий сўз захирага муваффақиятли уланди!',
+        restoreTitle: 'Бошқа қурилмадан тиклаш',
+        restorePlaceholder: 'Тиклаш коди (NI-XXXXXX) ёки уланган телефон рақам',
+        restoreBtn: 'Тиклаш',
+        restoringBtn: 'Тикланмоқда...',
+        restoreOk: '✓ Барча натижа ва созламаларингиз муваффақиятли тикланди!',
+        restoreNotFound: 'Бундай код ёки телефон рақам бўйича захира топилмади.',
+        restoreErr: 'Тармоқ хатолиги. Интернетни текшириб қайта урининг.',
+      };
+    }
+    return {
+      groupTitle: 'Bulutli zaxira va tiklash',
+      cardTitle: "Ma'lumotlarni avtomatik saqlash",
+      cardSub: "Ilova o'chib ketsa ham Qur'on, xatcho'plar, tasbeh, qazo va kitoblar yo'qolmaydi",
+      activeBadge: 'Saqlangan ✓',
+      syncNowBtn: 'Yangilash',
+      codeLabel: 'Sizning tiklash kodingiz',
+      copyBtn: 'Nusxalash',
+      copiedBtn: 'Nusxalandi ✓',
+      linkTitle: "Telefon raqam yoki maxfiy so'z ulash (ixtiyoriy)",
+      linkSub: 'Yangi telefon olganda kodsiz raqamingiz orqali bir zumda tiklash uchun',
+      linkedHint: (h: string) => `Ulangan: ${h}`,
+      linkPlaceholder: "+998 90 123 45 67 yoki maxfiy so'z",
+      linkSaveBtn: 'Saqlash',
+      linkSavedMsg: "✓ Raqam/maxfiy so'z zaxiraga muvaffaqiyatli ulandi!",
+      restoreTitle: 'Boshqa qurilmadan tiklash',
+      restorePlaceholder: 'Tiklash kodi (NI-XXXXXX) yoki ulangan telefon raqam',
+      restoreBtn: 'Tiklash',
+      restoringBtn: 'Tiklanmoqda...',
+      restoreOk: '✓ Barcha natija va sozlamalaringiz muvaffaqiyatli tiklandi!',
+      restoreNotFound: "Bunday kod yoki telefon raqam bo'yicha zaxira topilmadi.",
+      restoreErr: 'Tarmoq xatoligi. Internetni tekshirib qayta urining.',
+    };
+  }, [language]);
+
+  const handleManualBackupSync = async () => {
+    if (backupSyncing) return;
+    setBackupSyncing(true);
+    await syncOrAutoRestoreProgress({ force: true });
+    setBackupSyncing(false);
+  };
+
+  const handleCopyRecoveryCode = async () => {
+    const code = backupMeta.recoveryCode || userHandle;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCodeCopied(true);
+      window.setTimeout(() => setCodeCopied(false), 2200);
+    } catch {
+      // ignore clipboard restriction
+    }
+  };
+
+  const handleSaveRecoveryKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (linkKeyInput.trim().length < 4 || linkKeySaving) return;
+    setLinkKeySaving(true);
+    setLinkKeySavedOk(false);
+    await syncOrAutoRestoreProgress({ force: true, recoveryKey: linkKeyInput.trim() });
+    setLinkKeySaving(false);
+    setLinkKeyInput('');
+    setLinkKeySavedOk(true);
+    window.setTimeout(() => setLinkKeySavedOk(false), 3000);
+  };
+
+  const handleRestoreProgress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (restoreInput.trim().length < 4 || restoring) return;
+    setRestoring(true);
+    setRestoreFeedback('idle');
+    const res = await restoreProgressByCodeOrKey(restoreInput.trim());
+    setRestoring(false);
+    if (res.ok && res.found) {
+      setRestoreFeedback('ok');
+      setRestoreInput('');
+      setActivityTick((v) => v + 1);
+      setUserHandleState(getUserHandle());
+    } else if (res.ok && !res.found) {
+      setRestoreFeedback('not_found');
+    } else {
+      setRestoreFeedback('err');
+    }
+  };
 
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -824,6 +998,183 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Group 1.5: Cloud Backup & Zero-Login Progress Recovery */}
+        <div className="space-y-1.5">
+          <div className={groupHeadingCls}>{backupCopy.groupTitle}</div>
+          <div className={`${cardCls} divide-y ${dividerCls} overflow-hidden`}>
+            {/* Status + Recovery Code */}
+            <div className="p-3.5 space-y-3">
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className={iconBoxCls}>
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-bold">{backupCopy.cardTitle}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          isDay
+                            ? 'bg-[#eef9ea] text-[#0c4703] border border-[#c5e8bc]'
+                            : 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
+                        }`}
+                      >
+                        {backupCopy.activeBadge}
+                      </span>
+                    </div>
+                    <p className={`text-[11.5px] leading-relaxed mt-0.5 ${subTextCls}`}>
+                      {backupCopy.cardSub}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleManualBackupSync}
+                  disabled={backupSyncing}
+                  className={`p-2 rounded-xl border transition shrink-0 ${
+                    isDay
+                      ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-[#eef9ea]'
+                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-emerald-950'
+                  }`}
+                  title={backupCopy.syncNowBtn}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${backupSyncing ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {/* Personal Recovery Code Chip */}
+              <div
+                className={`px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2 ${
+                  isDay ? 'bg-[#f6faf5] border-[#dce9d9]' : 'bg-slate-950/80 border-emerald-900/50'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className={`text-[10px] font-semibold uppercase tracking-wider ${subTextCls}`}>
+                    {backupCopy.codeLabel}
+                  </div>
+                  <div
+                    className={`text-sm font-mono font-extrabold tracking-wide mt-0.5 ${
+                      isDay ? 'text-[#0c4703]' : 'text-amber-300'
+                    }`}
+                  >
+                    {backupMeta.recoveryCode || userHandle}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyRecoveryCode}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition shrink-0 ${
+                    codeCopied
+                      ? isDay
+                        ? 'bg-[#158509] text-white'
+                        : 'bg-amber-400 text-slate-950'
+                      : isDay
+                      ? 'bg-white border border-[#c5e8bc] text-[#0c4703] hover:bg-[#eef9ea]'
+                      : 'bg-emerald-950 border border-emerald-700/60 text-emerald-300'
+                  }`}
+                >
+                  {codeCopied ? backupCopy.copiedBtn : backupCopy.copyBtn}
+                </button>
+              </div>
+            </div>
+
+            {/* Optional Phone / Secret Word Link */}
+            <form onSubmit={handleSaveRecoveryKey} className="p-3.5 space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="text-[12px] font-bold">{backupCopy.linkTitle}</div>
+                {backupMeta.recoveryKeyHint && (
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      isDay
+                        ? 'bg-[#eef9ea] text-[#0c4703]'
+                        : 'bg-emerald-950 text-amber-300'
+                    }`}
+                  >
+                    {backupCopy.linkedHint(backupMeta.recoveryKeyHint)}
+                  </span>
+                )}
+              </div>
+              <p className={`text-[11px] ${subTextCls}`}>{backupCopy.linkSub}</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={linkKeyInput}
+                  onChange={(e) => setLinkKeyInput(e.target.value)}
+                  maxLength={60}
+                  placeholder={backupCopy.linkPlaceholder}
+                  className={`flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs focus:outline-none ${
+                    isDay
+                      ? 'bg-[#f8fafc] border-slate-300 text-slate-900 focus:border-[#158509]'
+                      : 'bg-slate-950 border-emerald-900/70 text-white focus:border-amber-400'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  disabled={linkKeySaving || linkKeyInput.trim().length < 4}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 disabled:opacity-50 ${
+                    isDay
+                      ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                      : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                  }`}
+                >
+                  {backupCopy.linkSaveBtn}
+                </button>
+              </div>
+              {linkKeySavedOk && (
+                <p className={`text-[11px] font-bold ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`}>
+                  {backupCopy.linkSavedMsg}
+                </p>
+              )}
+            </form>
+
+            {/* 1-Tap Restore from Code or Phone */}
+            <form onSubmit={handleRestoreProgress} className="p-3.5 space-y-2">
+              <div className="text-[12px] font-bold">{backupCopy.restoreTitle}</div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={restoreInput}
+                  onChange={(e) => {
+                    setRestoreInput(e.target.value);
+                    if (restoreFeedback !== 'idle') setRestoreFeedback('idle');
+                  }}
+                  maxLength={60}
+                  placeholder={backupCopy.restorePlaceholder}
+                  className={`flex-1 min-w-0 rounded-xl border px-3 py-2 text-xs focus:outline-none ${
+                    isDay
+                      ? 'bg-[#f8fafc] border-slate-300 text-slate-900 focus:border-[#158509]'
+                      : 'bg-slate-950 border-emerald-900/70 text-white focus:border-amber-400'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  disabled={restoring || restoreInput.trim().length < 4}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 disabled:opacity-50 ${
+                    isDay
+                      ? 'bg-[#eef9ea] border border-[#c5e8bc] text-[#0c4703] hover:bg-[#dff4d8]'
+                      : 'bg-emerald-950 border border-emerald-700/60 text-emerald-300 hover:bg-emerald-900'
+                  }`}
+                >
+                  {restoring ? backupCopy.restoringBtn : backupCopy.restoreBtn}
+                </button>
+              </div>
+              {restoreFeedback === 'ok' && (
+                <p className={`text-[11px] font-bold ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`}>
+                  {backupCopy.restoreOk}
+                </p>
+              )}
+              {restoreFeedback === 'not_found' && (
+                <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-300">
+                  {backupCopy.restoreNotFound}
+                </p>
+              )}
+              {restoreFeedback === 'err' && (
+                <p className="text-[11px] font-semibold text-rose-500">{backupCopy.restoreErr}</p>
+              )}
+            </form>
           </div>
         </div>
 
