@@ -359,15 +359,31 @@ function buildRecoveryKeyHint(raw) {
   return `${trimmed.slice(0, 2)}•••${trimmed.slice(-1)}`;
 }
 
-function extractSamePhoneSignature(req) {
-  const ip = getClientIp(req);
+function getCarrierSafeSubnet(ip) {
+  if (!ip) return 'unknown';
+  if (ip.includes('.')) {
+    const parts = ip.split('.');
+    return parts.length === 4 ? `${parts[0]}.${parts[1]}.${parts[2]}.0` : ip;
+  }
+  return ip.split(':').slice(0, 4).join(':');
+}
+
+function extractSamePhoneSignature(req, hwProfile = '') {
+  const subnet = getCarrierSafeSubnet(getClientIp(req));
   const ua = String(req.headers['user-agent'] || '');
-  // Match Android device model in User-Agent e.g. "Android 14; SM-S918B Build/..." or "Android 13; 2312DRA50G"
-  const androidMatch = ua.match(/Android\s+[\d.]+;\s*([^;)]+?)(?:\s+Build\/|\))/i);
-  if (!androidMatch || !androidMatch[1]) return '';
-  const model = androidMatch[1].trim().toLowerCase().replace(/\s+/g, '_').slice(0, 40);
-  if (!model || model === 'k' || model === 'wv' || model.length < 3) return '';
-  return crypto.createHash('sha1').update(`nq_fp_v1:${ip}|${model}`).digest('hex').slice(0, 20);
+  const androidVerMatch = ua.match(/Android\s+([\d.]+)/i);
+  const androidModelMatch = ua.match(/Android\s+[\d.]+;\s*([^;)]+?)(?:\s+Build\/|\))/i);
+  const androidVer = androidVerMatch ? androidVerMatch[1].trim() : '';
+  const rawModel = androidModelMatch && androidModelMatch[1] ? androidModelMatch[1].trim().toLowerCase() : '';
+  const cleanModel =
+    rawModel && rawModel !== 'k' && rawModel !== 'wv' && rawModel.length >= 3
+      ? rawModel.replace(/\s+/g, '_').slice(0, 40)
+      : '';
+  const cleanHw = typeof hwProfile === 'string' ? hwProfile.trim().slice(0, 80) : '';
+
+  if (!cleanModel && !cleanHw) return '';
+  const sigInput = `nq_fp_v2:${subnet}|${androidVer}|${cleanModel}|${cleanHw}`;
+  return crypto.createHash('sha1').update(sigInput).digest('hex').slice(0, 20);
 }
 
 function sanitizeProgressSnapshot(raw) {
@@ -1902,26 +1918,46 @@ const server = http.createServer(async (req, res) => {
 
       const incomingSnap = sanitizeProgressSnapshot(body.snapshot);
       const { score: incomingScore, summary: incomingSummary } = summarizeSnapshot(incomingSnap);
-      const deviceFp = extractSamePhoneSignature(req);
+      const hwProfile = cleanStr(body.hwProfile, 80);
+      const deviceFp = extractSamePhoneSignature(req, hwProfile);
 
-      const { record: existing, matchedBy } = findProgressRecord({
+      let { record: existing, matchedBy } = findProgressRecord({
         hardwareId,
         deviceId,
         deviceFp,
-        allowFpMatch: incomingScore === 0,
+        allowFpMatch: true,
       });
 
-      // Only prompt to restore if the existing cloud backup actually has REAL progress (score > 0: tasbih, quiz, bookmarks, surahs, books, qazo, etc.)
-      // Never prompt to restore an empty score=0 record!
-      const existingHasRealProgress = Boolean(existing && (existing.score || 0) > 0);
-      if (existingHasRealProgress && incomingScore === 0 && body.confirmOverwrite !== true) {
+      // Smart Cross-Install Upgrade: If this install matched a low-score record (e.g. fresh Google Play install)
+      // while the same physical phone (same deviceFp) ALSO has a much richer backup (e.g. from the older Direct APK),
+      // automatically offer the richer backup from the same phone!
+      if (deviceFp && body.confirmOverwrite !== true) {
+        const { record: fpRec } = findProgressRecord({
+          deviceFp,
+          allowFpMatch: true,
+        });
+        const curBestScore = Math.max(incomingScore, existing?.score || 0);
+        if (fpRec && (fpRec.score || 0) > curBestScore + 200) {
+          existing = fpRec;
+          matchedBy = 'deviceFingerprint';
+        }
+      }
+
+      // Prompt the user with 1-tap restore whenever the found cloud backup has richer progress than this install
+      const existingScore = existing?.score || 0;
+      const shouldOfferRestorePrompt =
+        Boolean(existing && existingScore > 0) &&
+        (incomingScore === 0 || existingScore > incomingScore + 200) &&
+        body.confirmOverwrite !== true;
+
+      if (shouldOfferRestorePrompt) {
         sendJson(res, 200, {
           ok: true,
           promptRestore: true,
           matchedBy,
           recoveryCode: existing.recoveryCode,
           recoveryKeyHint: existing.recoveryKeyHint || '',
-          score: existing.score || 0,
+          score: existingScore,
           summary: existing.summary,
           updatedAt: existing.updatedAt,
           snapshot: existing.snapshot,

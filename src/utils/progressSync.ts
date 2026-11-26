@@ -430,6 +430,24 @@ export function subscribeCloudBackupMeta(listener: (meta: CloudBackupMeta) => vo
   return () => window.removeEventListener(PROGRESS_SYNC_STATE_EVENT, handler);
 }
 
+function getHardwareProfileString(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const scr = window.screen
+      ? `${Math.min(window.screen.width, window.screen.height)}x${Math.max(
+          window.screen.width,
+          window.screen.height
+        )}@${Math.round((window.devicePixelRatio || 1) * 100)}`
+      : '';
+    const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 0 : 0;
+    const tz =
+      typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone || '' : '';
+    return `${scr}|c${cores}|${tz}`;
+  } catch {
+    return '';
+  }
+}
+
 let syncInFlight: Promise<CloudBackupMeta> | null = null;
 let lastUploadedSig = '';
 
@@ -526,9 +544,11 @@ export async function syncOrAutoRestoreProgress(options?: {
 
     const deviceId = getOrCreateDeviceId();
     const hardwareId = getHardwareDeviceId();
+    const hwProfile = getHardwareProfileString();
     const body = JSON.stringify({
       deviceId,
       hardwareId,
+      hwProfile,
       score,
       snapshot,
       ...(options?.recoveryKey !== undefined ? { recoveryKey: options.recoveryKey } : {}),
@@ -563,9 +583,8 @@ export async function syncOrAutoRestoreProgress(options?: {
 
         if (
           data.promptRestore &&
-          !promptDecided &&
-          Number(data.score) > 0 &&
-          score === 0 &&
+          Number(data.score) > score &&
+          (!promptDecided || score === 0 || Number(data.score) > score + 200) &&
           data.snapshot &&
           Object.keys(data.snapshot).length > 0 &&
           data.summary
