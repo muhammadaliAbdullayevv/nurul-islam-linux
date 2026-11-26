@@ -39,10 +39,12 @@ android {
     productFlavors {
         direct {
             dimension "distribution"
+            applicationId "com.nurulquran.app"
             buildConfigField "boolean", "ALLOW_DIRECT_OTA", "true"
         }
         play {
             dimension "distribution"
+            applicationId "app.nurul.islam"
             buildConfigField "boolean", "ALLOW_DIRECT_OTA", "false"
         }
     }
