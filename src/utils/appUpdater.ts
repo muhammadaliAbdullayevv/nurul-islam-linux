@@ -13,6 +13,7 @@ export interface LocalAppVersion {
 
 export interface RemoteAppRelease {
   versionCode: number;
+  playVersionCode?: number;
   versionName: string;
   apkUrl: string;
   rpmUrl?: string;
@@ -98,16 +99,22 @@ export function getLocalAppVersion(): LocalAppVersion {
   return { versionCode: 101, versionName: '1.8.81' };
 }
 
-export function getReleaseNoteText(release: RemoteAppRelease, language: AppLanguage): string {
-  if (!release.notes) return '';
-  if (typeof release.notes === 'string') return release.notes;
-  return (
-    release.notes[language] ||
-    release.notes.uz_lat ||
-    release.notes.en ||
-    release.notes.ru ||
-    ''
-  );
+const FRIENDLY_UPDATE_MESSAGES: Record<AppLanguage, string> = {
+  uz_lat:
+    "Ilovaning yanada qulay, tez va barqaror ishlashi uchun yangi talqin tayyorlandi. Eng yaxshi tajriba uchun hozir yangilab oling.",
+  uz_cyr:
+    "Илованинг янада қулай, тез ва барқарор ишлаши учун янги талқин тайёрланди. Энг яхши тажриба учун ҳозир янгилаб олинг.",
+  ru: 'Доступна новая, более быстрая и удобная версия приложения Nurul Islam. Обновите сейчас для стабильной и комфортной работы.',
+  en: 'A smoother, faster, and more reliable version of Nurul Islam is ready for you. Update now for the best experience.',
+};
+
+export function isPlayStoreDistributionBuild(): boolean {
+  const bridge = getUpdaterBridge();
+  return Boolean(bridge && typeof bridge.isDirectOtaEnabled === 'function' && !bridge.isDirectOtaEnabled());
+}
+
+export function getReleaseNoteText(_release: RemoteAppRelease, language: AppLanguage): string {
+  return FRIENDLY_UPDATE_MESSAGES[language] || FRIENDLY_UPDATE_MESSAGES.uz_lat;
 }
 
 export async function checkForAppUpdate(): Promise<{
@@ -116,6 +123,7 @@ export async function checkForAppUpdate(): Promise<{
   remote: RemoteAppRelease | null;
 }> {
   const local = getLocalAppVersion();
+  const isPlayBuild = isPlayStoreDistributionBuild();
   let lastError: unknown = null;
 
   for (const baseUrl of API_BASE_URLS) {
@@ -138,16 +146,26 @@ export async function checkForAppUpdate(): Promise<{
         throw new Error('Invalid release manifest');
       }
 
+      // On Google Play builds, ONLY compare against `playVersionCode` (the version confirmed live on Google Play)
+      // so users are never sent to Google Play before Google approves & publishes the update!
+      const playConfirmedCode =
+        typeof data.playVersionCode === 'number' && Number.isFinite(data.playVersionCode)
+          ? data.playVersionCode
+          : data.versionCode;
+      const effectiveRemoteCode = isPlayBuild ? playConfirmedCode : data.versionCode;
+
       const minSupported =
         typeof data.minSupportedVersionCode === 'number' && Number.isFinite(data.minSupportedVersionCode)
           ? data.minSupportedVersionCode
           : undefined;
       const effectiveForce =
-        Boolean(data.forceUpdate) ||
-        (minSupported !== undefined && local.versionCode < minSupported);
+        !isPlayBuild &&
+        (Boolean(data.forceUpdate) ||
+          (minSupported !== undefined && local.versionCode < minSupported));
 
       const remote: RemoteAppRelease = {
-        versionCode: data.versionCode,
+        versionCode: effectiveRemoteCode,
+        playVersionCode: playConfirmedCode,
         versionName: data.versionName,
         apkUrl: data.apkUrl,
         rpmUrl:
@@ -160,7 +178,7 @@ export async function checkForAppUpdate(): Promise<{
       };
 
       return {
-        hasUpdate: remote.versionCode > local.versionCode,
+        hasUpdate: effectiveRemoteCode > local.versionCode,
         local,
         remote,
       };

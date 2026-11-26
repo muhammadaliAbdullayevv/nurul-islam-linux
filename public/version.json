@@ -1,14 +1,15 @@
 {
   "versionCode": 101,
+  "playVersionCode": 100,
   "versionName": "1.8.81",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": false,
   "minSupportedVersionCode": 95,
   "notes": {
-    "uz_lat": "Yangi: Ma’lumotlarni avtomatik bulutli saqlash va 1-tugmada tiklash! Ilova o‘chib ketsa yoki qayta o‘rnatilsa ham tasbeh zikrlaringiz, viktorina natijalaringiz, Qur’on xatcho‘plaringiz va kitoblaringiz yo‘qolmaydi.",
-    "uz_cyr": "Янги: Маълумотларни автоматик булутли сақлаш ва 1-тугмада тиклаш! Илова ўчиб кетса ёки қайта ўрнатилса ҳам тасбеҳ зикрларингиз, викторина натижаларингиз, Қуръон хатчўпларингиз ва китобларингиз йўқолмайди.",
-    "en": "New: Automatic Cloud Progress Backup & 1-Tap Restore! Even if you delete and reinstall the app, your Tasbih counts, quiz test results, Quran bookmarks, and book progress can be restored immediately on first launch.",
-    "ru": "Новое: Автоматическое облачное сохранение и восстановление в 1 касание! Даже после удаления и переустановки ваши зикры в тасбихе, результаты викторин, закладки Корана и прогресс чтения книг легко восстанавливаются при входе."
+    "uz_lat": "Ilovaning yanada qulay, tez va barqaror ishlashi uchun yangi talqin tayyorlandi. Eng yaxshi tajriba uchun hozir yangilab oling.",
+    "uz_cyr": "Илованинг янада қулай, тез ва барқарор ишлаши учун янги талқин тайёрланди. Энг яхши тажриба учун ҳозир янгилаб олинг.",
+    "en": "A smoother, faster, and more reliable version of Nurul Islam is ready for you. Update now for the best experience.",
+    "ru": "Доступна новая, более быстрая и удобная версия приложения Nurul Islam. Обновите сейчас для стабильной и комфортной работы."
   }
 }

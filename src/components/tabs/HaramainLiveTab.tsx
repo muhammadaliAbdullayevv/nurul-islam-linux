@@ -539,8 +539,11 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
+        capLevelToPlayerSize: false,
+        startLevel: -1,
+        abrEwmaDefaultEstimate: 8_000_000,
         backBufferLength: 20,
-        maxBufferLength: 18,
+        maxBufferLength: 24,
         liveSyncDurationCount: 3,
         fragLoadingTimeOut: 10000,
         manifestLoadingTimeOut: 9000,
@@ -548,6 +551,25 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
       hlsRef.current = hls;
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Lock immediately to the highest resolution / bitrate HD stream level
+        if (Array.isArray(hls.levels) && hls.levels.length > 0) {
+          let bestIdx = hls.levels.length - 1;
+          let bestScore = -1;
+          hls.levels.forEach((lvl, idx) => {
+            const score = (lvl.height || 0) * 1_000_000 + (lvl.bitrate || 0);
+            if (score >= bestScore) {
+              bestScore = score;
+              bestIdx = idx;
+            }
+          });
+          hls.currentLevel = bestIdx;
+          hls.loadLevel = bestIdx;
+          hls.nextLevel = bestIdx;
+          const topLvl = hls.levels[bestIdx];
+          if (topLvl?.height) {
+            setResolutionLabel(topLvl.height >= 700 ? `${topLvl.height}p HD` : `${topLvl.height}p`);
+          }
+        }
         void startPlayback();
       });
 
@@ -678,16 +700,16 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
 
   return (
     <div
-      className={`rounded-3xl overflow-hidden border shadow-xl transition-colors ${
+      className={`-mx-3.5 sm:mx-0 rounded-none sm:rounded-3xl overflow-hidden border-y sm:border shadow-xl transition-colors ${
         isDay
           ? 'bg-white border-[#dce6dc] shadow-emerald-950/8'
           : 'bg-[#081711] border-emerald-800/45 shadow-black/40'
       }`}
     >
-      {/* 16:9 Cinema Video Viewport */}
+      {/* Full Phone-Width Cinema Video Viewport */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-video bg-[#040c09] overflow-hidden select-none group"
+        className="relative w-full aspect-[16/10] sm:aspect-video min-h-[225px] bg-[#040c09] overflow-hidden select-none group"
       >
         {sourceMode === 'youtube' ? (
           <iframe
@@ -1137,7 +1159,7 @@ export const HaramainLiveTab: React.FC = () => {
   }
 
   return (
-    <div className="px-3.5 sm:px-5 pt-3 pb-24 max-w-5xl mx-auto space-y-4">
+    <div className="px-0 sm:px-4 pt-1 pb-24 max-w-5xl mx-auto space-y-3.5">
       {/* Luxury Channel Switcher Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div
