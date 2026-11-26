@@ -70,6 +70,9 @@ interface NativePrayerJsBridge {
   requestPinWidgetByKind?: (kind: string) => boolean;
   openExternalUrl?: (url: string) => boolean;
   setSystemBarsTheme?: (isDay: boolean) => void;
+  setKeepScreenOn?: (keepOn: boolean) => void;
+  setVideoFullscreen?: (fullscreen: boolean) => void;
+  launchInAppReview?: () => void;
 }
 
 function getNativeBridge(): NativePrayerJsBridge | null {
@@ -334,6 +337,39 @@ export function syncNativeSystemBarsTheme(isDay: boolean): void {
       bridge.setSystemBarsTheme(Boolean(isDay));
     } catch {
       // ignore bridge errors
+    }
+  }
+}
+
+export function setNativeKeepScreenOn(keepOn: boolean): void {
+  const bridge = getNativeBridge();
+  if (bridge && typeof bridge.setKeepScreenOn === 'function') {
+    try {
+      bridge.setKeepScreenOn(Boolean(keepOn));
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export function setNativeVideoFullscreen(fullscreen: boolean): void {
+  const bridge = getNativeBridge();
+  if (bridge && typeof bridge.setVideoFullscreen === 'function') {
+    try {
+      bridge.setVideoFullscreen(Boolean(fullscreen));
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export function launchNativeInAppReview(): void {
+  const bridge = getNativeBridge();
+  if (bridge && typeof bridge.launchInAppReview === 'function') {
+    try {
+      bridge.launchInAppReview();
+    } catch {
+      // ignore
     }
   }
 }

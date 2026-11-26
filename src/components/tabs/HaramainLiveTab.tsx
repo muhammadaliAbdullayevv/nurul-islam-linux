@@ -7,6 +7,7 @@ import {
   Heart,
   Loader2,
   Maximize2,
+  Minimize2,
   Pause,
   PictureInPicture2,
   Play,
@@ -21,14 +22,12 @@ import {
 import { AppLanguage } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getCityCurrentDate } from '../../utils/prayerTimes';
 import {
-  DEFAULT_PRAYER_ADJUSTMENTS,
-  calculatePrayerTimes,
-  getCityCurrentDate,
-  getHijriDate,
-  getNextPrayer,
-} from '../../utils/prayerTimes';
-import { openExternalUrl } from '../../utils/nativePrayerBridge';
+  openExternalUrl,
+  setNativeKeepScreenOn,
+  setNativeVideoFullscreen,
+} from '../../utils/nativePrayerBridge';
 import {
   RemoteAppConfig,
   getCachedRemoteAppConfig,
@@ -399,6 +398,27 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
   const [needsSoundTap, setNeedsSoundTap] = useState<boolean>(false);
   const [resolutionLabel, setResolutionLabel] = useState<string>('HD');
   const [pipSupported, setPipSupported] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [zoomScale, setZoomScale] = useState<number>(1);
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const pinchRef = useRef<{
+    active: boolean;
+    initialDist: number;
+    initialScale: number;
+    panStartX: number;
+    panStartY: number;
+    originPanX: number;
+    originPanY: number;
+  }>({
+    active: false,
+    initialDist: 0,
+    initialScale: 1,
+    panStartX: 0,
+    panStartY: 0,
+    originPanX: 0,
+    originPanY: 0,
+  });
 
   const primaryUrl =
     customPrimaryUrl && /^https?:\/\//i.test(customPrimaryUrl)
@@ -406,13 +426,34 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
       : channel.defaultPrimaryHls;
   const backupUrl = channel.defaultBackupHls;
 
-  // Reset to primary HD stream whenever switching channel
+  // Reset to primary HD stream & 1x zoom whenever switching channel
   useEffect(() => {
     setSourceMode('primary');
     setStatus('loading');
     setNeedsSoundTap(false);
     setResolutionLabel('HD');
+    setZoomScale(1);
+    setPan({ x: 0, y: 0 });
   }, [channel.id, primaryUrl]);
+
+  // Handle Android hardware Back button to exit fullscreen cleanly
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onBack = (e: Event) => {
+      e.preventDefault();
+      setIsFullscreen(false);
+      setNativeVideoFullscreen(false);
+    };
+    window.addEventListener('nq:android-back', onBack);
+    return () => window.removeEventListener('nq:android-back', onBack);
+  }, [isFullscreen]);
+
+  // Ensure fullscreen orientation resets if component unmounts
+  useEffect(() => {
+    return () => {
+      setNativeVideoFullscreen(false);
+    };
+  }, []);
 
   useEffect(() => {
     setPipSupported(
@@ -449,18 +490,27 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
 
     let cancelled = false;
     let loadWatchdog: number | null = null;
+    let waitingTimer: number | null = null;
     const streamUrl = sourceMode === 'primary' ? primaryUrl : backupUrl;
 
     setStatus('loading');
-    setResolutionLabel(sourceMode === 'primary' ? 'HD' : 'SD');
+    setResolutionLabel(sourceMode === 'primary' ? '720p HD' : 'SD');
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
+    const clearWaitingTimer = () => {
+      if (waitingTimer !== null) {
+        window.clearTimeout(waitingTimer);
+        waitingTimer = null;
+      }
+    };
+
     const triggerFailover = () => {
       if (cancelled) return;
+      clearWaitingTimer();
       if (sourceMode === 'primary') {
         setSourceMode('backup');
       } else {
@@ -474,6 +524,7 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
       try {
         await video.play();
         if (!cancelled) {
+          clearWaitingTimer();
           setStatus('playing');
           if (!muted) stopConflictingAppAudio();
         }
@@ -487,7 +538,10 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
           setNeedsSoundTap(true);
           try {
             await video.play();
-            if (!cancelled) setStatus('playing');
+            if (!cancelled) {
+              clearWaitingTimer();
+              setStatus('playing');
+            }
           } catch {
             if (!cancelled) setStatus('paused');
           }
@@ -499,6 +553,7 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
 
     const onPlaying = () => {
       if (cancelled) return;
+      clearWaitingTimer();
       if (loadWatchdog) {
         window.clearTimeout(loadWatchdog);
         loadWatchdog = null;
@@ -511,11 +566,26 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
       }
     };
 
+    const onTimeUpdate = () => {
+      if (!cancelled && !video.paused && video.readyState >= 2) {
+        clearWaitingTimer();
+        setStatus((prev) => (prev === 'loading' ? 'playing' : prev));
+      }
+    };
+
+    // Debounce waiting event by 1600ms so brief 10-second segment transitions never flash a black loading screen
     const onWaiting = () => {
-      if (!cancelled) setStatus('loading');
+      if (cancelled) return;
+      clearWaitingTimer();
+      waitingTimer = window.setTimeout(() => {
+        if (!cancelled && video.readyState < 3) {
+          setStatus('loading');
+        }
+      }, 1600);
     };
 
     const onPause = () => {
+      clearWaitingTimer();
       if (!cancelled && video.readyState >= 2) setStatus('paused');
     };
 
@@ -524,29 +594,34 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
     };
 
     video.addEventListener('playing', onPlaying);
+    video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('pause', onPause);
     video.addEventListener('error', onVideoError);
 
-    // Failover watchdog if first frame doesn't arrive within 11s
+    // Failover watchdog if first frame doesn't arrive within 14s
     loadWatchdog = window.setTimeout(() => {
       if (!cancelled && video.readyState < 2) {
         triggerFailover();
       }
-    }, 11_000);
+    }, 14_000);
 
     if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true,
+        lowLatencyMode: false,
         capLevelToPlayerSize: false,
         startLevel: -1,
         abrEwmaDefaultEstimate: 8_000_000,
-        backBufferLength: 20,
-        maxBufferLength: 24,
+        backBufferLength: 30,
+        maxBufferLength: 60,
+        maxMaxBufferLength: 120,
         liveSyncDurationCount: 3,
-        fragLoadingTimeOut: 10000,
-        manifestLoadingTimeOut: 9000,
+        liveMaxLatencyDurationCount: 6,
+        fragLoadingTimeOut: 18000,
+        fragLoadingMaxRetry: 6,
+        manifestLoadingTimeOut: 12000,
+        manifestLoadingMaxRetry: 4,
       });
       hlsRef.current = hls;
 
@@ -583,7 +658,12 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
       let mediaRecoveryAttempts = 0;
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (cancelled || !data.fatal) return;
-        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveryAttempts < 2) {
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && mediaRecoveryAttempts < 3) {
+          mediaRecoveryAttempts += 1;
+          hls.startLoad();
+          return;
+        }
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveryAttempts < 3) {
           mediaRecoveryAttempts += 1;
           hls.recoverMediaError();
           return;
@@ -605,8 +685,10 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
 
     return () => {
       cancelled = true;
+      clearWaitingTimer();
       if (loadWatchdog) window.clearTimeout(loadWatchdog);
       video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('pause', onPause);
       video.removeEventListener('error', onVideoError);
@@ -652,22 +734,70 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
   }, [muted, onMutedChange]);
 
   const handleFullscreen = useCallback(() => {
-    const video = videoRef.current as
-      | (HTMLVideoElement & { webkitEnterFullscreen?: () => void })
-      | null;
-    const box = containerRef.current;
-    if (document.fullscreenElement) {
-      void document.exitFullscreen().catch(() => {});
-      return;
-    }
-    if (box && typeof box.requestFullscreen === 'function') {
-      void box.requestFullscreen().catch(() => {
-        video?.webkitEnterFullscreen?.();
-      });
-    } else if (video?.webkitEnterFullscreen) {
-      video.webkitEnterFullscreen();
-    }
+    setIsFullscreen((prev) => {
+      const next = !prev;
+      setNativeVideoFullscreen(next);
+      if (!next) {
+        setZoomScale(1);
+        setPan({ x: 0, y: 0 });
+      }
+      return next;
+    });
   }, []);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchRef.current.active = true;
+        pinchRef.current.initialDist = Math.max(10, Math.hypot(dx, dy));
+        pinchRef.current.initialScale = zoomScale;
+      } else if (e.touches.length === 1 && zoomScale > 1.02) {
+        pinchRef.current.active = false;
+        pinchRef.current.panStartX = e.touches[0].clientX;
+        pinchRef.current.panStartY = e.touches[0].clientY;
+        pinchRef.current.originPanX = pan.x;
+        pinchRef.current.originPanY = pan.y;
+      }
+    },
+    [pan.x, pan.y, zoomScale]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length === 2 && pinchRef.current.active) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const rawScale = pinchRef.current.initialScale * (dist / pinchRef.current.initialDist);
+        const clamped = Math.max(1, Math.min(4, rawScale));
+        setZoomScale(clamped);
+        if (clamped <= 1.02) {
+          setPan({ x: 0, y: 0 });
+        }
+      } else if (e.touches.length === 1 && !pinchRef.current.active && zoomScale > 1.02) {
+        const box = containerRef.current;
+        const maxPanX = box ? ((zoomScale - 1) * box.clientWidth) / 2 : 160;
+        const maxPanY = box ? ((zoomScale - 1) * box.clientHeight) / 2 : 100;
+        const nextX = pinchRef.current.originPanX + (e.touches[0].clientX - pinchRef.current.panStartX);
+        const nextY = pinchRef.current.originPanY + (e.touches[0].clientY - pinchRef.current.panStartY);
+        setPan({
+          x: Math.max(-maxPanX, Math.min(maxPanX, nextX)),
+          y: Math.max(-maxPanY, Math.min(maxPanY, nextY)),
+        });
+      }
+    },
+    [zoomScale]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    pinchRef.current.active = false;
+    if (zoomScale <= 1.04) {
+      setZoomScale(1);
+      setPan({ x: 0, y: 0 });
+    }
+  }, [zoomScale]);
 
   const handlePiP = useCallback(async () => {
     const video = videoRef.current as
@@ -700,16 +830,28 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
 
   return (
     <div
-      className={`-mx-3.5 sm:mx-0 rounded-none sm:rounded-3xl overflow-hidden border-y sm:border shadow-xl transition-colors ${
-        isDay
-          ? 'bg-white border-[#dce6dc] shadow-emerald-950/8'
-          : 'bg-[#081711] border-emerald-800/45 shadow-black/40'
-      }`}
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-[160] w-screen h-screen bg-black flex flex-col justify-between overflow-hidden'
+          : `-mx-3.5 sm:mx-0 rounded-none sm:rounded-3xl overflow-hidden border-y sm:border shadow-xl transition-colors ${
+              isDay
+                ? 'bg-white border-[#dce6dc] shadow-emerald-950/8'
+                : 'bg-[#081711] border-emerald-800/45 shadow-black/40'
+            }`
+      }
     >
-      {/* Full Phone-Width Cinema Video Viewport */}
+      {/* Full Phone-Width Cinema Video Viewport (Two-Finger Pinch-to-Zoom enabled) */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-[16/10] sm:aspect-video min-h-[225px] bg-[#040c09] overflow-hidden select-none group"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ touchAction: zoomScale > 1.02 ? 'none' : 'pan-y' }}
+        className={
+          isFullscreen
+            ? 'relative flex-1 w-full h-full bg-black overflow-hidden select-none group flex items-center justify-center'
+            : 'relative w-full aspect-video bg-[#040c09] overflow-hidden select-none group'
+        }
       >
         {sourceMode === 'youtube' ? (
           <iframe
@@ -727,7 +869,16 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
             autoPlay
             muted={muted}
             onClick={handleTogglePlay}
-            className="w-full h-full object-cover cursor-pointer"
+            style={{
+              transform:
+                zoomScale > 1.01
+                  ? `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoomScale})`
+                  : undefined,
+              transformOrigin: 'center center',
+            }}
+            className={`w-full h-full cursor-pointer transition-transform duration-75 ${
+              isFullscreen ? 'object-contain' : 'object-cover'
+            }`}
           />
         )}
 
@@ -931,12 +1082,14 @@ const StreamPlayerCard: React.FC<StreamPlayerCardProps> = ({
               onClick={handleFullscreen}
               title={ui.fullscreen}
               className={`inline-flex items-center justify-center w-9 h-9 rounded-xl border transition active:scale-95 ${
-                isDay
+                isFullscreen
+                  ? 'bg-[#158509] border-[#158509] text-white'
+                  : isDay
                   ? 'bg-white border-[#d6e2d5] text-slate-600 hover:bg-emerald-50 hover:text-[#158509]'
                   : 'bg-emerald-950/60 border-emerald-800/50 text-slate-300 hover:bg-emerald-900/60 hover:text-white'
               }`}
             >
-              <Maximize2 className="w-4 h-4" />
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
           )}
         </div>
@@ -1019,9 +1172,26 @@ export const HaramainLiveTab: React.FC = () => {
     return subscribeRemoteAppConfig((cfg) => setRemoteConfig(cfg));
   }, []);
 
-  // Stop background Quran Radio / Surah audio on opening Live TV so sound never overlaps
+  // Stop background Quran Radio / Surah audio on opening Live TV so sound never overlaps + keep phone screen awake
   useEffect(() => {
     stopConflictingAppAudio();
+    setNativeKeepScreenOn(true);
+    let wakeSentinel: { release?: () => Promise<void> } | null = null;
+    const nav = navigator as Navigator & {
+      wakeLock?: { request?: (type: 'screen') => Promise<{ release?: () => Promise<void> }> };
+    };
+    if (nav.wakeLock?.request) {
+      nav.wakeLock
+        .request('screen')
+        .then((s) => {
+          wakeSentinel = s;
+        })
+        .catch(() => {});
+    }
+    return () => {
+      setNativeKeepScreenOn(false);
+      wakeSentinel?.release?.().catch(() => {});
+    };
   }, []);
 
   // Live 1-second clock for Saudi local time & next Haramain prayer countdown
@@ -1082,27 +1252,14 @@ export const HaramainLiveTab: React.FC = () => {
 
   const currentSpec = CHANNELS[activeChannel];
 
-  // Live Makkah & Madinah local clock + prayer schedule (Umm al-Qura / Makkah method, Shafi'i standard Asr used in Haramain)
+  // Live Makkah & Madinah local Saudi clock
   const haramainSchedule = useMemo(() => {
     const tzDate = getCityCurrentDate(now, currentSpec.timezone);
     const hh = String(tzDate.getHours()).padStart(2, '0');
     const mm = String(tzDate.getMinutes()).padStart(2, '0');
-    const ss = String(tzDate.getSeconds()).padStart(2, '0');
-    const clockStr = `${hh}:${mm}:${ss}`;
     const shortClock = `${hh}:${mm}`;
-    const hijri = getHijriDate(tzDate, language);
-    const prayers = calculatePrayerTimes(
-      now,
-      currentSpec.lat,
-      currentSpec.lng,
-      'Makkah',
-      'Standard',
-      currentSpec.timezone,
-      DEFAULT_PRAYER_ADJUSTMENTS
-    );
-    const next = getNextPrayer(prayers, now, currentSpec.timezone);
-    return { clockStr, shortClock, hijri, prayers, next };
-  }, [currentSpec.lat, currentSpec.lng, currentSpec.timezone, language, now]);
+    return { shortClock };
+  }, [currentSpec.timezone, now]);
 
   const handleIncrementSalawat = useCallback(() => {
     setSalawatCount((prev) => {
@@ -1131,15 +1288,6 @@ export const HaramainLiveTab: React.FC = () => {
       // ignore
     }
   }, []);
-
-  const prayerLabels = t.prayers as Record<string, string>;
-  const fiveHaramainPrayers = [
-    { id: 'fajr', label: t.prayers.fajr, time: haramainSchedule.prayers.fajr },
-    { id: 'dhuhr', label: t.prayers.dhuhr, time: haramainSchedule.prayers.dhuhr },
-    { id: 'asr', label: t.prayers.asr, time: haramainSchedule.prayers.asr },
-    { id: 'maghrib', label: t.prayers.maghrib, time: haramainSchedule.prayers.maghrib },
-    { id: 'isha', label: t.prayers.isha, time: haramainSchedule.prayers.isha },
-  ];
 
   if (remoteConfig.features.haramain === false) {
     return (
@@ -1323,100 +1471,6 @@ export const HaramainLiveTab: React.FC = () => {
       <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold opacity-75">
         <Sparkles className={`w-3.5 h-3.5 ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`} />
         <span>{ui.adFreeNote}</span>
-      </div>
-
-      {/* Live Haramain Local Clock & 5-Prayer-Times Bar */}
-      <div
-        className={`rounded-3xl border p-4 sm:p-5 space-y-3.5 ${
-          isDay
-            ? 'bg-white border-[#dce6dc] shadow-sm'
-            : 'bg-[#091a14] border-emerald-900/55'
-        }`}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-xs font-extrabold uppercase tracking-wider ${
-                  isDay ? 'text-[#158509]' : 'text-emerald-400'
-                }`}
-              >
-                {activeChannel === 'makkah' ? ui.makkahName : ui.madinahName}
-              </span>
-              <span
-                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                  isDay ? 'bg-emerald-50 text-emerald-800' : 'bg-emerald-900/50 text-emerald-200'
-                }`}
-              >
-                {haramainSchedule.hijri}
-              </span>
-            </div>
-            <p className={`text-[11.5px] mt-0.5 ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
-              {ui.prayersTitle} · {ui.ummAlQuraNote}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className={`text-[10.5px] font-semibold ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
-                {ui.localTimeLabel}
-              </div>
-              <div
-                className={`text-lg font-black tabular-nums tracking-tight ${
-                  isDay ? 'text-slate-900' : 'text-white'
-                }`}
-              >
-                {haramainSchedule.clockStr}
-              </div>
-            </div>
-            <div
-              className={`px-3 py-1.5 rounded-2xl border text-right ${
-                isDay
-                  ? 'bg-[#eef8ec] border-[#cde7c9] text-[#0f5c06]'
-                  : 'bg-emerald-950/80 border-emerald-700/50 text-emerald-200'
-              }`}
-            >
-              <div className="text-[10px] font-bold opacity-80">
-                {ui.nextPrayerIn}{' '}
-                {prayerLabels[haramainSchedule.next.nextId] || haramainSchedule.next.name}
-              </div>
-              <div className="text-xs font-black tabular-nums">
-                {haramainSchedule.next.timeLeftStr}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 5 Prayers Strip */}
-        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-          {fiveHaramainPrayers.map((p) => {
-            const isNext = haramainSchedule.next.nextId === p.id;
-            const isActive = haramainSchedule.next.activeId === p.id;
-            return (
-              <div
-                key={p.id}
-                className={`rounded-2xl px-2 py-2 text-center border transition ${
-                  isNext
-                    ? isDay
-                      ? 'bg-[#158509] border-[#158509] text-white shadow-sm'
-                      : 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
-                    : isActive
-                    ? isDay
-                      ? 'bg-amber-50 border-amber-200 text-amber-900'
-                      : 'bg-amber-500/15 border-amber-400/35 text-amber-200'
-                    : isDay
-                    ? 'bg-[#f6faf5] border-[#e4ece3] text-slate-700'
-                    : 'bg-[#0d221a] border-emerald-900/45 text-slate-200'
-                }`}
-              >
-                <div className="text-[10px] sm:text-[11px] font-bold opacity-85 truncate">
-                  {p.label}
-                </div>
-                <div className="text-xs sm:text-sm font-black tabular-nums mt-0.5">{p.time}</div>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* Spiritual Companion Card (Kaaba Sighting Dua for Makkah / Salawat for Madinah) */}

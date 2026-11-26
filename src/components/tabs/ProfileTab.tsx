@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Star,
   Sun,
   Trash2,
   Trophy,
@@ -1001,50 +1002,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           </div>
         </div>
 
-        {/* Group 1.5: Automatic Cloud Progress Backup (Clean, Zero-Friction) */}
-        <div className="space-y-1.5">
-          <div className={groupHeadingCls}>{backupCopy.groupTitle}</div>
-          <div className={`${cardCls} overflow-hidden`}>
-            <div className="p-3.5 flex items-start justify-between gap-2.5">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className={iconBoxCls}>
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[13px] font-bold">{backupCopy.cardTitle}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        isDay
-                          ? 'bg-[#eef9ea] text-[#0c4703] border border-[#c5e8bc]'
-                          : 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
-                      }`}
-                    >
-                      {backupCopy.activeBadge}
-                    </span>
-                  </div>
-                  <p className={`text-[11.5px] leading-relaxed mt-0.5 ${subTextCls}`}>
-                    {backupCopy.cardSub}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleManualBackupSync}
-                disabled={backupSyncing}
-                className={`p-2 rounded-xl border transition shrink-0 ${
-                  isDay
-                    ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-[#eef9ea]'
-                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-emerald-950'
-                }`}
-                title={backupCopy.syncNowBtn}
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${backupSyncing ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Group 2: Prayer Notifications & Android Home Widget */}
         <div className="space-y-1.5">
           <div className={groupHeadingCls}>{ui.prayerGroup}</div>
@@ -1171,13 +1128,13 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           </div>
         </div>
 
-        {/* Group 3: App (Version/Updates, About, Reset) */}
+        {/* Group 3: App Version, Update Check & Automatic Cloud Backup */}
         <div className="space-y-1.5">
           <div className={groupHeadingCls}>{ui.appGroup}</div>
           <div className={`${cardCls} divide-y ${dividerCls} overflow-hidden`}>
-            {/* Version & Update Check */}
+            {/* 1. Check Version / App Update Row */}
             <div className="px-3.5 py-3 space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={iconBoxCls}>
                     <ArrowDownCircle className="w-4 h-4" />
@@ -1286,7 +1243,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
               {updateStatus === 'up_to_date' && (
                 <p className={`text-xs font-semibold ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`}>
-                  {t.updates.upToDate}
+                  ✓ {t.updates.upToDate}
                 </p>
               )}
               {updateStatus === 'error' && (
@@ -1294,18 +1251,98 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               )}
             </div>
 
-            {/* About */}
-            <div className="px-3.5 py-3 flex items-start gap-3">
-              <div className={iconBoxCls}>
-                <Info className="w-4 h-4" />
+            {/* 2. Automatic Cloud Progress Backup Status Row */}
+            <div className="px-3.5 py-3 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={iconBoxCls}>
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[13px] font-bold">{backupCopy.cardTitle}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        isDay
+                          ? 'bg-[#eef9ea] text-[#0c4703] border border-[#c5e8bc]'
+                          : 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
+                      }`}
+                    >
+                      {backupCopy.activeBadge}
+                    </span>
+                  </div>
+                  <p className={`text-[11.5px] truncate mt-0.5 ${subTextCls}`}>{backupCopy.cardSub}</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <div className="text-[13px] font-bold">{t.profile.aboutTitle}</div>
-                <p className={`text-[11.5px] leading-relaxed mt-0.5 ${subTextCls}`}>{t.profile.aboutDesc}</p>
-              </div>
+              <button
+                type="button"
+                onClick={handleManualBackupSync}
+                disabled={backupSyncing}
+                className={`p-2 rounded-xl border transition shrink-0 ${
+                  isDay
+                    ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-[#eef9ea]'
+                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-emerald-950'
+                }`}
+                title={backupCopy.syncNowBtn}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${backupSyncing ? 'animate-spin' : ''}`} />
+              </button>
             </div>
+          </div>
+        </div>
 
-            {/* Direct Feedback / Bug Report Row */}
+        {/* Group 4: Support, In-App Rating, Official Channel & Privacy Policy */}
+        <div className="space-y-1.5">
+          <div className={groupHeadingCls}>
+            {language === 'ru'
+              ? 'Оценка, связь и правовая информация'
+              : language === 'en'
+              ? 'Rating, Channel & Privacy'
+              : language === 'uz_cyr'
+              ? 'Баҳолаш, алоқа ва маълумот'
+              : "Baholash, aloqa va ma'lumot"}
+          </div>
+          <div className={`${cardCls} divide-y ${dividerCls} overflow-hidden`}>
+            {/* 1. In-App 5-Star Rating Row (Zero leaving the app!) */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event('nq:open-rating-modal'))}
+              className={`w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition ${
+                isDay ? 'hover:bg-slate-50/80 active:bg-[#eef9ea]/50' : 'hover:bg-slate-800/40'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    isDay ? 'bg-amber-50 text-amber-500' : 'bg-amber-500/15 text-amber-400'
+                  }`}
+                >
+                  <Star className="w-4 h-4 fill-current" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-bold truncate">
+                    {language === 'ru'
+                      ? 'Оценить приложение (★ 5 звёзд)'
+                      : language === 'en'
+                      ? 'Rate the App (★ 5 Stars)'
+                      : language === 'uz_cyr'
+                      ? 'Иловани баҳолаш (★ 5 юлдуз)'
+                      : 'Ilovani baholash (★ 5 yulduz)'}
+                  </div>
+                  <div className={`text-[11.5px] truncate ${subTextCls}`}>
+                    {language === 'ru'
+                      ? 'Поставьте оценку прямо внутри приложения'
+                      : language === 'en'
+                      ? 'Rate and review right inside the app'
+                      : language === 'uz_cyr'
+                      ? 'Иловадан чиқмасдан баҳо ва фикр қолдиринг'
+                      : 'Ilovadan chiqmasdan baho va fikr qoldiring'}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
+            </button>
+
+            {/* 2. Direct Feedback / Bug Report Row */}
             <button
               type="button"
               onClick={() => {
@@ -1328,7 +1365,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
             </button>
 
-            {/* Dynamic Telegram / Support Link */}
+            {/* 3. Official Telegram Channel & Support */}
             {remoteConfig.links.telegramUrl && (
               <button
                 type="button"
@@ -1352,7 +1389,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               </button>
             )}
 
-            {/* Dynamic Privacy Policy Link (Play Store Required) */}
+            {/* 4. Privacy Policy (Maxfiylik siyosati) */}
             {remoteConfig.links.privacyPolicyUrl && (
               <button
                 type="button"
@@ -1375,6 +1412,25 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 <ChevronRight className={`w-4 h-4 shrink-0 ${subTextCls}`} />
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Group 5: About the App & Reset Preferences */}
+        <div className="space-y-1.5">
+          <div className={groupHeadingCls}>{t.profile.aboutTitle}</div>
+          <div className={`${cardCls} divide-y ${dividerCls} overflow-hidden`}>
+            {/* About Nurul Islam */}
+            <div className="px-3.5 py-3 flex items-start gap-3">
+              <div className={iconBoxCls}>
+                <Info className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[13px] font-bold">
+                  Nurul Islam · v{getLocalAppVersion().versionName}
+                </div>
+                <p className={`text-[11.5px] leading-relaxed mt-0.5 ${subTextCls}`}>{t.profile.aboutDesc}</p>
+              </div>
+            </div>
 
             {/* Subtle Reset Row */}
             <div>

@@ -35,6 +35,8 @@ export type UpdateDownloadStatus =
 interface UpdaterJsBridge {
   getAppVersionJson: () => string;
   isDirectOtaEnabled?: () => boolean;
+  getPlayStoreUpdateStateJson?: () => string;
+  startPlayStoreInAppUpdate?: () => void;
   canRequestPackageInstalls: () => boolean;
   openInstallPermissionSettings: () => void;
   downloadAndInstall: (apkUrl: string) => void;
@@ -96,7 +98,7 @@ export function getLocalAppVersion(): LocalAppVersion {
       return { versionCode: dv.versionCode, versionName: dv.versionName };
     }
   }
-  return { versionCode: 101, versionName: '1.8.81' };
+  return { versionCode: 102, versionName: '1.8.82' };
 }
 
 const FRIENDLY_UPDATE_MESSAGES: Record<AppLanguage, string> = {
@@ -146,13 +148,35 @@ export async function checkForAppUpdate(): Promise<{
         throw new Error('Invalid release manifest');
       }
 
-      // On Google Play builds, ONLY compare against `playVersionCode` (the version confirmed live on Google Play)
-      // so users are never sent to Google Play before Google approves & publishes the update!
+      // On Google Play builds, first ask Google Play's native AppUpdateManager on the device if Google Play
+      // has confirmed an update is live for this user; otherwise fall back to `playVersionCode` from version.json.
       const playConfirmedCode =
         typeof data.playVersionCode === 'number' && Number.isFinite(data.playVersionCode)
           ? data.playVersionCode
           : data.versionCode;
-      const effectiveRemoteCode = isPlayBuild ? playConfirmedCode : data.versionCode;
+      let effectiveRemoteCode = isPlayBuild ? playConfirmedCode : data.versionCode;
+
+      if (isPlayBuild) {
+        const bridge = getUpdaterBridge();
+        if (bridge && typeof bridge.getPlayStoreUpdateStateJson === 'function') {
+          try {
+            const st = JSON.parse(bridge.getPlayStoreUpdateStateJson()) as {
+              checked?: boolean;
+              available?: boolean;
+              versionCode?: number;
+            };
+            if (st.checked) {
+              if (st.available && typeof st.versionCode === 'number' && st.versionCode > local.versionCode) {
+                effectiveRemoteCode = st.versionCode;
+              } else if (!st.available && playConfirmedCode <= local.versionCode) {
+                effectiveRemoteCode = local.versionCode;
+              }
+            }
+          } catch {
+            // use playConfirmedCode fallback
+          }
+        }
+      }
 
       const minSupported =
         typeof data.minSupportedVersionCode === 'number' && Number.isFinite(data.minSupportedVersionCode)
@@ -269,7 +293,11 @@ export function startInAppUpdate(
   }
 
   if (typeof bridge.isDirectOtaEnabled === 'function' && !bridge.isDirectOtaEnabled()) {
-    window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer');
+    if (typeof bridge.startPlayStoreInAppUpdate === 'function') {
+      bridge.startPlayStoreInAppUpdate();
+    } else {
+      window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer');
+    }
     onProgress(100, 'installing');
     return;
   }

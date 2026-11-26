@@ -6,6 +6,7 @@ import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.hardware.GeomagneticField;
@@ -27,8 +28,18 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.appupdate.AppUpdateOptions;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
+import com.google.android.play.core.review.ReviewInfo;
+import com.google.android.play.core.review.ReviewManager;
+import com.google.android.play.core.review.ReviewManagerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -58,6 +69,28 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
     private volatile boolean hasValidHeading = false;
     private volatile int sensorAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM;
     private volatile boolean isDayTheme = true;
+    private volatile boolean playStoreUpdateAvailable = false;
+    private volatile int playStoreAvailableVersionCode = 0;
+    private volatile boolean playStoreCheckCompleted = false;
+
+    private void refreshPlayStoreUpdateState() {
+        if (BuildConfig.ALLOW_DIRECT_OTA) return;
+        try {
+            AppUpdateManager mgr = AppUpdateManagerFactory.create(this);
+            mgr.getAppUpdateInfo().addOnSuccessListener(info -> {
+                int avail = info.updateAvailability();
+                boolean isAvail = (avail == UpdateAvailability.UPDATE_AVAILABLE
+                    || avail == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS);
+                playStoreUpdateAvailable = isAvail;
+                playStoreAvailableVersionCode = isAvail ? info.availableVersionCode() : 0;
+                playStoreCheckCompleted = true;
+            }).addOnFailureListener(e -> {
+                playStoreCheckCompleted = true;
+            });
+        } catch (Exception e) {
+            playStoreCheckCompleted = true;
+        }
+    }
 
     private void refreshDeclination(float lat, float lng) {
         GeomagneticField field = new GeomagneticField(lat, lng, 0f, System.currentTimeMillis());
@@ -120,6 +153,7 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
 
         handleNotificationLaunchIntent(getIntent());
         PrayerAlarmReceiver.ensureChannel(this);
+        refreshPlayStoreUpdateState();
 
         final OnBackPressedCallback backCallback = new OnBackPressedCallback(true) {
             @Override
@@ -186,6 +220,7 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
     public void onResume() {
         super.onResume();
         applySystemBarAppearance(isDayTheme);
+        refreshPlayStoreUpdateState();
         if (compassActive) {
             registerCompassSensors();
         }
@@ -425,6 +460,69 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
         }
 
         @JavascriptInterface
+        public void setKeepScreenOn(boolean keepOn) {
+            runOnUiThread(() -> {
+                Window window = getWindow();
+                if (window == null) return;
+                if (keepOn) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void setVideoFullscreen(boolean fullscreen) {
+            runOnUiThread(() -> {
+                try {
+                    Window window = getWindow();
+                    if (fullscreen) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                        if (window != null) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                            WindowInsetsControllerCompat controller =
+                                WindowCompat.getInsetsController(window, window.getDecorView());
+                            if (controller != null) {
+                                controller.hide(WindowInsetsCompat.Type.systemBars());
+                                controller.setSystemBarsBehavior(
+                                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                                );
+                            }
+                        }
+                    } else {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                        if (window != null) {
+                            WindowInsetsControllerCompat controller =
+                                WindowCompat.getInsetsController(window, window.getDecorView());
+                            if (controller != null) {
+                                controller.show(WindowInsetsCompat.Type.systemBars());
+                            }
+                        }
+                        applySystemBarAppearance(isDayTheme);
+                    }
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void launchInAppReview() {
+            runOnUiThread(() -> {
+                try {
+                    ReviewManager manager = ReviewManagerFactory.create(MainActivity.this);
+                    manager.requestReviewFlow().addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            ReviewInfo reviewInfo = task.getResult();
+                            manager.launchReviewFlow(MainActivity.this, reviewInfo);
+                        }
+                    });
+                } catch (Exception ignored) {
+                }
+            });
+        }
+
+        @JavascriptInterface
         public boolean openExternalUrl(String url) {
             if (url == null) return false;
             String trimmed = url.trim();
@@ -519,6 +617,63 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
         @JavascriptInterface
         public boolean isDirectOtaEnabled() {
             return BuildConfig.ALLOW_DIRECT_OTA;
+        }
+
+        @JavascriptInterface
+        public String getPlayStoreUpdateStateJson() {
+            refreshPlayStoreUpdateState();
+            return "{\"checked\":" + playStoreCheckCompleted
+                + ",\"available\":" + playStoreUpdateAvailable
+                + ",\"versionCode\":" + playStoreAvailableVersionCode + "}";
+        }
+
+        @JavascriptInterface
+        public void startPlayStoreInAppUpdate() {
+            runOnUiThread(() -> {
+                try {
+                    AppUpdateManager mgr = AppUpdateManagerFactory.create(MainActivity.this);
+                    mgr.getAppUpdateInfo().addOnSuccessListener(info -> {
+                        try {
+                            if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                                && info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
+                                mgr.startUpdateFlowForResult(
+                                    info,
+                                    MainActivity.this,
+                                    AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build(),
+                                    1002
+                                );
+                            } else {
+                                openPlayStoreListing();
+                            }
+                        } catch (Exception ex) {
+                            openPlayStoreListing();
+                        }
+                    }).addOnFailureListener(e -> openPlayStoreListing());
+                } catch (Exception e) {
+                    openPlayStoreListing();
+                }
+            });
+        }
+
+        private void openPlayStoreListing() {
+            try {
+                Intent marketIntent = new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("market://details?id=" + getPackageName())
+                );
+                marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(marketIntent);
+            } catch (Exception e) {
+                try {
+                    Intent webIntent = new Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://play.google.com/store/apps/details?id=" + getPackageName())
+                    );
+                    webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(webIntent);
+                } catch (Exception ignored) {
+                }
+            }
         }
 
         @JavascriptInterface

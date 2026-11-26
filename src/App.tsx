@@ -49,6 +49,7 @@ import {
   PrayerAlertPrefs,
   checkNativeNotificationPermission,
   isNativeAndroidBridgeAvailable,
+  launchNativeInAppReview,
   loadAlertPrefs,
   playPrayerChimePreview,
   openExternalUrl,
@@ -75,6 +76,7 @@ import {
   getCachedRemoteAppConfig,
   markReviewPromptAction,
   recordAppOpenAndShouldPromptReview,
+  submitUserFeedback,
   subscribeDeviceDirective,
   subscribeRemoteAppConfig,
   syncAppLive,
@@ -294,6 +296,10 @@ function AppContent() {
   const [remoteConfig, setRemoteConfig] = useState<RemoteAppConfig>(() => getCachedRemoteAppConfig());
   const [deviceDirective, setDeviceDirective] = useState<DeviceDirective>(() => getCachedDeviceDirective());
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const [ratingStars, setRatingStars] = useState<number>(5);
+  const [ratingComment, setRatingComment] = useState<string>('');
+  const [ratingSending, setRatingSending] = useState<boolean>(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState<boolean>(false);
   const [restoreCandidate, setRestoreCandidate] = useState<PendingRestoreCandidate | null>(() =>
     getPendingRestoreCandidate()
   );
@@ -963,16 +969,60 @@ function AppContent() {
     return () => window.removeEventListener(REMOTE_FORCE_UPDATE_EVENT, onRemoteForceUpdate);
   }, [handleCheckUpdate]);
 
-  // Smart Play Store 5-Star Rating Funnel (evaluated once per boot after minOpens)
+  // Smart In-App 5-Star Rating Funnel (evaluated once per boot after minOpens, or opened from Settings)
   const reviewEvaluatedRef = useRef(false);
+  useEffect(() => {
+    const onOpenRating = () => {
+      setRatingStars(5);
+      setRatingComment('');
+      setRatingSubmitted(false);
+      setShowReviewPrompt(true);
+    };
+    window.addEventListener('nq:open-rating-modal', onOpenRating);
+    return () => window.removeEventListener('nq:open-rating-modal', onOpenRating);
+  }, []);
+
   useEffect(() => {
     if (reviewEvaluatedRef.current || showOnboarding) return;
     reviewEvaluatedRef.current = true;
     if (recordAppOpenAndShouldPromptReview(getCachedRemoteAppConfig())) {
-      const tId = window.setTimeout(() => setShowReviewPrompt(true), 4500);
+      const tId = window.setTimeout(() => {
+        setRatingStars(5);
+        setRatingComment('');
+        setRatingSubmitted(false);
+        setShowReviewPrompt(true);
+      }, 4500);
       return () => window.clearTimeout(tId);
     }
   }, [showOnboarding]);
+
+  const handleSubmitInAppRating = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (ratingSending) return;
+    setRatingSending(true);
+    const starsStr = '★'.repeat(ratingStars) + '☆'.repeat(Math.max(0, 5 - ratingStars));
+    const msg = ratingComment.trim()
+      ? `[Baho: ${ratingStars}/5 ${starsStr}] ${ratingComment.trim()}`
+      : `[Baho: ${ratingStars}/5 ${starsStr}] Foydalanuvchi ilova ichida ${ratingStars} yulduz baho berdi.`;
+    await submitUserFeedback({
+      category: 'suggestion',
+      message: msg,
+      language,
+      city: currentCity.cityName,
+      region: currentCity.region || '',
+      country: currentCity.countryName || '',
+    }).catch(() => {});
+    markReviewPromptAction('rated');
+    setRatingSending(false);
+    setRatingSubmitted(true);
+    if (ratingStars >= 4) {
+      launchNativeInAppReview();
+    }
+    window.setTimeout(() => {
+      setShowReviewPrompt(false);
+      setRatingSubmitted(false);
+    }, 1500);
+  };
 
   useEffect(() => {
     const send = () => {
@@ -1730,10 +1780,11 @@ function AppContent() {
         </div>
       )}
 
-      {/* Smart Play Store 5-Star Rating Funnel Modal */}
+      {/* In-App 5-Star Rating & Feedback Modal (Zero leaving the app!) */}
       {showReviewPrompt && !isUpdateModalOpen && !showOnboarding && !deviceDirective.blocked && (
-        <div className="fixed inset-0 z-[72] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-4">
-          <div
+        <div className="fixed inset-0 z-[78] bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 animate-in fade-in">
+          <form
+            onSubmit={handleSubmitInAppRating}
             className={`w-full max-w-sm rounded-3xl border p-5 space-y-4 shadow-2xl ${
               isDay
                 ? 'bg-white border-[#dde3ea] text-slate-900'
@@ -1748,21 +1799,21 @@ function AppContent() {
                 <div>
                   <h3 className="text-sm font-extrabold">
                     {language === 'ru'
-                      ? 'Нравится ли вам Nurul Islam?'
+                      ? 'Оцените Nurul Islam'
                       : language === 'en'
-                      ? 'Enjoying Nurul Islam?'
+                      ? 'Rate Nurul Islam'
                       : language === 'uz_cyr'
-                      ? 'Nurul Islam сизга фойдали бўляптими?'
-                      : 'Nurul Islam sizga foydali bo‘lyaptimi?'}
+                      ? 'Nurul Islam иловасини баҳоланг'
+                      : 'Nurul Islam ilovasini baholang'}
                   </h3>
                   <p className={`text-[11.5px] mt-0.5 ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
                     {language === 'ru'
-                      ? 'Ваша оценка помогает другим мусульманам найти приложение.'
+                      ? 'Прямо здесь, не выходя из приложения'
                       : language === 'en'
-                      ? 'Your rating helps more Muslims discover this ad-free app.'
+                      ? 'Rate and share feedback right inside the app'
                       : language === 'uz_cyr'
-                      ? 'Баҳонгиз бошқа мусулмонларга ҳам иловани топишда ёрдам беради.'
-                      : 'Bahongiz boshqa musulmonlarga ham ushbu reklamasiz ilovani topishda yordam beradi.'}
+                      ? 'Иловадан чиқмасдан шу ернинг ўзида баҳо беринг'
+                      : "Ilovadan chiqmasdan shu yerning o'zida baho bering"}
                   </p>
                 </div>
               </div>
@@ -1778,53 +1829,109 @@ function AppContent() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  markReviewPromptAction('rated');
-                  setShowReviewPrompt(false);
-                  openExternalUrl(remoteConfig.links.playStoreUrl);
-                }}
-                className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${
-                  isDay
-                    ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
-                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
-                }`}
-              >
-                ★{' '}
-                {language === 'ru'
-                  ? 'Да, очень нравится! Оценить'
-                  : language === 'en'
-                  ? 'Yes, love it! Rate 5 Stars'
-                  : language === 'uz_cyr'
-                  ? 'Ҳа, жуда ёқди! Баҳолаш'
-                  : 'Ha, juda yoqdi! 5 yulduz qo‘yish'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  markReviewPromptAction('feedback');
-                  setShowReviewPrompt(false);
-                  navigateToTab('profile');
-                  window.setTimeout(() => window.dispatchEvent(new Event('nq:open-feedback-modal')), 120);
-                }}
-                className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition ${
-                  isDay
-                    ? 'bg-[#f6faf5] border-[#dce9d9] text-[#0c4703]'
-                    : 'bg-slate-950 border-emerald-900/70 text-emerald-300'
-                }`}
-              >
-                {language === 'ru'
-                  ? 'Есть замечание — написать разработчику'
-                  : language === 'en'
-                  ? 'Could be better — Send feedback'
-                  : language === 'uz_cyr'
-                  ? 'Таклифим ёки шикоятим бор'
-                  : 'Yaxshilash mumkin — Taklif yuborish'}
-              </button>
+
+            {/* Interactive 1..5 Stars Picker */}
+            <div className="flex items-center justify-center gap-2 py-1">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const active = star <= ratingStars;
+                return (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingStars(star)}
+                    className="p-1.5 rounded-2xl transition-transform active:scale-90"
+                    aria-label={`${star} stars`}
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-colors ${
+                        active
+                          ? 'text-amber-400 fill-amber-400 drop-shadow-xs'
+                          : isDay
+                          ? 'text-slate-300'
+                          : 'text-slate-700'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
             </div>
-          </div>
+
+            <textarea
+              rows={3}
+              maxLength={800}
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              placeholder={
+                language === 'ru'
+                  ? 'Напишите ваш отзыв или пожелание (необязательно)...'
+                  : language === 'en'
+                  ? 'Write your thoughts or suggestions (optional)...'
+                  : language === 'uz_cyr'
+                  ? 'Фикрингиз ёки таклифингизни ёзинг (ихтиёрий)...'
+                  : 'Fikringiz yoki taklifingizni yozing (ixtiyoriy)...'
+              }
+              className={`w-full rounded-2xl border p-3 text-xs leading-relaxed focus:outline-none ${
+                isDay
+                  ? 'bg-[#f8fafc] border-slate-300 text-slate-900 focus:border-[#158509]'
+                  : 'bg-slate-950 border-emerald-900/70 text-white focus:border-amber-400'
+              }`}
+            />
+
+            {ratingSubmitted ? (
+              <p className={`text-xs font-extrabold text-center py-1 ${isDay ? 'text-[#158509]' : 'text-emerald-400'}`}>
+                ✓{' '}
+                {language === 'ru'
+                  ? 'Спасибо! Ваша оценка принята.'
+                  : language === 'en'
+                  ? 'Thank you! Your rating has been received.'
+                  : language === 'uz_cyr'
+                  ? 'Раҳмат! Баҳонгиз қабул қилинди 🤲'
+                  : 'Rahmat! Bahongiz qabul qilindi 🤲'}
+              </p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    markReviewPromptAction('later');
+                    setShowReviewPrompt(false);
+                  }}
+                  className={`py-2.5 px-3.5 rounded-xl border text-xs font-semibold transition ${
+                    isDay
+                      ? 'bg-slate-50 border-slate-200 text-slate-600'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
+                  }`}
+                >
+                  {language === 'ru'
+                    ? 'Позже'
+                    : language === 'en'
+                    ? 'Later'
+                    : language === 'uz_cyr'
+                    ? 'Кейинроқ'
+                    : 'Keyinroq'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={ratingSending}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold transition disabled:opacity-50 ${
+                    isDay
+                      ? 'bg-[#158509] hover:bg-[#0c5007] text-white'
+                      : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                  }`}
+                >
+                  {ratingSending
+                    ? '...'
+                    : language === 'ru'
+                    ? `Отправить оценку (${ratingStars} ★)`
+                    : language === 'en'
+                    ? `Submit Rating (${ratingStars} ★)`
+                    : language === 'uz_cyr'
+                    ? `Баҳони юбориш (${ratingStars} ★)`
+                    : `Bahoni yuborish (${ratingStars} ★)`}
+                </button>
+              </div>
+            )}
+          </form>
         </div>
       )}
 
