@@ -86,6 +86,7 @@ import {
   acceptPendingRestoreCandidate,
   dismissPendingRestoreCandidate,
   getPendingRestoreCandidate,
+  installAutoProgressInterceptor,
   subscribeRestorePrompt,
   syncOrAutoRestoreProgress,
 } from './utils/progressSync';
@@ -863,6 +864,7 @@ function AppContent() {
       }
     };
 
+    installAutoProgressInterceptor();
     window.addEventListener(PROGRESS_RESTORED_EVENT, hydrateFromRestoredStorage);
     const unsubPrompt = subscribeRestorePrompt((cand) => setRestoreCandidate(cand));
     void syncOrAutoRestoreProgress({ force: true });

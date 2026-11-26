@@ -425,6 +425,12 @@ function summarizeSnapshot(snap) {
   const hifzCount = Array.isArray(hifzArr) ? hifzArr.length : 0;
   const muallimCount = Array.isArray(muallimArr) ? muallimArr.length : 0;
   const hasLastRead = Boolean(lastReadObj && Number(lastReadObj.surahNumber) >= 1);
+  const wisdomBmArr = safeJsonParse(snap.nq_wisdom_bookmarks_v1, []);
+  const savedLibArr = safeJsonParse(snap.nq_saved_library_v1, []);
+  const jumaSalawatObj = safeJsonParse(snap.nq_juma_salawat_v1, {});
+  const wisdomCount = Array.isArray(wisdomBmArr) ? wisdomBmArr.length : 0;
+  const savedLibCount = Array.isArray(savedLibArr) ? savedLibArr.length : 0;
+  const salawatCount = Math.max(0, Number(jumaSalawatObj?.count) || 0);
 
   const score =
     completedSurahs * 120 +
@@ -438,6 +444,9 @@ function summarizeSnapshot(snap) {
     (qazoTotal > 0 ? 80 : 0) +
     hifzCount * 40 +
     muallimCount * 35 +
+    wisdomCount * 30 +
+    savedLibCount * 30 +
+    Math.min(5_000, salawatCount * 2) +
     (hasLastRead ? 40 : 0);
 
   return {
@@ -640,9 +649,7 @@ function findProgressRecord({ hardwareId = '', deviceId = '', codeOrKey = '', de
     const cutoffMs = Date.now() - 30 * 86400_000;
     let bestFpRec = null;
     for (const rec of records) {
-      if (!rec || rec.deviceFp !== deviceFp) continue;
-      const hasData = (rec.score || 0) > 0 || Boolean(rec.summary?.city || rec.summary?.handle);
-      if (!hasData) continue;
+      if (!rec || rec.deviceFp !== deviceFp || (rec.score || 0) <= 0) continue;
       const updatedMs = Date.parse(rec.updatedAt || '') || 0;
       if (updatedMs < cutoffMs) continue;
       if (!bestFpRec || (rec.score || 0) > (bestFpRec.score || 0)) {
@@ -1904,11 +1911,10 @@ const server = http.createServer(async (req, res) => {
         allowFpMatch: incomingScore === 0,
       });
 
-      // If fresh empty install and we found an existing backup via hardwareId/deviceId/same-phone fingerprint,
-      // DO NOT overwrite it — return `promptRestore: true` (or `autoRestored: true`) with the snapshot so the app can ask the user with a 1-tap restore dialog!
-      const existingHasData =
-        existing && ((existing.score || 0) > 0 || Boolean(existing.summary?.city || existing.summary?.handle));
-      if (existingHasData && incomingScore === 0 && body.confirmOverwrite !== true) {
+      // Only prompt to restore if the existing cloud backup actually has REAL progress (score > 0: tasbih, quiz, bookmarks, surahs, books, qazo, etc.)
+      // Never prompt to restore an empty score=0 record!
+      const existingHasRealProgress = Boolean(existing && (existing.score || 0) > 0);
+      if (existingHasRealProgress && incomingScore === 0 && body.confirmOverwrite !== true) {
         sendJson(res, 200, {
           ok: true,
           promptRestore: true,

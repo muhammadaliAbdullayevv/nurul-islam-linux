@@ -197,6 +197,12 @@ export function computeSnapshotScore(snap: Record<string, string>): number {
   const hifzCount = Array.isArray(hifz) ? hifz.length : 0;
   const muallimCount = Array.isArray(muallim) ? muallim.length : 0;
   const hasLastRead = Boolean(lastRead && Number(lastRead.surahNumber) >= 1);
+  const wisdomBm = safeParse<unknown[]>(snap.nq_wisdom_bookmarks_v1, []);
+  const savedLib = safeParse<unknown[]>(snap.nq_saved_library_v1, []);
+  const jumaSalawat = safeParse<{ count?: number }>(snap.nq_juma_salawat_v1, {});
+  const wisdomCount = Array.isArray(wisdomBm) ? wisdomBm.length : 0;
+  const savedLibCount = Array.isArray(savedLib) ? savedLib.length : 0;
+  const salawatCount = Math.max(0, Number(jumaSalawat?.count) || 0);
 
   return (
     surahCount * 120 +
@@ -210,6 +216,9 @@ export function computeSnapshotScore(snap: Record<string, string>): number {
     (qazoSum > 0 ? 80 : 0) +
     hifzCount * 40 +
     muallimCount * 35 +
+    wisdomCount * 30 +
+    savedLibCount * 30 +
+    Math.min(5_000, salawatCount * 2) +
     (hasLastRead ? 40 : 0)
   );
 }
@@ -354,6 +363,7 @@ export function applyProgressSnapshotToLocal(
   }
 
   let changed = false;
+  applyingSnapshotInternally = true;
   try {
     for (const key of USER_PROGRESS_KEYS) {
       const nextVal = merged[key];
@@ -369,6 +379,8 @@ export function applyProgressSnapshotToLocal(
     saveNativeProgressBackup(JSON.stringify(merged));
   } catch {
     // ignore storage errors
+  } finally {
+    applyingSnapshotInternally = false;
   }
 
   if (changed && typeof window !== 'undefined') {
@@ -552,6 +564,8 @@ export async function syncOrAutoRestoreProgress(options?: {
         if (
           data.promptRestore &&
           !promptDecided &&
+          Number(data.score) > 0 &&
+          score === 0 &&
           data.snapshot &&
           Object.keys(data.snapshot).length > 0 &&
           data.summary
@@ -565,6 +579,15 @@ export async function syncOrAutoRestoreProgress(options?: {
             snapshot: data.snapshot,
           });
           return getCachedCloudBackupMeta();
+        }
+
+        // If user now has local progress (score > 0), mark prompt decided so we never show a stale restore prompt mid-session
+        if (score > 0 && !promptDecided) {
+          try {
+            localStorage.setItem(RESTORE_PROMPT_DECISION_KEY, 'active');
+          } catch {
+            // ignore
+          }
         }
 
         if (data.autoRestored && data.snapshot && Object.keys(data.snapshot).length > 0) {
@@ -597,6 +620,41 @@ export async function syncOrAutoRestoreProgress(options?: {
     syncInFlight = null;
   });
   return syncInFlight;
+}
+
+const PROGRESS_KEY_SET = new Set<string>(USER_PROGRESS_KEYS);
+let interceptorInstalled = false;
+let autoWatchDebounceTimer: number | undefined;
+let applyingSnapshotInternally = false;
+
+/**
+ * Intercepts `localStorage.setItem` across the entire app so ANY change in Tasbih,
+ * Quran bookmarks/last-read/completed surahs, Quiz/Asma mastery, Qazo, Ramadan, or Library
+ * immediately mirrors to Android Native SharedPreferences and syncs to the VPS within 1.2s.
+ */
+export function installAutoProgressInterceptor(): void {
+  if (interceptorInstalled || typeof window === 'undefined' || typeof Storage === 'undefined') {
+    return;
+  }
+  interceptorInstalled = true;
+  const origSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (key: string, value: string): void {
+    origSetItem.call(this, key, value);
+    if (applyingSnapshotInternally || !PROGRESS_KEY_SET.has(key)) return;
+    // Immediately mirror to native Android SharedPreferences (<0.5ms)
+    try {
+      const snap = collectLocalProgressSnapshot();
+      if (computeSnapshotScore(snap) > 0) {
+        saveNativeProgressBackup(JSON.stringify(snap));
+      }
+    } catch {
+      // ignore
+    }
+    if (autoWatchDebounceTimer) window.clearTimeout(autoWatchDebounceTimer);
+    autoWatchDebounceTimer = window.setTimeout(() => {
+      void syncOrAutoRestoreProgress();
+    }, 1200);
+  };
 }
 
 /**
