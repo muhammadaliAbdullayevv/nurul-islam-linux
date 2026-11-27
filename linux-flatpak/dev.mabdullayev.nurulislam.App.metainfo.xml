@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.86" date="2026-11-28">
+      <description>
+        <p>Added desktop keyboard arrow navigation, mouse click-and-drag page turning, touchpad two-finger horizontal swipe, and clickable top page indicator chevrons for Full-Screen Mushaf Reader Mode.</p>
+      </description>
+    </release>
     <release version="1.8.85" date="2026-11-27">
       <description>
         <p>Added Full-Screen Arabic Mushaf Reader Mode with RTL swipe page switching, word-only live recitation highlighting, tap-any-word instant audio seek, customizable Arabic and Translation font sizes (Aa), centered Qori picker modal, verified Yasser Ad-Dussary recitation across all 114 Surahs, Style B native header hierarchy, and rounded docked Home mini-player.</p>

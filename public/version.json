@@ -1,7 +1,7 @@
 {
-  "versionCode": 105,
-  "playVersionCode": 103,
-  "versionName": "1.8.85",
+  "versionCode": 106,
+  "playVersionCode": 105,
+  "versionName": "1.8.86",
   "apkUrl": "https://nurulislam.mabdullayev.dev/downloads/nurul-quran-latest.apk",
   "rpmUrl": "https://nurulislam.mabdullayev.dev/linux/nurul-islam-latest.rpm",
   "forceUpdate": false,

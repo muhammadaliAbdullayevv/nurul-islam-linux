@@ -99,7 +99,7 @@ export function getLocalAppVersion(): LocalAppVersion {
       return { versionCode: dv.versionCode, versionName: dv.versionName };
     }
   }
-  return { versionCode: 105, versionName: '1.8.85' };
+  return { versionCode: 106, versionName: '1.8.86' };
 }
 
 const FRIENDLY_UPDATE_MESSAGES: Record<AppLanguage, string> = {

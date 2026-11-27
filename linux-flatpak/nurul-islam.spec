@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.85
+Version:        1.8.86
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sat Nov 28 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.86-1
+- Add desktop keyboard arrows, mouse drag, touchpad 2-finger swipe, and top bar chevrons for Mushaf page switching
 * Fri Nov 27 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.85-1
 - Add Full-Screen Arabic Mushaf Reader Mode with RTL swipe page switching, word-only live recitation highlighting, tap-any-word instant audio seek, customizable Arabic & Translation font sizes (Aa), centered Qori picker modal, 100% pure Yasser Ad-Dussary per-ayah audio across all 114 Surahs, Style B native header hierarchy, and rounded docked Home mini-player
 * Tue Nov 24 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.79-1
