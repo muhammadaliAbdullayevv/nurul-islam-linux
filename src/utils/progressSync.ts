@@ -83,6 +83,8 @@ export const USER_PROGRESS_KEYS = [
   'nq_quran_last_read',
   'nq_quran_completed_surahs',
   'nq_quran_reciter_id',
+  'nq_quran_arabic_font_size',
+  'nq_quran_trans_font_size',
   'nq_translation',
   'nq_hifz_mastered_v1',
   'nq_muallimi_soniy_done_v1',

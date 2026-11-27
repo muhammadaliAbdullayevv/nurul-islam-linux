@@ -128,6 +128,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
   const activeTitle = tabTitleMap[activeTab] || t.appTitle;
   const isSecondaryFeature = !PRIMARY_BOTTOM_TABS.has(activeTab);
   const shouldHideBottomNav = Boolean(hideBottomNav || isSecondaryFeature);
+  const shouldHideTopAppBar = Boolean(hideBottomNav);
 
   // Clean 4-button Material 3 Bottom Navigation Bar (Mobile)
   const bottomNavItems = [
@@ -432,51 +433,53 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
 
         {/* Main Right Widescreen Desktop Workspace */}
         <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
-          {/* Rich Emerald Desktop Top Header Bar */}
-          <header
-            className={`px-6 py-3 border-b flex items-center justify-between gap-4 shrink-0 shadow-xs ${
-              isDay
-                ? 'bg-white/95 border-[#c9dec4] text-slate-900'
-                : 'bg-[#072119]/95 border-emerald-900/60 text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              {activeTab !== 'home' && (
-                <button
-                  type="button"
-                  onClick={() => (onBack ? onBack() : onTabChange('home'))}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-extrabold transition active:scale-95 ${
+          {/* Rich Emerald Desktop Top Header Bar (Hidden on Quran page / Surah Reader) */}
+          {!shouldHideTopAppBar && (
+            <header
+              className={`px-6 py-3 border-b flex items-center justify-between gap-4 shrink-0 shadow-xs ${
+                isDay
+                  ? 'bg-white/95 border-[#c9dec4] text-slate-900'
+                  : 'bg-[#072119]/95 border-emerald-900/60 text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {activeTab !== 'home' && (
+                  <button
+                    type="button"
+                    onClick={() => (onBack ? onBack() : onTabChange('home'))}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-extrabold transition active:scale-95 ${
+                      isDay
+                        ? 'bg-[#eef9ea] border-[#b7e2ad] text-[#0c4703] hover:bg-[#e1f5da]'
+                        : 'bg-emerald-950 border-emerald-800 text-amber-300'
+                    }`}
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>{t.backLabel}</span>
+                  </button>
+                )}
+                <h1
+                  className={`font-display text-lg font-extrabold tracking-tight truncate ${
+                    isDay ? 'text-[#0c4703]' : 'text-white'
+                  }`}
+                >
+                  {activeTitle}
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                <PWAInstallButton />
+                <div
+                  className={`px-3 py-1.5 rounded-full text-xs font-mono font-extrabold border ${
                     isDay
-                      ? 'bg-[#eef9ea] border-[#b7e2ad] text-[#0c4703] hover:bg-[#e1f5da]'
+                      ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
                       : 'bg-emerald-950 border-emerald-800 text-amber-300'
                   }`}
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>{t.backLabel}</span>
-                </button>
-              )}
-              <h1
-                className={`font-display text-lg font-extrabold tracking-tight truncate ${
-                  isDay ? 'text-[#0c4703]' : 'text-white'
-                }`}
-              >
-                {activeTitle}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-2.5 shrink-0">
-              <PWAInstallButton />
-              <div
-                className={`px-3 py-1.5 rounded-full text-xs font-mono font-extrabold border ${
-                  isDay
-                    ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
-                    : 'bg-emerald-950 border-emerald-800 text-amber-300'
-                }`}
-              >
-                {currentTimeStr}
+                  {currentTimeStr}
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
+          )}
 
           {topBanner}
 
@@ -536,7 +539,8 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
             : 'md:max-w-2xl md:border-x md:border-emerald-950 md:shadow-2xl'
         }`}
       >
-        {/* Solid Deep Islamic Green App Top Bar */}
+        {/* Solid Deep Islamic Green App Top Bar (Hidden when on Quran page or reading a Surah/Book) */}
+        {!shouldHideTopAppBar && (
         <div
           style={{
             paddingTop: isCapacitorNative
@@ -549,7 +553,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
               : 'bg-[#051f05] border-emerald-950 text-white'
           }`}
         >
-          {isSecondaryFeature ? (
+          {activeTab !== 'home' ? (
             <div className="relative flex items-center justify-between min-w-0 flex-1">
               <button
                 type="button"
@@ -577,7 +581,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
             </div>
           )}
 
-          {!isSecondaryFeature && !hideBottomNav && (
+          {activeTab === 'home' && !hideBottomNav && (
             <div className="flex items-center gap-1 shrink-0">
               <PWAInstallButton compact onDarkBar />
 
@@ -660,21 +664,28 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
             </div>
           )}
         </div>
+        )}
 
         {topBanner}
 
         {/* Viewport Content */}
         <div
           ref={viewportScrollRef}
-          style={
-            isSecondaryFeature
+          style={{
+            ...(shouldHideTopAppBar && isCapacitorNative
+              ? {
+                  paddingTop:
+                    'calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 10px)',
+                }
+              : {}),
+            ...(isSecondaryFeature
               ? {
                   paddingBottom: hideBottomNav
                     ? 'calc(0.45rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))'
                     : 'calc(1rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))',
                 }
-              : undefined
-          }
+              : {}),
+          }}
           className={`flex-1 min-h-0 no-scrollbar relative ${
             activeTab === 'home'
               ? 'flex flex-col overflow-y-auto'

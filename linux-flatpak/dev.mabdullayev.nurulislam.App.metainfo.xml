@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.85" date="2026-11-27">
+      <description>
+        <p>Added Full-Screen Arabic Mushaf Reader Mode with RTL swipe page switching, word-only live recitation highlighting, tap-any-word instant audio seek, customizable Arabic and Translation font sizes (Aa), centered Qori picker modal, verified Yasser Ad-Dussary recitation across all 114 Surahs, Style B native header hierarchy, and rounded docked Home mini-player.</p>
+      </description>
+    </release>
     <release version="1.8.79" date="2026-11-24">
       <description>
         <p>Added 24/7 Ad-Free HD Live Watching of Makkah (Kaaba / Al-Masjid al-Haram) and Madinah (Al-Masjid an-Nabawi) with automatic HLS failover, widescreen split Dual View, live Haramain prayer schedule &amp; local clock, authentic Kaaba sighting dua and Salawat counter, and remote Owner Panel stream overrides.</p>

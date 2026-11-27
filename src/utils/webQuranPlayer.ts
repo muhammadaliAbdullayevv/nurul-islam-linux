@@ -25,6 +25,7 @@ export interface WebQuranPlayParams {
   ayahs: Ayah[];
   startAyahNumber: number;
   offsetSec?: number;
+  offsetFraction?: number;
 }
 
 class WebQuranPlayer {
@@ -41,6 +42,7 @@ class WebQuranPlayer {
   private active = false;
   private isPlaying = false;
   private isPreparing = false;
+  private pendingSeekSec = 0;
   private surahNumber = 0;
   private surahName = '';
   private reciterId: QuranReciterId = DEFAULT_RECITER_ID;
@@ -60,10 +62,13 @@ class WebQuranPlayer {
 
   public getState(): NativeQuranAudioState {
     const rec = getReciterById(this.reciterId);
-    const posMs =
-      this.audio && Number.isFinite(this.audio.currentTime)
-        ? Math.max(0, Math.round(this.audio.currentTime * 1000))
+    const liveTime =
+      this.pendingSeekSec > 0
+        ? this.pendingSeekSec
+        : this.audio && Number.isFinite(this.audio.currentTime)
+        ? this.audio.currentTime
         : 0;
+    const posMs = Math.max(0, Math.round(liveTime * 1000));
     const durMs =
       this.audio && Number.isFinite(this.audio.duration) && this.audio.duration > 0
         ? Math.round(this.audio.duration * 1000)
@@ -214,12 +219,28 @@ class WebQuranPlayer {
     this.reciterId = params.reciterId;
     this.ayahs = params.ayahs;
     this.active = true;
-    this.playAyahInternal(params.startAyahNumber, params.offsetSec || 0);
+    this.playAyahInternal(params.startAyahNumber, params.offsetSec || 0, params.offsetFraction || 0);
   }
 
-  public jumpToAyah(ayahNumber: number, offsetSec = 0): void {
+  public jumpToAyah(ayahNumber: number, offsetSec = 0, offsetFraction = 0): void {
     if (!this.active || this.ayahs.length === 0) return;
-    this.playAyahInternal(ayahNumber, offsetSec);
+    if (
+      this.currentAyahNumber === ayahNumber &&
+      this.audio &&
+      this.audio.src &&
+      this.audio.readyState >= 1 &&
+      !this.isPreparing
+    ) {
+      const targetSec =
+        offsetSec > 0
+          ? offsetSec
+          : offsetFraction > 0 && Number.isFinite(this.audio.duration) && this.audio.duration > 0
+          ? offsetFraction * this.audio.duration
+          : 0;
+      this.seekWithinCurrentAyah(targetSec);
+      return;
+    }
+    this.playAyahInternal(ayahNumber, offsetSec, offsetFraction);
   }
 
   public seekWithinCurrentAyah(offsetSec: number): void {
@@ -228,6 +249,7 @@ class WebQuranPlayer {
       this.audio.duration && Number.isFinite(this.audio.duration)
         ? Math.min(Math.max(0, offsetSec), Math.max(0, this.audio.duration - 0.1))
         : Math.max(0, offsetSec);
+    this.pendingSeekSec = 0;
     this.audio.currentTime = clamped;
     this.emit();
     if (!this.isPlaying) {
@@ -237,13 +259,19 @@ class WebQuranPlayer {
 
   public getLiveAudioTiming(): { currentTimeSec: number; durationSec: number } {
     if (!this.audio) return { currentTimeSec: 0, durationSec: 0 };
+    const currentTimeSec =
+      this.pendingSeekSec > 0
+        ? this.pendingSeekSec
+        : Number.isFinite(this.audio.currentTime)
+        ? this.audio.currentTime
+        : 0;
     return {
-      currentTimeSec: Number.isFinite(this.audio.currentTime) ? this.audio.currentTime : 0,
+      currentTimeSec,
       durationSec: Number.isFinite(this.audio.duration) ? this.audio.duration : 0,
     };
   }
 
-  private playAyahInternal(ayahNumberInSurah: number, offsetSec = 0): void {
+  private playAyahInternal(ayahNumberInSurah: number, offsetSec = 0, offsetFraction = 0): void {
     const ayahObj = this.ayahs.find((a) => a.numberInSurah === ayahNumberInSurah);
     if (!ayahObj) {
       this.stop();
@@ -262,16 +290,27 @@ class WebQuranPlayer {
     const token = ++this.playbackToken;
     this.currentAyahNumber = ayahNumberInSurah;
     this.isPreparing = true;
+    this.pendingSeekSec = offsetSec > 0 ? offsetSec : 0;
     this.active = true;
     this.emit();
+
+    const resolveTargetSeekSec = (el: HTMLAudioElement): number => {
+      if (offsetSec > 0) return offsetSec;
+      if (offsetFraction > 0 && el.duration && Number.isFinite(el.duration) && el.duration > 0) {
+        return offsetFraction * el.duration;
+      }
+      return 0;
+    };
 
     const attachHandlers = (el: HTMLAudioElement, onFail: () => void) => {
       let appliedSeek = false;
       el.onloadedmetadata = () => {
         if (token !== this.playbackToken) return;
-        if (!appliedSeek && offsetSec > 0 && el.duration && Number.isFinite(el.duration)) {
+        const targetSec = resolveTargetSeekSec(el);
+        if (!appliedSeek && targetSec > 0 && el.duration && Number.isFinite(el.duration)) {
           appliedSeek = true;
-          el.currentTime = Math.min(offsetSec, Math.max(0, el.duration - 0.15));
+          el.currentTime = Math.min(targetSec, Math.max(0, el.duration - 0.15));
+          this.pendingSeekSec = 0;
         }
         this.emit();
       };
@@ -331,6 +370,16 @@ class WebQuranPlayer {
             .play()
             .then(() => {
               if (token !== this.playbackToken) return;
+              const targetSec = resolveTargetSeekSec(audio);
+              if (
+                targetSec > 0 &&
+                audio.duration &&
+                Number.isFinite(audio.duration) &&
+                Math.abs(audio.currentTime - targetSec) > 0.35
+              ) {
+                audio.currentTime = Math.min(targetSec, Math.max(0, audio.duration - 0.15));
+              }
+              this.pendingSeekSec = 0;
               this.isPlaying = true;
               this.isPreparing = false;
               this.syncListenTracker();
