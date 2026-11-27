@@ -29,6 +29,7 @@ export interface NativeLoadAudioPayload {
   surahName: string;
   reciterName: string;
   reciterKey?: string;
+  everyAyahFolder?: string;
   mp3QuranBase?: string;
   preferFullSurah?: boolean;
   ayahLabelPrefix: string;

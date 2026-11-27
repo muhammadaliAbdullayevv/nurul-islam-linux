@@ -187,6 +187,7 @@ public class QuranAudioService extends Service {
     private String surahName = "Nurul Islam";
     private String reciterName = "Mishary Rashid Al-Afasy";
     private String reciterKey = "alafasy";
+    private String everyAyahFolder = "Alafasy_128kbps";
     private String mp3QuranBase = "https://server8.mp3quran.net/afs";
     private String ayahPrefix = "Oyat";
     private int totalAyahsCount = 0;
@@ -437,6 +438,11 @@ public class QuranAudioService extends Service {
             String nextSurahName = obj.optString("surahName", "Nurul Islam");
             String nextReciter = obj.optString("reciterName", "Mishary Rashid Al-Afasy");
             String nextReciterKey = sanitizeReciterKey(obj.optString("reciterKey", "alafasy"));
+            String defaultFolder = "dussary".equals(nextReciterKey) ? "Yasser_Ad-Dussary_128kbps" : "Alafasy_128kbps";
+            String nextEveryAyahFolder = obj.optString("everyAyahFolder", defaultFolder);
+            if (nextEveryAyahFolder == null || nextEveryAyahFolder.trim().isEmpty()) {
+                nextEveryAyahFolder = defaultFolder;
+            }
             String nextMp3Base = obj.optString("mp3QuranBase", "https://server8.mp3quran.net/afs");
             if (nextMp3Base == null || !nextMp3Base.startsWith("https://")) {
                 nextMp3Base = "https://server8.mp3quran.net/afs";
@@ -505,6 +511,7 @@ public class QuranAudioService extends Service {
             surahName = nextSurahName;
             reciterName = nextReciter;
             reciterKey = nextReciterKey;
+            everyAyahFolder = nextEveryAyahFolder;
             mp3QuranBase = nextMp3Base;
             ayahPrefix = nextPrefix;
             totalAyahsCount = Math.max(totalAyahs, playlist.size());
@@ -953,6 +960,24 @@ public class QuranAudioService extends Service {
         }
         if (nextSurah - 1 < catalogAyahCounts.size() && catalogAyahCounts.get(nextSurah - 1) > 0) {
             totalAyahsCount = catalogAyahCounts.get(nextSurah - 1);
+        } else {
+            totalAyahsCount = 7;
+        }
+
+        String pad3 = String.format(java.util.Locale.US, "%03d", nextSurah);
+        String folder = (everyAyahFolder != null && !everyAyahFolder.trim().isEmpty())
+            ? everyAyahFolder.trim()
+            : ("dussary".equals(reciterKey) ? "Yasser_Ad-Dussary_128kbps" : "Alafasy_128kbps");
+
+        playlist.clear();
+        for (int a = 1; a <= totalAyahsCount; a++) {
+            String aPad3 = String.format(java.util.Locale.US, "%03d", a);
+            List<String> urls = new ArrayList<>();
+            urls.add("https://everyayah.com/data/" + folder + "/" + pad3 + aPad3 + ".mp3");
+            if ("alafasy".equals(reciterKey)) {
+                urls.add("https://audio.qurancdn.com/Alafasy/mp3/" + pad3 + aPad3 + ".mp3");
+            }
+            playlist.add(new AyahItem(a, urls));
         }
 
         fullSurahUrls.clear();
@@ -960,23 +985,25 @@ public class QuranAudioService extends Service {
         if (localFile.exists() && localFile.length() > 10_000L) {
             fullSurahUrls.add(localFile.getAbsolutePath());
         }
-        String pad3 = String.format(java.util.Locale.US, "%03d", nextSurah);
         String base = (mp3QuranBase != null && mp3QuranBase.startsWith("https://"))
             ? mp3QuranBase
-            : "https://server8.mp3quran.net/afs";
+            : ("dussary".equals(reciterKey)
+                ? "https://download.quranicaudio.com/quran/yasser_ad-dussary"
+                : "https://server8.mp3quran.net/afs");
         fullSurahUrls.add(base + "/" + pad3 + ".mp3");
         if ("alafasy".equals(reciterKey)) {
             fullSurahUrls.add("https://cdn.mp3quran.net/audio/mishary-alafasy/r1/" + pad3 + ".mp3");
             fullSurahUrls.add("https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/" + nextSurah + ".mp3");
         }
-        playlist.clear();
 
+        currentIndex = 0;
+        currentCandidateIdx = 0;
         fullSurahCandIdx = 0;
         pendingSeekMs = 0L;
         pendingStartFraction = -1.0;
         lastNotifiedAyah = -1;
-        isFullSurahMode = true;
-        playFullSurahCandidate();
+        isFullSurahMode = false;
+        playCurrentAyahIndex();
     }
 
     private void skipNext() {

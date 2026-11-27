@@ -983,11 +983,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 </p>
               </div>
 
-              <div className="text-right px-4 py-2.5 rounded-2xl bg-black/25 border border-white/15">
+              <div className="min-w-[118px] text-center px-3.5 py-2.5 rounded-2xl bg-black/25 border border-white/15 shrink-0">
                 <LivePrayerRemainingText
                   prayerTimes={prayerTimes}
                   timezone={currentCity.timezone}
-                  className="tabular-nums text-xl font-extrabold tracking-tight text-[#d0f39f] block"
+                  className="font-mono tabular-nums text-xl font-extrabold tracking-tight text-[#d0f39f] block"
                 />
                 <span className="text-[11px] text-white/75 block">{t.home.remaining}</span>
               </div>
@@ -1326,11 +1326,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </p>
           </div>
 
-          <div className="text-right px-3 py-1.5 rounded-2xl bg-black/22 border border-white/15 shrink-0">
+          <div className="min-w-[98px] text-center px-2.5 py-1.5 rounded-2xl bg-black/22 border border-white/15 shrink-0">
             <LivePrayerRemainingText
               prayerTimes={prayerTimes}
               timezone={currentCity.timezone}
-              className="tabular-nums text-base font-semibold tracking-tight text-[#d0f39f] block leading-tight"
+              className="font-mono tabular-nums text-[15.5px] font-bold tracking-tight text-[#d0f39f] block leading-tight"
             />
             <span className="text-[10px] text-white/75 block">
               {t.home.remaining}
@@ -1534,7 +1534,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       )}
 
       {/* SWIPEABLE & LONG-PRESS REORDERABLE FEATURE GRID */}
-      <div className="flex-1 min-h-0 flex flex-col pt-1.5 pb-2">
+      <div className="flex-1 min-h-0 flex flex-col pt-1 pb-1">
         {/* Top Bar: Either Edit/Reorder Toolbar OR Clean Page Dots */}
         {isReorderMode ? (
           <div className="px-3.5 pb-1.5 shrink-0">
@@ -1719,7 +1719,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       }}
                       role="button"
                       tabIndex={0}
-                      className={`relative w-full h-full min-h-[64px] flex flex-col items-center justify-center px-1.5 py-1.5 rounded-2xl border transition group cursor-pointer select-none ${
+                      className={`relative w-full h-full min-h-[64px] flex flex-col items-center justify-center px-1 py-1 rounded-2xl border transition group cursor-pointer select-none ${
                         isBeingDragged
                           ? isDay
                             ? 'opacity-45 scale-95 border-2 border-dashed border-[#158509] bg-[#eef9ea]'
@@ -1782,7 +1782,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                       )}
 
                       {feat.imageSrc ? (
-                        <div className="w-[44px] h-[44px] flex items-center justify-center group-hover:scale-105 transition mb-0.5 pointer-events-none">
+                        <div className="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 flex items-center justify-center group-hover:scale-105 transition mb-0.5 pointer-events-none">
                           <img
                             src={feat.imageSrc}
                             alt={feat.label}
@@ -1793,7 +1793,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                         </div>
                       ) : (
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center group-hover:scale-105 transition mb-1 pointer-events-none ${
+                          className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center group-hover:scale-105 transition mb-0.5 pointer-events-none ${
                             isHighlighted
                               ? isDay
                                 ? 'bg-[#158509] text-white'
@@ -1803,12 +1803,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                               : 'bg-emerald-950/90 border border-emerald-800/50 text-amber-300'
                           }`}
                         >
-                          <IconComp className="w-[21px] h-[21px]" />
+                          <IconComp className="w-[19px] h-[19px]" />
                         </div>
                       )}
 
                       <span
-                        className={`text-[11.5px] font-semibold transition text-center leading-tight line-clamp-2 pointer-events-none ${
+                        className={`text-[11px] font-semibold transition text-center leading-[1.15] line-clamp-2 min-h-[25px] flex items-center justify-center pointer-events-none ${
                           isDay
                             ? 'text-slate-800 group-hover:text-[#0c4703]'
                             : 'text-slate-100 group-hover:text-amber-300'

@@ -11,7 +11,6 @@ import {
   nativeTogglePlayPause,
 } from '../utils/nativeQuranAudio';
 import { webQuranPlayer } from '../utils/webQuranPlayer';
-import { MushafIcon } from './icons/IslamicFeatureIcons';
 
 interface QuranMiniPlayerProps {
   audioState: NativeQuranAudioState;
@@ -33,7 +32,7 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
 
   const handlePrev = () => {
     if (isNativeAudio) nativePrevAyah();
-    else webQuranPlayer.prevAyah();
+    else webQuranPlayer.switchSurah(-1);
   };
 
   const handleToggle = () => {
@@ -43,13 +42,18 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
 
   const handleNext = () => {
     if (isNativeAudio) nativeNextAyah();
-    else webQuranPlayer.nextAyah();
+    else webQuranPlayer.switchSurah(1);
   };
 
   const handleStop = () => {
     if (isNativeAudio) nativeStopAudio();
     else webQuranPlayer.stop();
   };
+
+  const progressPct =
+    audioState.totalAyahs > 0
+      ? Math.min(100, Math.max(4, Math.round((Math.max(1, audioState.ayahNumber) / audioState.totalAyahs) * 100)))
+      : 0;
 
   return (
     <div
@@ -61,15 +65,21 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
             }
           : undefined
       }
-      className={`shrink-0 px-3 ${showBottomSafePadding ? (isNative ? 'pt-1.5' : 'py-2') : 'pb-1.5 pt-1'} z-30`}
+      className={`shrink-0 w-full rounded-t-3xl border-t-2 overflow-hidden z-30 transition-colors ${
+        isDay
+          ? 'bg-[#f2fbef] border-[#9fd895] shadow-[0_-6px_20px_rgba(12,71,3,0.08)]'
+          : 'bg-slate-900/95 border-emerald-700/80 shadow-[0_-6px_22px_rgba(0,0,0,0.48)]'
+      }`}
     >
-      <div
-        className={`flex items-center justify-between gap-2 rounded-2xl border px-3 py-2 transition-colors ${
-          isDay
-            ? 'bg-white border-[#cde8c3] shadow-[0_4px_14px_rgba(12,71,3,0.08)]'
-            : 'bg-slate-900 border-emerald-800/70 shadow-[0_4px_16px_rgba(0,0,0,0.45)]'
-        }`}
-      >
+      {/* Thin embedded progress accent along top curve */}
+      <div className={`w-full h-[2.5px] ${isDay ? 'bg-[#d6efd0]' : 'bg-emerald-950'}`}>
+        <div
+          className={`h-full transition-all duration-300 ${isDay ? 'bg-[#158509]' : 'bg-amber-400'}`}
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-2 px-3.5 py-2">
         <button
           type="button"
           onClick={() => onOpenSurah(audioState.surahNumber, Math.max(1, audioState.ayahNumber))}
@@ -78,41 +88,48 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
           <div
             className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
               isDay
-                ? 'bg-[#eef9ea] text-[#158509] border border-[#c5e8bc]'
+                ? 'bg-[#e1f5da] text-[#158509] border border-[#b2e0a8]'
                 : 'bg-emerald-950 text-amber-400 border border-emerald-800/60'
             }`}
           >
-            <MushafIcon className="w-4 h-4" />
+            <img
+              src="/icons/home/quran.webp"
+              alt=""
+              className="w-5 h-5 object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
           </div>
           <div className="min-w-0">
             <p className={`text-xs font-bold truncate ${isDay ? 'text-[#0c4703]' : 'text-white'}`}>
               {audioState.surahNumber}. {audioState.surahName}
             </p>
-            <p className={`text-[10.5px] truncate tabular-nums ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
+            <p className={`text-[10.5px] truncate tabular-nums ${isDay ? 'text-slate-600' : 'text-slate-400'}`}>
               {audioState.ayahNumber}/{audioState.totalAyahs} · {audioState.reciterName}
             </p>
           </div>
         </button>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={handlePrev}
-            disabled={isNativeAudio ? audioState.surahNumber <= 1 : audioState.ayahNumber <= 1}
-            className={`p-2 rounded-xl transition active:scale-95 disabled:opacity-35 ${
+            disabled={audioState.surahNumber <= 1}
+            className={`p-2 rounded-xl border transition active:scale-95 disabled:opacity-35 ${
               isDay
-                ? 'bg-[#f1f5f9] text-[#0c4703] hover:bg-[#e1f5db]'
-                : 'bg-slate-800 text-slate-200 hover:text-white'
+                ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
+                : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
             }`}
-            aria-label={isNativeAudio ? 'Previous Surah' : 'Previous Ayah'}
+            aria-label="Previous Surah"
           >
-            <SkipBack className="w-3.5 h-3.5" />
+            <SkipBack className="w-3.5 h-3.5 fill-current" />
           </button>
 
           <button
             type="button"
             onClick={handleToggle}
-            className={`p-2 rounded-xl transition active:scale-95 ${
+            className={`p-2 rounded-xl transition active:scale-95 shadow-xs ${
               isDay
                 ? 'bg-[#158509] text-white'
                 : 'bg-amber-400 text-slate-950'
@@ -129,28 +146,24 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
           <button
             type="button"
             onClick={handleNext}
-            disabled={
-              isNativeAudio
-                ? audioState.surahNumber >= 114
-                : audioState.ayahNumber >= audioState.totalAyahs
-            }
-            className={`p-2 rounded-xl transition active:scale-95 disabled:opacity-35 ${
+            disabled={audioState.surahNumber >= 114}
+            className={`p-2 rounded-xl border transition active:scale-95 disabled:opacity-35 ${
               isDay
-                ? 'bg-[#f1f5f9] text-[#0c4703] hover:bg-[#e1f5db]'
-                : 'bg-slate-800 text-slate-200 hover:text-white'
+                ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
+                : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
             }`}
-            aria-label={isNativeAudio ? 'Next Surah' : 'Next Ayah'}
+            aria-label="Next Surah"
           >
-            <SkipForward className="w-3.5 h-3.5" />
+            <SkipForward className="w-3.5 h-3.5 fill-current" />
           </button>
 
           <button
             type="button"
             onClick={handleStop}
-            className={`p-2 rounded-xl transition active:scale-95 ${
+            className={`p-2 rounded-xl border transition active:scale-95 ${
               isDay
-                ? 'bg-[#f1f5f9] text-slate-500 hover:text-rose-600'
-                : 'bg-slate-800 text-slate-400 hover:text-rose-400'
+                ? 'bg-white border-[#d7e2dd] text-slate-500 hover:text-rose-600'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-rose-400'
             }`}
             aria-label="Stop"
           >
@@ -158,6 +171,15 @@ export const QuranMiniPlayer: React.FC<QuranMiniPlayerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Colored separator line dividing the docked Mini-Player and the Bottom Navigation Bar */}
+      {!showBottomSafePadding && (
+        <div
+          className={`mx-3.5 h-[1.5px] rounded-full ${
+            isDay ? 'bg-[#9bd691]' : 'bg-emerald-800/85'
+          }`}
+        />
+      )}
     </div>
   );
 };

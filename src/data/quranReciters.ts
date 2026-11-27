@@ -1,6 +1,6 @@
 import { AppLanguage } from '../types';
 
-export type QuranReciterId = 7 | 97 | 9 | 2 | 1 | 6;
+export type QuranReciterId = 7 | 97;
 
 export interface QuranReciterMeta {
   id: QuranReciterId;
@@ -47,53 +47,12 @@ export const QURAN_RECITERS: QuranReciterMeta[] = [
     arabicName: 'ياسر الدوسري',
     style: { uz_lat: 'Murattal', uz_cyr: 'Мураттал', ru: 'Муратталь', en: 'Murattal' },
     everyAyahFolder: 'Yasser_Ad-Dussary_128kbps',
-    mp3QuranBase: 'https://server11.mp3quran.net/yasser',
-    preferFullSurahStream: true,
-  },
-  {
-    id: 9,
-    storageKey: 'minshawi',
-    name: 'Mohamed Siddiq Al-Minshawi',
-    shortName: 'Al-Minshawi',
-    arabicName: 'محمد صديق المنشاوي',
-    style: { uz_lat: 'Murattal', uz_cyr: 'Мураттал', ru: 'Муратталь', en: 'Murattal' },
-    everyAyahFolder: 'Minshawy_Murattal_128kbps',
-    quranCdnFolder: 'Minshawi/Murattal/mp3',
-    islamicNetEdition: 'ar.minshawi',
-    mp3QuranBase: 'https://server10.mp3quran.net/minsh',
-  },
-  {
-    id: 2,
-    storageKey: 'abdulbaset_murattal',
-    name: 'AbdulBaset AbdulSamad',
-    shortName: 'AbdulBaset',
-    arabicName: 'عبد الباسط عبد الصمد',
-    style: { uz_lat: 'Murattal', uz_cyr: 'Мураттал', ru: 'Муратталь', en: 'Murattal' },
-    everyAyahFolder: 'Abdul_Basit_Murattal_192kbps',
-    quranCdnFolder: 'AbdulBaset/Murattal/mp3',
-    mp3QuranBase: 'https://server7.mp3quran.net/basit',
-  },
-  {
-    id: 1,
-    storageKey: 'abdulbaset_mujawwad',
-    name: 'AbdulBaset AbdulSamad',
-    shortName: 'AbdulBaset · Muj.',
-    arabicName: 'عبد الباسط عبد الصمد (مجود)',
-    style: { uz_lat: 'Mujawwad', uz_cyr: 'Мужаввад', ru: 'Муджаввад', en: 'Mujawwad' },
-    everyAyahFolder: 'Abdul_Basit_Mujawwad_128kbps',
-    quranCdnFolder: 'AbdulBaset/Mujawwad/mp3',
-    mp3QuranBase: 'https://server7.mp3quran.net/basit/Almusshaf-Al-Mojawwad',
-  },
-  {
-    id: 6,
-    storageKey: 'husary',
-    name: 'Mahmoud Khalil Al-Husary',
-    shortName: 'Al-Husary',
-    arabicName: 'محمود خليل الحصري',
-    style: { uz_lat: 'Murattal', uz_cyr: 'Мураттал', ru: 'Муратталь', en: 'Murattal' },
-    everyAyahFolder: 'Husary_128kbps',
-    islamicNetEdition: 'ar.husary',
-    mp3QuranBase: 'https://server13.mp3quran.net/husr',
+    mp3QuranBase: 'https://download.quranicaudio.com/quran/yasser_ad-dussary',
+    preferFullSurahStream: false,
+    extraFullMirrors: (_surahNum, pad3) => [
+      `https://download.quranicaudio.com/quran/yasser_ad-dussary/${pad3}.mp3`,
+      `https://server11.mp3quran.net/yasser/${pad3}.mp3`,
+    ],
   },
 ];
 
@@ -163,8 +122,11 @@ export function getReciterFullSurahAudioCandidates(
       if (!candidates.includes(mirror)) candidates.push(mirror);
     }
   }
-  if (qdcUrl && !candidates.includes(qdcUrl)) {
-    candidates.push(qdcUrl);
+  if (qdcUrl) {
+    const normalizedQdc = qdcUrl.replace(/([^:])\/\/+/g, '$1/');
+    if (!candidates.includes(normalizedQdc)) {
+      candidates.unshift(normalizedQdc);
+    }
   }
   return candidates;
 }

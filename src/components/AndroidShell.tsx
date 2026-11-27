@@ -690,16 +690,22 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
 
         {miniPlayer}
 
-        {/* Modern Elevated 4-Button Bottom Navigation Dock */}
+        {/* Modern Elevated 4-Button Bottom Navigation Dock (connects seamlessly under miniPlayer when active) */}
         {!shouldHideBottomNav && (
           <nav
             style={{
               paddingBottom:
                 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 10px)',
             }}
-            className={`shrink-0 rounded-t-3xl border-t px-3 pt-2.5 flex items-stretch gap-2 z-40 select-none transition-colors ${
+            className={`shrink-0 ${
+              miniPlayer ? 'pt-2' : 'rounded-t-3xl border-t pt-2.5'
+            } px-3 flex items-stretch gap-2 z-40 select-none transition-colors ${
               isDay
-                ? 'bg-white border-[#d6dfe8] shadow-[0_-8px_26px_rgba(12,71,3,0.09)]'
+                ? miniPlayer
+                  ? 'bg-white'
+                  : 'bg-white border-[#d6dfe8] shadow-[0_-8px_26px_rgba(12,71,3,0.09)]'
+                : miniPlayer
+                ? 'bg-slate-950'
                 : 'bg-slate-950 border-emerald-900/70 shadow-[0_-8px_26px_rgba(0,0,0,0.45)]'
             }`}
           >

@@ -438,11 +438,12 @@ function AppContent() {
         handleStartUpdate();
         return;
       }
-      if (hiddenAtRef.current !== null && Date.now() - hiddenAtRef.current >= 30_000) {
+      // Whenever the user closes/minimizes the app and reopens it, reset "Later" dismissal so the update popup shows again
+      if (hiddenAtRef.current !== null) {
         dismissedUpdateCodeRef.current = null;
       }
       hiddenAtRef.current = null;
-      void handleCheckUpdate(true);
+      void handleCheckUpdate(true, true);
     };
 
     const onVisibilityChange = () => {
@@ -464,7 +465,10 @@ function AppContent() {
     };
 
     const win = window as Window & { __nqOnAppResume?: () => void };
-    win.__nqOnAppResume = handleResumeCheck;
+    win.__nqOnAppResume = () => {
+      dismissedUpdateCodeRef.current = null;
+      handleResumeCheck();
+    };
 
     const livePollId = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -1488,33 +1492,7 @@ function AppContent() {
         onTabChange={navigateToTab}
         onBack={handleBack}
         onSelectLanguage={handleSelectLanguage}
-        topBanner={
-          updateRelease && !isUpdateModalOpen && !showOnboarding ? (
-            <button
-              type="button"
-              onClick={() => setIsUpdateModalOpen(true)}
-              className={`w-full shrink-0 px-3.5 py-2 flex items-center justify-between gap-2 text-left border-b transition active:opacity-90 z-30 ${
-                isDay
-                  ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#0c4703]'
-                  : 'bg-emerald-950/95 border-emerald-800/70 text-amber-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <ArrowDownCircle className="w-4 h-4 shrink-0 animate-bounce" />
-                <span className="text-xs font-bold truncate">
-                  {t.updates.newVersionAvailable} · v{updateRelease.versionName}
-                </span>
-              </div>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
-                  isDay ? 'bg-[#158509] text-white' : 'bg-amber-400 text-slate-950'
-                }`}
-              >
-                {t.updates.updateNowBtn}
-              </span>
-            </button>
-          ) : undefined
-        }
+        topBanner={undefined}
         miniPlayer={
           showGlobalDownloadBanner || showMiniPlayer || showRadioMiniPlayer ? (
             <>

@@ -74,6 +74,7 @@ import {
   nativeTogglePlayPause,
   nativeJumpToAyah,
   nativeSeekMs,
+  nativeStopAudio,
   isNativeAudioDownloaded,
   downloadNativeSurahAudio,
   removeNativeSurahAudio,
@@ -684,6 +685,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const prevTranslationRef = useRef<TranslationId>(selectedTranslation);
   const activeSurahRef = useRef<SurahDetail | null>(null);
   const loadedSurahIdRef = useRef<number | null>(null);
+  const lastNativeSurahRef = useRef<number>(0);
   const currentAyahRef = useRef<number | null>(null);
   const activeWordRef = useRef<number | null>(null);
   const lastScrolledAyahKeyRef = useRef<string | null>(null);
@@ -988,14 +990,20 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const applyNativeState = useCallback(
     (st: NativeQuranAudioState) => {
       const currentSurah = activeSurahRef.current;
+      const prevNativeSurah = lastNativeSurahRef.current;
+      lastNativeSurahRef.current = st.active && st.surahNumber > 0 ? st.surahNumber : 0;
+
       if (
         currentSurah &&
         st.active &&
         st.surahNumber > 0 &&
+        prevNativeSurah > 0 &&
+        st.surahNumber !== prevNativeSurah &&
         st.surahNumber !== currentSurah.number &&
+        !pendingAutoPlayRef.current &&
         loadedSurahIdRef.current === currentSurah.number
       ) {
-        // Notification / mini-player switched to a different Surah while reader is open: follow it
+        // Notification / mini-player actively switched to a different Surah while reader is open: follow it
         loadSurahRef.current(st.surahNumber, false, Math.max(1, st.ayahNumber || 1));
         return;
       }
@@ -1220,6 +1228,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
             surahName: loc.name,
             reciterName: reciter.name,
             reciterKey: reciter.storageKey,
+            everyAyahFolder: reciter.everyAyahFolder,
             mp3QuranBase: reciter.mp3QuranBase,
             preferFullSurah,
             ayahLabelPrefix: ayahPrefix,
@@ -1900,6 +1909,21 @@ export const QuranTab: React.FC<QuranTabProps> = ({
 
       if (wasPlaying && loadedSurahIdRef.current === curSurah.number && selectedReciterIdRef.current === nextId) {
         startPlayingFromAyah(resumeAyah, 0, nextId);
+      } else {
+        // Ensure any paused background service holding the previous reciter is cleared so it never resumes with the old Qori
+        if (hasNativeQuranAudioBridge()) {
+          const curNative = getNativeAudioState();
+          const nextRec = getReciterById(nextId);
+          if (curNative.active && curNative.reciterKey && curNative.reciterKey !== nextRec.storageKey) {
+            nativeStopAudio();
+          }
+        } else {
+          const curWeb = webQuranPlayer.getState();
+          const nextRec = getReciterById(nextId);
+          if (curWeb.active && curWeb.reciterKey && curWeb.reciterKey !== nextRec.storageKey) {
+            webQuranPlayer.stop();
+          }
+        }
       }
     },
     [isAudioPlaying, startPlayingFromAyah]

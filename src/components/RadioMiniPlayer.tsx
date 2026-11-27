@@ -40,15 +40,13 @@ export const RadioMiniPlayer: React.FC<RadioMiniPlayerProps> = ({
             }
           : undefined
       }
-      className={`shrink-0 px-3 ${showBottomSafePadding ? (isNative ? 'pt-1.5' : 'py-2') : 'pb-1.5 pt-1'} z-30`}
+      className={`shrink-0 w-full rounded-t-3xl border-t-2 overflow-hidden z-30 transition-colors ${
+        isDay
+          ? 'bg-[#f2fbef] border-[#9fd895] shadow-[0_-6px_20px_rgba(12,71,3,0.08)]'
+          : 'bg-slate-900/95 border-emerald-700/80 shadow-[0_-6px_22px_rgba(0,0,0,0.48)]'
+      }`}
     >
-      <div
-        className={`flex items-center justify-between gap-2 rounded-2xl border px-3 py-2 transition-colors ${
-          isDay
-            ? 'bg-white border-[#cde8c3] shadow-[0_4px_14px_rgba(12,71,3,0.08)]'
-            : 'bg-slate-900 border-emerald-800/70 shadow-[0_4px_16px_rgba(0,0,0,0.45)]'
-        }`}
-      >
+      <div className="flex items-center justify-between gap-2 px-3.5 py-2">
         <button
           type="button"
           onClick={onOpenRadio}
@@ -57,7 +55,7 @@ export const RadioMiniPlayer: React.FC<RadioMiniPlayerProps> = ({
           <div
             className={`relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
               isDay
-                ? 'bg-[#eef9ea] text-[#158509] border border-[#c5e8bc]'
+                ? 'bg-[#e1f5da] text-[#158509] border border-[#b2e0a8]'
                 : 'bg-emerald-950 text-amber-400 border border-emerald-800/60'
             }`}
           >
@@ -83,17 +81,17 @@ export const RadioMiniPlayer: React.FC<RadioMiniPlayerProps> = ({
                 {station.name[language]}
               </p>
             </div>
-            <p className={`text-[10.5px] truncate ${isDay ? 'text-slate-500' : 'text-slate-400'}`}>
+            <p className={`text-[10.5px] truncate ${isDay ? 'text-slate-600' : 'text-slate-400'}`}>
               {station.subtitle[language]}
             </p>
           </div>
         </button>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => quranRadioPlayer.togglePlayPause(station.id)}
-            className={`p-2 rounded-xl transition active:scale-95 ${
+            className={`p-2 rounded-xl transition active:scale-95 shadow-xs ${
               isDay ? 'bg-[#158509] text-white' : 'bg-amber-400 text-slate-950'
             }`}
             aria-label={isPlaying ? 'Pause Radio' : 'Play Radio'}
@@ -110,23 +108,23 @@ export const RadioMiniPlayer: React.FC<RadioMiniPlayerProps> = ({
           <button
             type="button"
             onClick={() => quranRadioPlayer.playRelative(1)}
-            className={`p-2 rounded-xl transition active:scale-95 ${
+            className={`p-2 rounded-xl border transition active:scale-95 ${
               isDay
-                ? 'bg-[#f1f5f9] text-[#0c4703] hover:bg-[#e1f5db]'
-                : 'bg-slate-800 text-slate-200 hover:text-white'
+                ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
+                : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
             }`}
             aria-label="Next Station"
           >
-            <SkipForward className="w-3.5 h-3.5" />
+            <SkipForward className="w-3.5 h-3.5 fill-current" />
           </button>
 
           <button
             type="button"
             onClick={() => quranRadioPlayer.stop()}
-            className={`p-2 rounded-xl transition active:scale-95 ${
+            className={`p-2 rounded-xl border transition active:scale-95 ${
               isDay
-                ? 'bg-[#f1f5f9] text-slate-500 hover:text-rose-600'
-                : 'bg-slate-800 text-slate-400 hover:text-rose-400'
+                ? 'bg-white border-[#d7e2dd] text-slate-500 hover:text-rose-600'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-rose-400'
             }`}
             aria-label="Stop Radio"
           >
@@ -134,6 +132,14 @@ export const RadioMiniPlayer: React.FC<RadioMiniPlayerProps> = ({
           </button>
         </div>
       </div>
+
+      {!showBottomSafePadding && (
+        <div
+          className={`mx-3.5 h-[1.5px] rounded-full ${
+            isDay ? 'bg-[#9bd691]' : 'bg-emerald-800/85'
+          }`}
+        />
+      )}
     </div>
   );
 };

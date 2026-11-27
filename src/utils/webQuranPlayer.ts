@@ -459,17 +459,38 @@ class WebQuranPlayer {
     else this.resume();
   }
 
+  public switchSurah(delta: -1 | 1): void {
+    if (!this.active || this.surahNumber <= 0) return;
+    const targetNum = Math.max(1, Math.min(114, this.surahNumber + delta));
+    if (targetNum === this.surahNumber) {
+      this.playAyahInternal(1, 0);
+      return;
+    }
+    const nextMeta = ALL_SURAHS.find((s) => s.number === targetNum);
+    if (!nextMeta) return;
+    const placeholderAyahs: Ayah[] = Array.from({ length: nextMeta.numberOfAyahs }, (_, idx) => ({
+      numberInSurah: idx + 1,
+      number: 0,
+      text: '',
+      translation: '',
+    }));
+    this.loadAndPlay({
+      surahNumber: nextMeta.number,
+      surahName: nextMeta.englishName,
+      reciterId: this.reciterId,
+      ayahs: placeholderAyahs,
+      startAyahNumber: 1,
+      offsetSec: 0,
+    });
+  }
+
   public nextAyah(): void {
     if (!this.active || this.ayahs.length === 0) return;
     const next = this.ayahs.find((a) => a.numberInSurah === this.currentAyahNumber + 1);
     if (next) {
       this.playAyahInternal(next.numberInSurah, 0);
     } else if (this.surahNumber < 114) {
-      // If at last ayah and user presses Next in mini-player, advance Surah using minimal placeholder
-      const nextMeta = ALL_SURAHS.find((s) => s.number === this.surahNumber + 1);
-      if (nextMeta) {
-        this.stop();
-      }
+      this.switchSurah(1);
     }
   }
 
