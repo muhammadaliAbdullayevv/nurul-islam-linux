@@ -467,6 +467,10 @@ public class QuranAudioService extends Service {
 
             fullSurahUrls.clear();
             File localFile = getLocalAudioFile(this, nextSurahNum, nextReciterKey);
+            if (!preferFull && "dussary".equals(nextReciterKey) && localFile.exists()) {
+                // Remove any legacy mp3quran full-Surah cached file so per-ayah Yasser Ad-Dussary always plays cleanly
+                localFile.delete();
+            }
             if (localFile.exists() && localFile.length() > 10_000L) {
                 fullSurahUrls.add(localFile.getAbsolutePath());
             }

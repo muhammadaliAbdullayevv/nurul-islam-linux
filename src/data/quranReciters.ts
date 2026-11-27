@@ -51,7 +51,6 @@ export const QURAN_RECITERS: QuranReciterMeta[] = [
     preferFullSurahStream: false,
     extraFullMirrors: (_surahNum, pad3) => [
       `https://download.quranicaudio.com/quran/yasser_ad-dussary/${pad3}.mp3`,
-      `https://server11.mp3quran.net/yasser/${pad3}.mp3`,
     ],
   },
 ];
