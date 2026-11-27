@@ -734,6 +734,9 @@ export const QuranTab: React.FC<QuranTabProps> = ({
   const [isMushafBookMode, setIsMushafBookMode] = useState<boolean>(false);
   const [bookPageIdx, setBookPageIdx] = useState<number>(0);
   const bookTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const bookMouseStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastBookWheelFlipTsRef = useRef<number>(0);
+  const lastBookMouseDragTsRef = useRef<number>(0);
   const bookPageScrollRef = useRef<HTMLDivElement | null>(null);
   const lastAutoTurnedAyahRef = useRef<string | null>(null);
   const [arabicFontSize, setArabicFontSize] = useState<number>(() =>
@@ -2273,6 +2276,46 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     [mushafBookPages.length]
   );
 
+  const stepMushafBookPage = useCallback(
+    (dir: 'next' | 'prev') => {
+      if (!activeSurahData || mushafBookPages.length === 0) return;
+      const totalLeaves = mushafBookPages.length;
+      const safeIdx = Math.max(0, Math.min(totalLeaves - 1, bookPageIdx));
+      if (dir === 'next') {
+        if (safeIdx < totalLeaves - 1) {
+          turnToBookPage(safeIdx + 1);
+        } else if (activeSurahData.number < 114) {
+          switchReaderSurah(1);
+        }
+      } else {
+        if (safeIdx > 0) {
+          turnToBookPage(safeIdx - 1);
+        } else if (activeSurahData.number > 1) {
+          switchReaderSurah(-1);
+        }
+      }
+    },
+    [activeSurahData, bookPageIdx, mushafBookPages.length, switchReaderSurah, turnToBookPage]
+  );
+
+  // Desktop keyboard support in Mushaf Book Mode: Left Arrow = Next Arabic Page (RTL), Right Arrow = Prev Arabic Page
+  useEffect(() => {
+    if (!isMushafBookMode || !activeSurahData) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        stepMushafBookPage('next');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        stepMushafBookPage('prev');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeSurahData, isMushafBookMode, stepMushafBookPage]);
+
   // Reset or jump to initial Ayah's book page when Surah changes or when entering Mushaf Book Mode
   useEffect(() => {
     if (!activeSurahData || mushafBookPages.length === 0) {
@@ -2983,6 +3026,9 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                 ? `${safeIdx + 1} / ${totalLeaves}`
                 : `${safeIdx + 1} / ${totalLeaves}`;
 
+            const canGoNextPage = safeIdx < totalLeaves - 1 || activeSurahData.number < 114;
+            const canGoPrevPage = safeIdx > 0 || activeSurahData.number > 1;
+
             return (
               <div
                 className="flex-1 min-h-0 flex flex-col select-none"
@@ -3004,22 +3050,45 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                     // Swiping to the RIGHT (dx > 0) pulls the next page from the left (1/3 -> 2/3 -> 3/3 -> Next Surah).
                     // Swiping to the LEFT (dx < 0) goes back to the previous page (3/3 -> 2/3 -> 1/3 -> Previous Surah).
                     if (dx > 0) {
-                      if (safeIdx < totalLeaves - 1) {
-                        turnToBookPage(safeIdx + 1);
-                      } else if (activeSurahData.number < 114) {
-                        switchReaderSurah(1);
-                      }
+                      stepMushafBookPage('next');
                     } else {
-                      if (safeIdx > 0) {
-                        turnToBookPage(safeIdx - 1);
-                      } else if (activeSurahData.number > 1) {
-                        switchReaderSurah(-1);
-                      }
+                      stepMushafBookPage('prev');
+                    }
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (e.button !== 0) return;
+                  bookMouseStartRef.current = { x: e.clientX, y: e.clientY };
+                }}
+                onMouseUp={(e) => {
+                  const start = bookMouseStartRef.current;
+                  bookMouseStartRef.current = null;
+                  if (!start) return;
+                  const dx = e.clientX - start.x;
+                  const dy = e.clientY - start.y;
+                  if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+                    lastBookMouseDragTsRef.current = Date.now();
+                    if (dx > 0) {
+                      stepMushafBookPage('next');
+                    } else {
+                      stepMushafBookPage('prev');
+                    }
+                  }
+                }}
+                onWheel={(e) => {
+                  if (Math.abs(e.deltaX) > 28 && Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.2) {
+                    const now = Date.now();
+                    if (now - lastBookWheelFlipTsRef.current < 380) return;
+                    lastBookWheelFlipTsRef.current = now;
+                    if (e.deltaX < 0) {
+                      stepMushafBookPage('next');
+                    } else {
+                      stepMushafBookPage('prev');
                     }
                   }
                 }}
               >
-                {/* Clean Full-Height Mushaf Frame (Zero 3D GPU tilt, works smoothly on all phones) */}
+                {/* Clean Full-Height Mushaf Frame (Zero 3D GPU tilt, works smoothly on all phones & desktops) */}
                 <div
                   key={`${activeSurahData.number}-leaf-${safeIdx}`}
                   className={`relative flex-1 min-h-0 flex flex-col rounded-2xl border-2 overflow-hidden transition-colors duration-150 ${
@@ -3028,17 +3097,61 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                       : 'bg-[#071a14] border-amber-500/65 shadow-md'
                   }`}
                 >
-                  {/* Top Bar: Page Indicator Placed Cleanly in the Exact Middle (No Arabic title on right, no Mushaf bet/juz text) */}
+                  {/* Top Bar: Centered Page Indicator with Clickable Desktop ‹ and › Chevrons */}
                   <div
-                    className={`shrink-0 px-3 py-1.5 border-b flex items-center justify-center ${
+                    className={`shrink-0 px-3 py-1 border-b flex items-center justify-center gap-2 ${
                       isDay
                         ? 'bg-[#f4ebd4]/90 border-[#dec484] text-[#5a4312]'
                         : 'bg-emerald-950/90 border-amber-500/40 text-amber-300'
                     }`}
                   >
-                    <span className="font-mono text-xs font-extrabold tracking-wider">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        stepMushafBookPage('next');
+                      }}
+                      disabled={!canGoNextPage}
+                      className={`p-0.5 rounded-md transition active:scale-90 disabled:opacity-30 ${
+                        isDay ? 'hover:bg-[#e8d7ae] text-[#5a4312]' : 'hover:bg-emerald-900 text-amber-300'
+                      }`}
+                      title={
+                        language === 'ru'
+                          ? 'Следующая страница (←)'
+                          : language === 'en'
+                          ? 'Next Page (←)'
+                          : 'Keyingi sahifa (←)'
+                      }
+                      aria-label="Next Page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <span className="font-mono text-xs font-extrabold tracking-wider min-w-[44px] text-center">
                       {centeredPageIndicator}
                     </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        stepMushafBookPage('prev');
+                      }}
+                      disabled={!canGoPrevPage}
+                      className={`p-0.5 rounded-md transition active:scale-90 disabled:opacity-30 ${
+                        isDay ? 'hover:bg-[#e8d7ae] text-[#5a4312]' : 'hover:bg-emerald-900 text-amber-300'
+                      }`}
+                      title={
+                        language === 'ru'
+                          ? 'Предыдущая страница (→)'
+                          : language === 'en'
+                          ? 'Previous Page (→)'
+                          : 'Oldingi sahifa (→)'
+                      }
+                      aria-label="Previous Page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
 
                   {/* Full-Bleed Inner Ornate Mushaf Page Body */}
@@ -3093,7 +3206,10 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                             <span
                               key={ayah.numberInSurah}
                               id={`mushaf-ayah-${ayah.numberInSurah}`}
-                              onClick={() => handlePlayAyahCard(ayah.numberInSurah)}
+                              onClick={() => {
+                                if (Date.now() - lastBookMouseDragTsRef.current < 180) return;
+                                handlePlayAyahCard(ayah.numberInSurah);
+                              }}
                               className="inline cursor-pointer"
                             >
                               {wordsList.map((word, wIdx) => {
@@ -3105,6 +3221,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                                     <span
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        if (Date.now() - lastBookMouseDragTsRef.current < 180) return;
                                         handlePlayWord(ayah.numberInSurah, word.position);
                                       }}
                                       className={`rounded-md px-1 -mx-1 py-0.5 transition-colors duration-100 ${
