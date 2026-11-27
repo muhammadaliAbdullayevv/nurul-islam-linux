@@ -65,6 +65,9 @@ interface NativePrayerJsBridge {
   syncData: (payloadJson: string) => void;
   hasNotificationPermission: () => boolean;
   requestNotificationPermission: () => void;
+  hasLocationPermission?: () => boolean;
+  requestLocationPermission?: () => void;
+  getNativeLocationJson?: () => string;
   sendTestNotification: (prayerName: string, timeStr: string, city: string) => void;
   requestPinWidget: () => boolean;
   requestPinWidgetByKind?: (kind: string) => boolean;
@@ -372,4 +375,84 @@ export function launchNativeInAppReview(): void {
       // ignore
     }
   }
+}
+
+export function checkNativeLocationPermission(): boolean {
+  const bridge = getNativeBridge();
+  if (bridge && typeof bridge.hasLocationPermission === 'function') {
+    try {
+      return Boolean(bridge.hasLocationPermission());
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function requestNativeLocationPermission(): Promise<boolean> {
+  const bridge = getNativeBridge();
+  if (bridge && typeof bridge.requestLocationPermission === 'function') {
+    if (checkNativeLocationPermission()) {
+      return Promise.resolve(true);
+    }
+    return new Promise<boolean>((resolve) => {
+      const win = window as Window & { __nqOnLocationPermission?: (ok: boolean) => void };
+      const safetyTimer = window.setTimeout(() => {
+        delete win.__nqOnLocationPermission;
+        resolve(checkNativeLocationPermission());
+      }, 60_000);
+      win.__nqOnLocationPermission = (ok: boolean) => {
+        window.clearTimeout(safetyTimer);
+        delete win.__nqOnLocationPermission;
+        resolve(Boolean(ok));
+      };
+      try {
+        bridge.requestLocationPermission!();
+      } catch {
+        window.clearTimeout(safetyTimer);
+        delete win.__nqOnLocationPermission;
+        resolve(false);
+      }
+    });
+  }
+  return Promise.resolve(true);
+}
+
+export function getNativeFastLocation(): {
+  ok: boolean;
+  lat?: number;
+  lng?: number;
+  acc?: number;
+  ageMs?: number;
+} {
+  const bridge = getNativeBridge();
+  if (bridge && typeof bridge.getNativeLocationJson === 'function') {
+    try {
+      const parsed = JSON.parse(bridge.getNativeLocationJson()) as {
+        ok?: boolean;
+        lat?: number;
+        lng?: number;
+        acc?: number;
+        ageMs?: number;
+      };
+      if (
+        parsed?.ok &&
+        typeof parsed.lat === 'number' &&
+        typeof parsed.lng === 'number' &&
+        Number.isFinite(parsed.lat) &&
+        Number.isFinite(parsed.lng)
+      ) {
+        return {
+          ok: true,
+          lat: parsed.lat,
+          lng: parsed.lng,
+          acc: parsed.acc,
+          ageMs: parsed.ageMs,
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return { ok: false };
 }

@@ -98,7 +98,7 @@ export function getLocalAppVersion(): LocalAppVersion {
       return { versionCode: dv.versionCode, versionName: dv.versionName };
     }
   }
-  return { versionCode: 102, versionName: '1.8.82' };
+  return { versionCode: 103, versionName: '1.8.83' };
 }
 
 const FRIENDLY_UPDATE_MESSAGES: Record<AppLanguage, string> = {
@@ -165,12 +165,8 @@ export async function checkForAppUpdate(): Promise<{
               available?: boolean;
               versionCode?: number;
             };
-            if (st.checked) {
-              if (st.available && typeof st.versionCode === 'number' && st.versionCode > local.versionCode) {
-                effectiveRemoteCode = st.versionCode;
-              } else if (!st.available && playConfirmedCode <= local.versionCode) {
-                effectiveRemoteCode = local.versionCode;
-              }
+            if (st.checked && st.available && typeof st.versionCode === 'number' && st.versionCode > local.versionCode) {
+              effectiveRemoteCode = Math.max(playConfirmedCode, st.versionCode);
             }
           } catch {
             // use playConfirmedCode fallback

@@ -47,12 +47,15 @@ import {
 import {
   DEFAULT_ALERT_PREFS,
   PrayerAlertPrefs,
+  checkNativeLocationPermission,
   checkNativeNotificationPermission,
+  getNativeFastLocation,
   isNativeAndroidBridgeAvailable,
   launchNativeInAppReview,
   loadAlertPrefs,
   playPrayerChimePreview,
   openExternalUrl,
+  requestNativeLocationPermission,
   requestNativeNotificationPermission,
   saveAlertPrefs,
   syncNativeAlertsAndWidget
@@ -1136,41 +1139,94 @@ function AppContent() {
 
     const isDesktopShell =
       typeof window !== 'undefined' &&
-      new URLSearchParams(window.location.search).get('desktop') === '1';
+      (new URLSearchParams(window.location.search).get('desktop') === '1' ||
+        Boolean((window as Window & { __NQ_LINUX_DESKTOP__?: boolean }).__NQ_LINUX_DESKTOP__));
+    const isNativeMobile = Capacitor.isNativePlatform() || isNativeAndroidBridgeAvailable();
 
     if (isDesktopShell || !('geolocation' in navigator)) {
       return tryIpGeolocationFallback();
     }
 
-    return new Promise((resolve) => {
-      let settled = false;
-      const fallbackTimer = window.setTimeout(async () => {
-        if (settled) return;
-        settled = true;
-        const fallbackRes = await tryIpGeolocationFallback();
-        resolve(fallbackRes);
-      }, 2500);
+    const requestBrowserOrWebviewGps = (highAccuracy: boolean, timeoutMs: number, maxAgeMs: number) =>
+      new Promise<{ ok: boolean; lat?: number; lng?: number }>((resolve) => {
+        let settled = false;
+        const guardTimer = window.setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve({ ok: false });
+        }, timeoutMs + 500);
 
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          if (settled) return;
-          settled = true;
-          window.clearTimeout(fallbackTimer);
-          const { latitude, longitude } = pos.coords;
-          const res = await applyCoords(latitude, longitude);
-          resolve(res);
-        },
-        async (err) => {
-          if (settled) return;
-          settled = true;
-          window.clearTimeout(fallbackTimer);
-          console.warn('Hardware GPS unavailable, using IP geolocation fallback:', err);
-          const fallbackRes = await tryIpGeolocationFallback();
-          resolve(fallbackRes);
-        },
-        { enableHighAccuracy: true, timeout: 2400, maximumAge: 60000 }
-      );
-    });
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(guardTimer);
+            resolve({
+              ok: true,
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            });
+          },
+          () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(guardTimer);
+            resolve({ ok: false });
+          },
+          { enableHighAccuracy: highAccuracy, timeout: timeoutMs, maximumAge: maxAgeMs }
+        );
+      });
+
+    return (async (): Promise<{ ok: boolean }> => {
+      // 1. On native Android, wait for the user to respond to the OS Location Permission prompt BEFORE starting any GPS timeout!
+      if (isNativeAndroidBridgeAvailable()) {
+        if (!checkNativeLocationPermission()) {
+          const granted = await requestNativeLocationPermission();
+          if (!granted) {
+            return { ok: false };
+          }
+        }
+
+        // 2. Check Android's native LocationManager (fused / GPS / cell-tower / Wi-Fi) for an instant sub-second fix
+        const fastLoc = getNativeFastLocation();
+        if (
+          fastLoc.ok &&
+          typeof fastLoc.lat === 'number' &&
+          typeof fastLoc.lng === 'number' &&
+          (fastLoc.ageMs ?? 0) <= 30 * 60 * 1000
+        ) {
+          const applied = await applyCoords(fastLoc.lat, fastLoc.lng);
+          // Also trigger a silent high-accuracy satellite refinement in the background if cached fix is older than 2 min
+          if ((fastLoc.ageMs ?? 0) > 2 * 60 * 1000 || (fastLoc.acc ?? 0) > 400) {
+            void requestBrowserOrWebviewGps(true, 9000, 30000).then((fresh) => {
+              if (fresh.ok && typeof fresh.lat === 'number' && typeof fresh.lng === 'number') {
+                void applyCoords(fresh.lat, fresh.lng);
+              }
+            });
+          }
+          return applied;
+        }
+      }
+
+      // 3. Try high-accuracy satellite GPS (10s timeout so cold GPS after permission grant has plenty of time)
+      const highAcc = await requestBrowserOrWebviewGps(true, 10000, 60000);
+      if (highAcc.ok && typeof highAcc.lat === 'number' && typeof highAcc.lng === 'number') {
+        return await applyCoords(highAcc.lat, highAcc.lng);
+      }
+
+      // 4. Indoor fallback: try OS coarse / cell-tower / Wi-Fi geolocation (accurately detects regional cities like Jizzakh indoors)
+      const coarseAcc = await requestBrowserOrWebviewGps(false, 8000, 300000);
+      if (coarseAcc.ok && typeof coarseAcc.lat === 'number' && typeof coarseAcc.lng === 'number') {
+        return await applyCoords(coarseAcc.lat, coarseAcc.lng);
+      }
+
+      // 5. Never fall back to IP geolocation on native Android phones (Uzbekistan mobile carriers route all regional 4G/5G IPs through Tashkent / Chilonzor!)
+      if (isNativeMobile) {
+        return { ok: false };
+      }
+
+      return await tryIpGeolocationFallback();
+    })();
   };
 
   const handleOpenSurah = useCallback(

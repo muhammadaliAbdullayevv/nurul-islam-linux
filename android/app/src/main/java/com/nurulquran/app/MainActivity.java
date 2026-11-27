@@ -14,6 +14,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -358,6 +360,26 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
             if (granted) {
                 PrayerAlarmScheduler.rescheduleAll(this);
             }
+        } else if (requestCode == 1003) {
+            boolean granted = false;
+            if (grantResults != null) {
+                for (int res : grantResults) {
+                    if (res == PackageManager.PERMISSION_GRANTED) {
+                        granted = true;
+                        break;
+                    }
+                }
+            }
+            final boolean finalGranted = granted;
+            final WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+            if (webView != null) {
+                webView.post(() ->
+                    webView.evaluateJavascript(
+                        "window.__nqOnLocationPermission && window.__nqOnLocationPermission(" + finalGranted + ")",
+                        null
+                    )
+                );
+            }
         }
     }
 
@@ -390,6 +412,79 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
                         1001
                     )
                 );
+            }
+        }
+
+        @JavascriptInterface
+        public boolean hasLocationPermission() {
+            return ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @JavascriptInterface
+        public void requestLocationPermission() {
+            runOnUiThread(() ->
+                ActivityCompat.requestPermissions(
+                    MainActivity.this,
+                    new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    },
+                    1003
+                )
+            );
+        }
+
+        @JavascriptInterface
+        public String getNativeLocationJson() {
+            try {
+                if (!hasLocationPermission()) {
+                    return "{\"ok\":false,\"reason\":\"no_permission\"}";
+                }
+                LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if (lm == null) {
+                    return "{\"ok\":false,\"reason\":\"no_manager\"}";
+                }
+                String[] providers = new String[]{
+                    "fused",
+                    LocationManager.GPS_PROVIDER,
+                    LocationManager.NETWORK_PROVIDER,
+                    LocationManager.PASSIVE_PROVIDER
+                };
+                Location best = null;
+                long now = System.currentTimeMillis();
+                for (String p : providers) {
+                    try {
+                        Location loc = lm.getLastKnownLocation(p);
+                        if (loc == null) continue;
+                        double lat = loc.getLatitude();
+                        double lng = loc.getLongitude();
+                        if (lat == 0.0 && lng == 0.0) continue;
+                        if (best == null) {
+                            best = loc;
+                        } else {
+                            long ageLoc = Math.max(0L, now - loc.getTime());
+                            long ageBest = Math.max(0L, now - best.getTime());
+                            // Prefer location fresher by at least 2 minutes, or better accuracy
+                            if (ageLoc + 120_000L < ageBest || (Math.abs(ageLoc - ageBest) <= 120_000L && loc.getAccuracy() < best.getAccuracy())) {
+                                best = loc;
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (best != null) {
+                    long ageMs = Math.max(0L, now - best.getTime());
+                    return "{\"ok\":true,\"lat\":" + best.getLatitude()
+                        + ",\"lng\":" + best.getLongitude()
+                        + ",\"acc\":" + best.getAccuracy()
+                        + ",\"ageMs\":" + ageMs + "}";
+                }
+                return "{\"ok\":false,\"reason\":\"no_last_known\"}";
+            } catch (Exception e) {
+                return "{\"ok\":false,\"reason\":\"error\"}";
             }
         }
 
