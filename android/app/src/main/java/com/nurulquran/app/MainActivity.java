@@ -715,8 +715,16 @@ public class MainActivity extends BridgeActivity implements SensorEventListener 
         }
 
         @JavascriptInterface
-        public String getPlayStoreUpdateStateJson() {
+        public void requestFreshPlayStoreUpdateCheck() {
+            playStoreCheckCompleted = false;
             refreshPlayStoreUpdateState();
+        }
+
+        @JavascriptInterface
+        public String getPlayStoreUpdateStateJson() {
+            if (!playStoreCheckCompleted) {
+                refreshPlayStoreUpdateState();
+            }
             return "{\"checked\":" + playStoreCheckCompleted
                 + ",\"available\":" + playStoreUpdateAvailable
                 + ",\"versionCode\":" + playStoreAvailableVersionCode + "}";

@@ -35,6 +35,7 @@ export type UpdateDownloadStatus =
 interface UpdaterJsBridge {
   getAppVersionJson: () => string;
   isDirectOtaEnabled?: () => boolean;
+  requestFreshPlayStoreUpdateCheck?: () => void;
   getPlayStoreUpdateStateJson?: () => string;
   startPlayStoreInAppUpdate?: () => void;
   canRequestPackageInstalls: () => boolean;
@@ -160,16 +161,30 @@ export async function checkForAppUpdate(): Promise<{
         const bridge = getUpdaterBridge();
         if (bridge && typeof bridge.getPlayStoreUpdateStateJson === 'function') {
           try {
-            const st = JSON.parse(bridge.getPlayStoreUpdateStateJson()) as {
-              checked?: boolean;
-              available?: boolean;
-              versionCode?: number;
-            };
-            if (st.checked && st.available && typeof st.versionCode === 'number' && st.versionCode > local.versionCode) {
-              effectiveRemoteCode = Math.max(playConfirmedCode, st.versionCode);
+            if (typeof bridge.requestFreshPlayStoreUpdateCheck === 'function') {
+              bridge.requestFreshPlayStoreUpdateCheck();
+            }
+            let st: { checked?: boolean; available?: boolean; versionCode?: number } = {};
+            for (let attempt = 0; attempt < 8; attempt++) {
+              st = JSON.parse(bridge.getPlayStoreUpdateStateJson()) as {
+                checked?: boolean;
+                available?: boolean;
+                versionCode?: number;
+              };
+              if (st.checked) break;
+              await new Promise((r) => window.setTimeout(r, 150));
+            }
+            if (st.checked) {
+              if (st.available && typeof st.versionCode === 'number' && st.versionCode > local.versionCode) {
+                // Google Play Store confirms a newer AAB is uploaded, approved, and live for this user
+                effectiveRemoteCode = st.versionCode;
+              } else {
+                // Google Play Store confirms NO newer AAB is live yet (not uploaded or still in review)
+                effectiveRemoteCode = local.versionCode;
+              }
             }
           } catch {
-            // use playConfirmedCode fallback
+            // use playConfirmedCode fallback only if native bridge throws
           }
         }
       }
