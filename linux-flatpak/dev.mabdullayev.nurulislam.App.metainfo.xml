@@ -58,6 +58,11 @@
   </provides>
 
   <releases>
+    <release version="1.8.87" date="2026-11-28">
+      <description>
+        <p>Restored deep Islamic green Surah top header, made Mushaf reader page full-width with dynamic font-scaled pagination so bottom lines are never clipped, attached combining Uthmani waqf marks cleanly above letters, synchronized scroll position when returning from Mushaf Mode to Translation Mode, and added full 4-sided borders to bottom audio players.</p>
+      </description>
+    </release>
     <release version="1.8.86" date="2026-11-28">
       <description>
         <p>Added desktop keyboard arrow navigation, mouse click-and-drag page turning, touchpad two-finger horizontal swipe, and clickable top page indicator chevrons for Full-Screen Mushaf Reader Mode.</p>

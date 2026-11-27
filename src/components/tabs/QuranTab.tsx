@@ -219,6 +219,16 @@ function findWordInTimingAtAbsMs(timing: AyahVerseTiming, absMs: number): number
 }
 
 const STANDALONE_QURAN_MARK_RE = /^[\u06D6-\u06ED\u06DD\u06DE\u06E9]+$/;
+const COMBINING_WAQF_SPACE_RE = /\s+([\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED])/g;
+
+/**
+ * Normalizes a single Uthmani word token so combining Qur'anic waqf/pause marks (ۚ, ۗ, ۖ, etc.)
+ * attach directly above the preceding letter instead of sitting on a space character (which causes
+ * Amiri to drop ۚ onto the baseline as a detached letter ج on the margin).
+ */
+function normalizeUthmaniWordText(text: string): string {
+  return text.replace(COMBINING_WAQF_SPACE_RE, '$1');
+}
 
 /**
  * Splits an Ayah into Uthmani word tokens while merging standalone pause/waqf signs (ۚ, ۖ, ۞, etc.)
@@ -226,7 +236,10 @@ const STANDALONE_QURAN_MARK_RE = /^[\u06D6-\u06ED\u06DD\u06DE\u06E9]+$/;
  */
 function getAyahWordsList(ayah: Ayah): AyahWord[] {
   if (ayah.words && ayah.words.length > 0) {
-    return ayah.words;
+    return ayah.words.map((w) => ({
+      position: w.position,
+      text: normalizeUthmaniWordText(w.text),
+    }));
   }
   const rawTokens = ayah.text.trim().split(/\s+/).filter(Boolean);
   const merged: string[] = [];
@@ -238,12 +251,12 @@ function getAyahWordsList(ayah: Ayah): AyahWord[] {
       continue;
     }
     if (STANDALONE_QURAN_MARK_RE.test(tok) && merged.length > 0) {
-      merged[merged.length - 1] = `${merged[merged.length - 1]}\u00A0${tok}`;
+      merged[merged.length - 1] = normalizeUthmaniWordText(`${merged[merged.length - 1]} ${tok}`);
       continue;
     }
     const finalTok = pendingPrefix ? `${pendingPrefix}\u00A0${tok}` : tok;
     pendingPrefix = '';
-    merged.push(finalTok);
+    merged.push(normalizeUthmaniWordText(finalTok));
   }
   if (pendingPrefix && merged.length > 0) {
     merged[0] = `${pendingPrefix}\u00A0${merged[0]}`;
@@ -873,7 +886,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       cancelAnimationFrame(raf2);
       window.clearTimeout(settleTimer);
     };
-  }, [activeSurahData, isLoadingSurah, visibleAyahCount, highlightedAyah]);
+  }, [activeSurahData, isLoadingSurah, visibleAyahCount, highlightedAyah, isMushafBookMode]);
 
   useEffect(() => {
     activeSurahRef.current = activeSurahData;
@@ -903,13 +916,20 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     };
   }, [stopRaf]);
 
-  // Smoothly auto-scroll the scrollable Surah container to keep the active ayah centered (once per ayah transition)
+  // Smoothly auto-scroll the scrollable Surah container to keep the active ayah centered
+  // (both during recitation AND when returning from Mushaf Book Mode back to the Translation list)
   useEffect(() => {
-    if (currentPlayingAyah === null || !activeSurahData?.number) {
-      lastScrolledAyahKeyRef.current = null;
+    if (isMushafBookMode || currentPlayingAyah === null || !activeSurahData?.number) {
+      if (isMushafBookMode) {
+        lastScrolledAyahKeyRef.current = null;
+      }
       return;
     }
-    const scrollKey = `${activeSurahData.number}:${currentPlayingAyah}`;
+    if (visibleAyahCount < currentPlayingAyah + 5) {
+      setVisibleAyahCount(Math.min(activeSurahData.ayahs.length, currentPlayingAyah + 20));
+      return;
+    }
+    const scrollKey = `${activeSurahData.number}:${currentPlayingAyah}:list`;
     if (lastScrolledAyahKeyRef.current === scrollKey) return;
 
     const rafId = requestAnimationFrame(() => {
@@ -928,7 +948,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       }
     });
     return () => cancelAnimationFrame(rafId);
-  }, [currentPlayingAyah, visibleAyahCount, activeSurahData?.number]);
+  }, [currentPlayingAyah, visibleAyahCount, activeSurahData?.number, activeSurahData?.ayahs.length, isMushafBookMode]);
 
   const resolveWordForAyahTime = useCallback(
     (
@@ -2204,11 +2224,8 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     }
   }, []);
 
-  const toggleMushafBookMode = useCallback(() => {
-    setIsMushafBookMode((prev) => !prev);
-  }, []);
-
-  // Build balanced Mushaf Book Pages for the active Surah (respecting real Madinah Mushaf page breaks + comfortable word density)
+  // Build balanced, screen-fitting Mushaf Book Pages for the active Surah
+  // (scaled dynamically by arabicFontSize so every page fits cleanly inside the frame without slicing bottom lines in half)
   const mushafBookPages = React.useMemo(() => {
     if (!activeSurahData || activeSurahData.ayahs.length === 0) return [];
     const pages: Array<{
@@ -2219,7 +2236,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       isFirstPage: boolean;
     }> = [];
 
-    const MAX_WORDS_PER_BOOK_LEAF = 82;
+    const fontScale = Math.pow(DEFAULT_ARABIC_FONT_SIZE / Math.max(20, arabicFontSize), 1.42);
+    const maxWordsNormalLeaf = Math.max(16, Math.min(64, Math.round(45 * fontScale)));
+    const maxWordsFirstLeaf = activeSurahData.bismillahPre
+      ? Math.max(14, Math.round(maxWordsNormalLeaf * 0.84))
+      : maxWordsNormalLeaf;
+
     let currentBucket: Ayah[] = [];
     let currentWords = 0;
     let currentMushafPage = activeSurahData.ayahs[0]?.page || activeSurahData.page || 1;
@@ -2242,13 +2264,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       const ayahWordsCount = getAyahWordsList(ayah).length;
       const ayahMushafPage = ayah.page || currentMushafPage;
       const ayahJuz = ayah.juz || currentJuz;
+      const leafBudget = pages.length === 0 ? maxWordsFirstLeaf : maxWordsNormalLeaf;
 
-      const crossedMushafPage =
-        currentBucket.length > 0 && ayah.page && ayah.page !== currentMushafPage;
       const exceededLeafWords =
-        currentBucket.length > 0 && currentWords + ayahWordsCount > MAX_WORDS_PER_BOOK_LEAF;
+        currentBucket.length > 0 && currentWords + ayahWordsCount > leafBudget;
 
-      if (crossedMushafPage || exceededLeafWords) {
+      if (exceededLeafWords) {
         flushBucket();
       }
       if (currentBucket.length === 0) {
@@ -2260,7 +2281,26 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     }
     flushBucket();
     return pages;
-  }, [activeSurahData]);
+  }, [activeSurahData, arabicFontSize]);
+
+  const exitMushafBookModeToTranslation = useCallback(() => {
+    const resumeAyah =
+      currentPlayingAyah ??
+      mushafBookPages[Math.max(0, Math.min(mushafBookPages.length - 1, bookPageIdx))]?.ayahs[0]
+        ?.numberInSurah ??
+      1;
+    targetScrollAyahRef.current = resumeAyah;
+    lastScrolledAyahKeyRef.current = null;
+    setIsMushafBookMode(false);
+  }, [bookPageIdx, currentPlayingAyah, mushafBookPages]);
+
+  const toggleMushafBookMode = useCallback(() => {
+    if (isMushafBookMode) {
+      exitMushafBookModeToTranslation();
+    } else {
+      setIsMushafBookMode(true);
+    }
+  }, [exitMushafBookModeToTranslation, isMushafBookMode]);
 
   const turnToBookPage = useCallback(
     (targetIdx: number) => {
@@ -2382,7 +2422,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
       }
       if (isMushafBookMode) {
         e.preventDefault();
-        setIsMushafBookMode(false);
+        exitMushafBookModeToTranslation();
         return;
       }
       if (activeSurahNumber) {
@@ -2392,7 +2432,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
     };
     window.addEventListener('nq:android-back', handleBack);
     return () => window.removeEventListener('nq:android-back', handleBack);
-  }, [activeSurahNumber, closeSurahDetail, isFontSheetOpen, isMushafBookMode, isReciterPickerOpen]);
+  }, [activeSurahNumber, closeSurahDetail, exitMushafBookModeToTranslation, isFontSheetOpen, isMushafBookMode, isReciterPickerOpen]);
 
   // Hide the bottom navigation dock synchronously before paint while inside the Surah reader view
   useLayoutEffect(() => {
@@ -2684,39 +2724,36 @@ export const QuranTab: React.FC<QuranTabProps> = ({
           };
 
     return (
-      <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-        {/* Clean Single-Row Surah Top Header: Back | Title | Mushaf Book + Font Size (Aa) + Download */}
+      <div className="flex-1 min-h-0 h-full -mx-3.5 px-3.5 flex flex-col overflow-hidden">
+        {/* Rich Deep Islamic Green Single-Row Surah Top Header: Back | Title | Mushaf Book + Font Size (Aa) + Download */}
         <div
-          className={`shrink-0 z-20 -mx-3.5 px-3.5 py-2 border-b flex items-center justify-between gap-1.5 ${
+          style={{
+            paddingTop: isNative
+              ? 'calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 16px)'
+              : 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          }}
+          className={`shrink-0 z-20 -mx-3.5 px-3.5 pb-2.5 border-b flex items-center justify-between gap-1.5 ${
             isDay
-              ? 'bg-[#ecf1f5] border-[#d6dfe8] text-slate-900'
-              : 'bg-slate-950 border-emerald-900/50 text-white'
+              ? 'bg-[#0c4703] border-[#1a6810] text-white shadow-sm'
+              : 'bg-[#051f05] border-emerald-950 text-white'
           }`}
         >
           <button
             type="button"
             onClick={() => {
               if (isMushafBookMode) {
-                setIsMushafBookMode(false);
+                exitMushafBookModeToTranslation();
               } else {
                 closeSurahDetail();
               }
             }}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition active:scale-95 shrink-0 ${
-              isDay
-                ? 'bg-white border-[#dde3ea] text-[#0c4703] hover:bg-[#eef9ea]'
-                : 'bg-slate-900 border-emerald-900/60 text-emerald-300 hover:text-white'
-            }`}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/14 hover:bg-white/22 border border-white/20 text-white text-xs font-semibold transition active:scale-95 shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{backButtonLabel || t.quran.backToSurahs}</span>
           </button>
 
-          <h1
-            className={`font-display text-[15px] font-bold tracking-tight truncate text-center flex-1 min-w-0 ${
-              isDay ? 'text-[#0c4703]' : 'text-white'
-            }`}
-          >
+          <h1 className="font-display text-[15px] font-bold tracking-tight truncate text-center flex-1 min-w-0 text-white">
             {activeSurahData.number}. {locActiveSurah.name}
           </h1>
 
@@ -2727,12 +2764,8 @@ export const QuranTab: React.FC<QuranTabProps> = ({
               onClick={toggleMushafBookMode}
               className={`px-2.5 py-1.5 rounded-xl border text-xs font-extrabold transition active:scale-95 flex items-center gap-1 shrink-0 ${
                 isMushafBookMode
-                  ? isDay
-                    ? 'bg-[#158509] border-[#0c4703] text-white nq-keep-dark shadow-xs'
-                    : 'bg-amber-400 border-amber-300 text-slate-950 shadow-xs'
-                  : isDay
-                  ? 'bg-white border-[#dde3ea] text-[#0c4703] hover:bg-[#eef9ea]'
-                  : 'bg-slate-900 border-emerald-900/60 text-amber-300 hover:text-white'
+                  ? 'bg-amber-400 border-amber-300 text-slate-950 shadow-xs'
+                  : 'bg-white/14 hover:bg-white/22 border-white/20 text-white'
               }`}
               title={
                 language === 'ru'
@@ -2754,12 +2787,8 @@ export const QuranTab: React.FC<QuranTabProps> = ({
               onClick={() => setIsFontSheetOpen((prev) => !prev)}
               className={`px-2.5 py-1.5 rounded-xl border text-xs font-extrabold transition active:scale-95 flex items-center gap-1 shrink-0 ${
                 isFontSheetOpen
-                  ? isDay
-                    ? 'bg-[#158509] border-[#0c4703] text-white nq-keep-dark'
-                    : 'bg-amber-400 border-amber-300 text-slate-950'
-                  : isDay
-                  ? 'bg-white border-[#dde3ea] text-[#0c4703] hover:bg-[#eef9ea]'
-                  : 'bg-slate-900 border-emerald-900/60 text-amber-300 hover:text-white'
+                  ? 'bg-amber-400 border-amber-300 text-slate-950 shadow-xs'
+                  : 'bg-white/14 hover:bg-white/22 border-white/20 text-white'
               }`}
               title={fontCopy.btnTitle}
               aria-label={fontCopy.btnTitle}
@@ -2774,16 +2803,10 @@ export const QuranTab: React.FC<QuranTabProps> = ({
               disabled={isLoadingSurah || activeSurahData.ayahs.length === 0 || isDlActive}
               className={`px-2 py-1.5 rounded-xl border transition active:scale-95 disabled:opacity-90 flex items-center gap-1 shrink-0 ${
                 isDlActive
-                  ? isDay
-                    ? 'bg-[#eef9ea] border-[#c5e8bc] text-[#158509]'
-                    : 'bg-emerald-950 border-emerald-700 text-amber-300'
+                  ? 'bg-amber-400/20 border-amber-300/60 text-amber-300'
                   : isOfflineReady
-                  ? isDay
-                    ? 'bg-[#158509] border-[#0c4703] text-white nq-keep-dark'
-                    : 'bg-emerald-800 border-emerald-600 text-white'
-                  : isDay
-                  ? 'bg-white border-[#dde3ea] text-slate-600 hover:text-[#0c4703]'
-                  : 'bg-slate-900 border-emerald-900/60 text-slate-300 hover:text-white'
+                  ? 'bg-amber-400 border-amber-300 text-slate-950 shadow-xs'
+                  : 'bg-white/14 hover:bg-white/22 border-white/20 text-white'
               }`}
               title={
                 isDlActive
@@ -2988,12 +3011,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
           </div>
         )}
 
-        {/* Independently Scrollable Middle Verses Area (Or Full-Screen Mushaf View when Book Mode is active) */}
+        {/* Independently Scrollable Middle Verses Area (Or Edge-to-Edge Full-Width Mushaf View when Book Mode is active) */}
         <div
           ref={versesScrollRef}
           className={`flex-1 min-h-0 -mx-3.5 ${
             isMushafBookMode && !isLoadingSurah
-              ? 'flex flex-col overflow-hidden px-2 pt-1.5 pb-1.5'
+              ? 'flex flex-col overflow-hidden px-0 pt-0 pb-1'
               : 'overflow-y-auto no-scrollbar px-3.5'
           }`}
         >
@@ -3088,12 +3111,12 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                   }
                 }}
               >
-                {/* Clean Full-Height Mushaf Frame (Zero 3D GPU tilt, works smoothly on all phones & desktops) */}
+                {/* Clean Full-Width & Full-Height Mushaf Frame (Zero 3D GPU tilt, works smoothly on all phones & desktops) */}
                 <div
                   key={`${activeSurahData.number}-leaf-${safeIdx}`}
-                  className={`relative flex-1 min-h-0 flex flex-col rounded-2xl border-2 overflow-hidden transition-colors duration-150 ${
+                  className={`relative flex-1 min-h-0 flex flex-col border-y-2 overflow-hidden transition-colors duration-150 ${
                     isDay
-                      ? 'bg-[#fcf8ee] border-[#c8a962] shadow-sm'
+                      ? 'bg-[#fcf8ee] border-[#c8a962] shadow-xs'
                       : 'bg-[#071a14] border-amber-500/65 shadow-md'
                   }`}
                 >
@@ -3154,21 +3177,16 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                     </button>
                   </div>
 
-                  {/* Full-Bleed Inner Ornate Mushaf Page Body */}
+                  {/* Full-Width Mushaf Page Body (No nested double border box, maximum width for Quran text) */}
                   <div
                     ref={bookPageScrollRef}
-                    className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-1.5"
+                    className={`flex-1 min-h-0 overflow-y-auto no-scrollbar px-3.5 py-2.5 flex flex-col justify-between ${
+                      isDay ? 'bg-[#fdfaf2]' : 'bg-[#081f18]'
+                    }`}
                   >
-                    <div
-                      className={`min-h-full rounded-xl border px-3.5 py-3 flex flex-col justify-between ${
-                        isDay
-                          ? 'border-[#dfc588] bg-[#fdfaf2]/95'
-                          : 'border-amber-500/35 bg-[#081f18]/85'
-                      }`}
-                    >
                       {/* Opening Bismillah on Page 1 (Without duplicate Arabic Surah box) */}
                       {curLeaf.isFirstPage && activeSurahData.bismillahPre && (
-                        <div className="mb-2.5 pb-1.5 border-b border-dashed border-[#dfc588]/70 text-center">
+                        <div className="mb-2 pb-1.5 border-b border-dashed border-[#dfc588]/70 text-center">
                           <p
                             style={{
                               fontSize: `${Math.max(20, Math.round(arabicFontSize * 0.88))}px`,
@@ -3224,7 +3242,7 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                                         if (Date.now() - lastBookMouseDragTsRef.current < 180) return;
                                         handlePlayWord(ayah.numberInSurah, word.position);
                                       }}
-                                      className={`rounded-md px-1 -mx-1 py-0.5 transition-colors duration-100 ${
+                                      className={`rounded px-0.5 -mx-0.5 py-0 transition-colors duration-100 ${
                                         isWordActive
                                           ? isDay
                                             ? 'bg-[#158509] text-white nq-keep-dark shadow-2xs'
@@ -3238,16 +3256,10 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                                   </React.Fragment>
                                 );
                               })}
-                              {/* Ornate Mushaf Ayah End Medallion ﴿١﴾ attached cleanly with non-breaking space */}
+                              {/* Ornate Mushaf Ayah End Medallion ﴿١﴾ attached cleanly with non-breaking space (uniform gold, word-only highlight) */}
                               <span
                                 className={`inline whitespace-nowrap text-[0.76em] font-bold select-none ${
-                                  isAyahActive
-                                    ? isDay
-                                      ? 'text-[#158509]'
-                                      : 'text-amber-300'
-                                    : isDay
-                                    ? 'text-[#8b6914]'
-                                    : 'text-amber-400/85'
+                                  isDay ? 'text-[#8b6914]' : 'text-amber-400/85'
                                 }`}
                               >
                                 ﴿{toArabicIndicNumber(ayah.numberInSurah)}﴾
@@ -3256,7 +3268,6 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                           );
                         })}
                       </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -3352,123 +3363,127 @@ export const QuranTab: React.FC<QuranTabProps> = ({
         </div>
 
         {/* Bottom Audio Player:
-            - In Mushaf Book Mode: Shows ONLY the compact 1-row Home-style docked bottom bar (rounded-t-3xl) so the Mushaf book opens at maximum full-screen height.
-            - In Normal Verse + Translation Mode: Shows the frosted-glass Surah player. */}
+            - In Mushaf Book Mode: Shows ONLY the compact 1-row Home-style docked bottom bar with visible top AND bottom border.
+            - In Normal Verse + Translation Mode: Shows the frosted-glass Surah player with visible 4-sided border. */}
         {isMushafBookMode ? (
           <div
             style={
               isNative
                 ? {
                     paddingBottom:
-                      'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 8px)',
+                      'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 6px)',
                   }
                 : undefined
             }
-            className={`shrink-0 -mx-3.5 rounded-t-3xl border-t-2 overflow-hidden z-30 transition-colors ${
-              isDay
-                ? 'bg-[#f2fbef] border-[#9fd895] shadow-[0_-6px_20px_rgba(12,71,3,0.08)]'
-                : 'bg-slate-900/95 border-emerald-700/80 shadow-[0_-6px_22px_rgba(0,0,0,0.48)]'
-            }`}
+            className={`shrink-0 -mx-3.5 px-2 pt-1 ${!isNative ? 'pb-2' : ''} z-30`}
           >
-            {/* Thin embedded progress accent along top curve */}
-            <div className={`w-full h-[2.5px] ${isDay ? 'bg-[#d6efd0]' : 'bg-emerald-950'}`}>
-              <div
-                className={`h-full transition-all duration-200 ${
-                  isDay ? 'bg-[#158509]' : 'bg-amber-400'
-                }`}
-                style={{
-                  width: `${
-                    progressPercent > 0
-                      ? progressPercent
-                      : totalLoadedAyahs > 0
-                      ? Math.min(100, Math.max(4, Math.round((displayAyahNum / totalLoadedAyahs) * 100)))
-                      : 0
-                  }%`,
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-2 px-3.5 py-2">
-              <button
-                type="button"
-                onClick={() => setIsReciterPickerOpen(true)}
-                className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
-                title={activeReciter.name}
-              >
+            <div
+              className={`w-full rounded-2xl border-2 overflow-hidden transition-colors ${
+                isDay
+                  ? 'bg-[#f2fbef] border-[#86cf77] shadow-[0_4px_18px_rgba(12,71,3,0.10)]'
+                  : 'bg-slate-900/95 border-emerald-700/85 shadow-[0_4px_20px_rgba(0,0,0,0.52)]'
+              }`}
+            >
+              {/* Thin embedded progress accent along top curve */}
+              <div className={`w-full h-[2.5px] ${isDay ? 'bg-[#d6efd0]' : 'bg-emerald-950'}`}>
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                    isDay
-                      ? 'bg-[#e1f5da] text-[#158509] border border-[#b2e0a8]'
-                      : 'bg-emerald-950 text-amber-400 border border-emerald-800/60'
+                  className={`h-full transition-all duration-200 ${
+                    isDay ? 'bg-[#158509]' : 'bg-amber-400'
                   }`}
+                  style={{
+                    width: `${
+                      progressPercent > 0
+                        ? progressPercent
+                        : totalLoadedAyahs > 0
+                        ? Math.min(100, Math.max(4, Math.round((displayAyahNum / totalLoadedAyahs) * 100)))
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-2 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => setIsReciterPickerOpen(true)}
+                  className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                  title={activeReciter.name}
                 >
-                  <img
-                    src="/icons/home/quran.webp"
-                    alt=""
-                    className="w-5 h-5 object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      isDay
+                        ? 'bg-[#e1f5da] text-[#158509] border border-[#b2e0a8]'
+                        : 'bg-emerald-950 text-amber-400 border border-emerald-800/60'
+                    }`}
+                  >
+                    <img
+                      src="/icons/home/quran.webp"
+                      alt=""
+                      className="w-5 h-5 object-contain"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-bold truncate ${isDay ? 'text-[#0c4703]' : 'text-white'}`}>
+                      {activeSurahData.number}. {locActiveSurah.name}
+                    </p>
+                    <p className={`text-[10.5px] truncate tabular-nums flex items-center gap-1 ${isDay ? 'text-slate-600' : 'text-slate-400'}`}>
+                      <span>
+                        {displayAyahNum}/{totalLoadedAyahs} · {activeReciter.shortName}
+                      </span>
+                      <ChevronDown className="w-3 h-3 shrink-0 opacity-75" />
+                    </p>
+                  </div>
+                </button>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => switchReaderSurah(-1)}
+                    disabled={activeSurahData.number <= 1}
+                    className={`p-2 rounded-xl border transition active:scale-95 disabled:opacity-35 ${
+                      isDay
+                        ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
+                        : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
+                    }`}
+                    aria-label={t.quran.prevSurah}
+                  >
+                    <SkipBack className="w-3.5 h-3.5 fill-current" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleTogglePlayPause}
+                    className={`p-2 rounded-xl transition active:scale-95 shadow-xs ${
+                      isDay
+                        ? 'bg-[#158509] text-white nq-keep-dark'
+                        : 'bg-amber-400 text-slate-950'
+                    }`}
+                    aria-label={isAudioPlaying ? t.quran.pause : t.quran.recite}
+                  >
+                    {isAudioPlaying ? (
+                      <Pause className="w-3.5 h-3.5 fill-current" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchReaderSurah(1)}
+                    disabled={activeSurahData.number >= 114}
+                    className={`p-2 rounded-xl border transition active:scale-95 disabled:opacity-35 ${
+                      isDay
+                        ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
+                        : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
+                    }`}
+                    aria-label={t.quran.nextSurah}
+                  >
+                    <SkipForward className="w-3.5 h-3.5 fill-current" />
+                  </button>
                 </div>
-                <div className="min-w-0">
-                  <p className={`text-xs font-bold truncate ${isDay ? 'text-[#0c4703]' : 'text-white'}`}>
-                    {activeSurahData.number}. {locActiveSurah.name}
-                  </p>
-                  <p className={`text-[10.5px] truncate tabular-nums flex items-center gap-1 ${isDay ? 'text-slate-600' : 'text-slate-400'}`}>
-                    <span>
-                      {displayAyahNum}/{totalLoadedAyahs} · {activeReciter.shortName}
-                    </span>
-                    <ChevronDown className="w-3 h-3 shrink-0 opacity-75" />
-                  </p>
-                </div>
-              </button>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => switchReaderSurah(-1)}
-                  disabled={activeSurahData.number <= 1}
-                  className={`p-2 rounded-xl border transition active:scale-95 disabled:opacity-35 ${
-                    isDay
-                      ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
-                      : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
-                  }`}
-                  aria-label={t.quran.prevSurah}
-                >
-                  <SkipBack className="w-3.5 h-3.5 fill-current" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleTogglePlayPause}
-                  className={`p-2 rounded-xl transition active:scale-95 shadow-xs ${
-                    isDay
-                      ? 'bg-[#158509] text-white nq-keep-dark'
-                      : 'bg-amber-400 text-slate-950'
-                  }`}
-                  aria-label={isAudioPlaying ? t.quran.pause : t.quran.recite}
-                >
-                  {isAudioPlaying ? (
-                    <Pause className="w-3.5 h-3.5 fill-current" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => switchReaderSurah(1)}
-                  disabled={activeSurahData.number >= 114}
-                  className={`p-2 rounded-xl border transition active:scale-95 disabled:opacity-35 ${
-                    isDay
-                      ? 'bg-white border-[#c3e2bc] text-[#0c4703] hover:bg-[#e1f5db]'
-                      : 'bg-slate-800 border-emerald-800/60 text-slate-200 hover:text-white'
-                  }`}
-                  aria-label={t.quran.nextSurah}
-                >
-                  <SkipForward className="w-3.5 h-3.5 fill-current" />
-                </button>
               </div>
             </div>
           </div>
@@ -3482,17 +3497,13 @@ export const QuranTab: React.FC<QuranTabProps> = ({
                   }
                 : undefined
             }
-            className={`shrink-0 z-30 -mx-3.5 px-3 pt-2 ${!isNative ? 'pb-3' : ''} backdrop-blur-md border-t transition-colors ${
-              isDay
-                ? 'bg-[#ecf1f5]/70 border-white/60'
-                : 'bg-slate-950/70 border-emerald-900/35'
-            }`}
+            className={`shrink-0 z-30 -mx-3.5 px-3 pt-1.5 ${!isNative ? 'pb-3' : ''}`}
           >
             <div
-              className={`rounded-3xl border px-4 py-3 backdrop-blur-xl transition-colors ${
+              className={`rounded-3xl border-2 px-4 py-3 backdrop-blur-xl transition-colors ${
                 isDay
-                  ? 'bg-white/82 border-white/90 shadow-[0_6px_22px_rgba(12,71,3,0.10)] ring-1 ring-[#cde8c3]/60'
-                  : 'bg-slate-900/82 border-emerald-800/60 shadow-[0_6px_22px_rgba(0,0,0,0.55)]'
+                  ? 'bg-white/92 border-[#86cf77] shadow-[0_6px_22px_rgba(12,71,3,0.12)]'
+                  : 'bg-slate-900/92 border-emerald-700/85 shadow-[0_6px_22px_rgba(0,0,0,0.55)]'
               }`}
             >
               {/* Compact Top Info Strip + Qori Reciter Switcher */}

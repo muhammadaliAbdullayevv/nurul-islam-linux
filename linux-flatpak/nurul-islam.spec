@@ -1,5 +1,5 @@
 Name:           nurul-islam
-Version:        1.8.86
+Version:        1.8.87
 Release:        1%{?dist}
 Summary:        Holy Quran, Prayer Times, Tajweed & Hanafi Fiqh Companion
 License:        MIT
@@ -49,6 +49,8 @@ cp -r www/* %{buildroot}%{_datadir}/nurulislam/www/
 %{_datadir}/nurulislam/
 
 %changelog
+* Sat Nov 28 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.87-1
+- Restore deep Islamic green Surah top bar, make Mushaf reader page full-width with dynamic font-scaled pagination (no cut-off bottom lines), normalize combining Uthmani waqf signs, sync scroll position when exiting Mushaf mode to Translation mode, and add full 4-sided borders to bottom audio players
 * Sat Nov 28 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.86-1
 - Add desktop keyboard arrows, mouse drag, touchpad 2-finger swipe, and top bar chevrons for Mushaf page switching
 * Fri Nov 27 2026 Muhammadali Abdullayev <admin@mabdullayev.dev> - 1.8.85-1

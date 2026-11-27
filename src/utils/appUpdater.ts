@@ -99,7 +99,7 @@ export function getLocalAppVersion(): LocalAppVersion {
       return { versionCode: dv.versionCode, versionName: dv.versionName };
     }
   }
-  return { versionCode: 106, versionName: '1.8.86' };
+  return { versionCode: 107, versionName: '1.8.87' };
 }
 
 const FRIENDLY_UPDATE_MESSAGES: Record<AppLanguage, string> = {
@@ -174,14 +174,8 @@ export async function checkForAppUpdate(): Promise<{
               if (st.checked) break;
               await new Promise((r) => window.setTimeout(r, 150));
             }
-            if (st.checked) {
-              if (st.available && typeof st.versionCode === 'number' && st.versionCode > local.versionCode) {
-                // Google Play Store confirms a newer AAB is uploaded, approved, and live for this user
-                effectiveRemoteCode = st.versionCode;
-              } else {
-                // Google Play Store confirms NO newer AAB is live yet (not uploaded or still in review)
-                effectiveRemoteCode = local.versionCode;
-              }
+            if (st.checked && st.available && typeof st.versionCode === 'number') {
+              effectiveRemoteCode = Math.max(playConfirmedCode, st.versionCode);
             }
           } catch {
             // use playConfirmedCode fallback only if native bridge throws

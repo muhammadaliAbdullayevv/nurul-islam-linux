@@ -672,7 +672,7 @@ export const AndroidShell: React.FC<AndroidShellProps> = ({
         <div
           ref={viewportScrollRef}
           style={{
-            ...(shouldHideTopAppBar && isCapacitorNative
+            ...(shouldHideTopAppBar && isCapacitorNative && activeTab !== 'quran'
               ? {
                   paddingTop:
                     'calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 10px)',
